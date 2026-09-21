@@ -1,0 +1,111 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Home</title>
+        <link rel="stylesheet" href="HOME.css">
+         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous">
+         <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+         <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
+         <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.min.js" integrity="sha384-w1Q4orYjBQndcko6MimVbzY0tgp4pWB4lZ7lr30WKz0vr/aWKhXdBNmNb5D92v7s" crossorigin="anonymous"></script>
+         <script src="https://cdn.jsdelivr.net/npm/gsap@3.15/dist/gsap.min.js"></script>
+    </head>
+    <body class="event-page">
+       <nav class="navbar navbar-expand-lg navbar-light bg-dark">
+            <a class="navbar-brand" href="#">EVENTPRO</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+                <div class="navbar-nav ml-auto" style="color: white;">
+                <a class="nav-link active" href="#">Home <span class="sr-only">(current)</span></a>
+                <a class="nav-link" href="#features">Features</a>
+                <a class="nav-link" href="./SIGNUP.html">Sign Up</a>
+                <a class="nav-link" href="./SIGNIN.html" onclick="window.location.replace('./SIGNIN.html'); return false;">Sign In</a>
+                </div>
+            </div>
+            </nav>
+        <div class="justify-content-center">
+        <h1 class="welcome-heading">WELCOME TO EVENTPRO</h1>
+        <h2 Style="font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;">WHERE WE PLAN AND MANAGE EVERYTHING</h2>
+        <div class="animation-stage" aria-label="Animated EventPro box">
+            <div class="animation-box">EVENTPRO</div>
+        </div>
+        </div>
+        <section class="features-section" id="features">
+            <h2 class="features-title">Features</h2>
+            <div class="features-grid">
+                <article class="feature-card">
+                    <h3>Event Planning</h3>
+                    <p>Organize every event detail from one simple workspace.</p>
+                </article>
+                <article class="feature-card">
+                    <h3>Guest Management</h3>
+                    <p>Track invitations, registrations, and guest information easily.</p>
+                </article>
+                <article class="feature-card">
+                    <h3>Smart Scheduling</h3>
+                    <p>Build clear schedules and keep every activity on time.</p>
+                </article>
+                <article class="feature-card">
+                    <h3>Event Analytics</h3>
+                    <p>Review useful insights to make every event better.</p>
+                </article>
+            </div>
+        </section>
+        <section class="partners-section" id="partners">
+            <h2 class="partners-title">OUR PARTNERS</h2>
+            <div class="partner-lane" aria-label="Partner companies moving from right to left">
+                <div class="partner-track partner-track-left">
+                    <span class="partner-logo">NOVA EVENTS</span>
+                    <span class="partner-logo">BRIGHTWORKS</span>
+                    <span class="partner-logo">MOMENTUM CO.</span>
+                    <span class="partner-logo">LUMEN GROUP</span>
+                    <span class="partner-logo">NOVA EVENTS</span>
+                    <span class="partner-logo">BRIGHTWORKS</span>
+                    <span class="partner-logo">MOMENTUM CO.</span>
+                    <span class="partner-logo">LUMEN GROUP</span>
+                </div>
+            </div>
+            <div class="partner-lane" aria-label="Partner companies moving from left to right">
+                <div class="partner-track partner-track-right">
+                    <span class="partner-logo">CRESCENT MEDIA</span>
+                    <span class="partner-logo">SKYLINE STUDIO</span>
+                    <span class="partner-logo">APEX HOSPITALITY</span>
+                    <span class="partner-logo">ORBIT CREATIVE</span>
+                    <span class="partner-logo">CRESCENT MEDIA</span>
+                    <span class="partner-logo">SKYLINE STUDIO</span>
+                    <span class="partner-logo">APEX HOSPITALITY</span>
+                    <span class="partner-logo">ORBIT CREATIVE</span>
+                </div>
+            </div>
+        </section>
+        <footer class="site-footer">
+            <div class="footer-item">
+                <h2>Contact Us</h2>
+                <a href="tel:+15551234567">+1 (555) 123-4567</a>
+            </div>
+            <div class="footer-item">
+                <h2>Email Address</h2>
+                <a href="mailto:hello@eventpro.com">hello@eventpro.com</a>
+            </div>
+            <div class="footer-item">
+                <h2>Address</h2>
+                <address>123 Event Street, New York, NY 10001</address>
+            </div>
+        </footer>
+        <script>
+            gsap.timeline({ repeat: -1, yoyo: true })
+                .to(".animation-box", {
+                    y: -28,
+                    rotation: 8,
+                    duration: 1.2,
+                    ease: "power2.inOut"
+                })
+                .to(".animation-box", {
+                    rotation: -8,
+                    duration: 0.8,
+                    ease: "power1.inOut"
+                });
+        </script>
+    </body>
+</html>

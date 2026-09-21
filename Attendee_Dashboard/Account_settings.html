@@ -1,0 +1,116 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventPro | Account Settings</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous">
+    <link rel="stylesheet" href="Account_settings.css">
+    <script src="https://cdn.jsdelivr.net/npm/amazon-cognito-identity-js@6.3.12/dist/amazon-cognito-identity.min.js"></script>
+    <script src="../aws-config.js"></script>
+    <script src="../dashboard-auth.js"></script>
+</head>
+<body class="account-page" data-required-role="attendee">
+    <div class="page-shell">
+        <aside class="sidebar">
+            <div class="brand-wrap">
+                <div class="brand-mark">E</div>
+                <div>
+                    <p class="brand-mini">Attendee</p>
+                    <h2>EVENTPRO</h2>
+                </div>
+            </div>
+
+            <nav class="side-nav">
+                <a href="Event_List.html">Explore Events</a>
+                <a href="Your_Booking.html">My Bookings</a>
+                <a href="Account_settings.html" class="active">Account Settings</a>
+                <a href="Saved_Events.html">Saved Events</a>
+            </nav>
+
+            <div class="sidebar-card">
+                <p>Profile status</p>
+                <h3>Verified account</h3>
+                <span>All security checks are complete.</span>
+                <button type="button">Upgrade plan</button>
+            </div>
+        </aside>
+
+        <main class="main-panel">
+            <header class="topbar">
+                <div>
+                    <p class="eyebrow">Profile settings</p>
+                    <h1>Account settings</h1>
+                </div>
+                <div class="topbar-actions">
+                    <button class="ghost-btn">Support</button>
+                    <div class="user-pill">
+                        <span class="user-avatar">G</span>
+                        <span>Gourav</span>
+                    </div>
+                </div>
+            </header>
+
+            <section class="profile-card">
+                <div class="profile-header">
+                    <div class="avatar-large">G</div>
+                    <div>
+                        <h3>Gourav Sharma</h3>
+                        <p>Attendee member</p>
+                    </div>
+                    <button class="primary-btn">Edit profile</button>
+                </div>
+            </section>
+
+            <section class="settings-grid">
+                <div class="settings-card">
+                    <h4>Personal details</h4>
+                    <form class="form-grid">
+                        <div class="field">
+                            <label>Full name</label>
+                            <input type="text" value="Gourav Sharma">
+                        </div>
+                        <div class="field">
+                            <label>Email</label>
+                            <input type="email" value="gourav@example.com">
+                        </div>
+                        <div class="field">
+                            <label>Phone</label>
+                            <input type="tel" value="+1 (555) 321-9876">
+                        </div>
+                        <div class="field">
+                            <label>Location</label>
+                            <input type="text" value="New York, USA">
+                        </div>
+                    </form>
+                </div>
+
+                <div class="settings-card">
+                    <h4>Security</h4>
+                    <ul class="security-list">
+                        <li><span>Password</span><a href="#">Change</a></li>
+                        <li><span>Two-factor auth</span><a href="#">Enabled</a></li>
+                        <li><span>Login activity</span><a href="#">View</a></li>
+                    </ul>
+                </div>
+            </section>
+
+            <section class="settings-card preferences-card">
+                <h4>Notification preferences</h4>
+                <div class="toggle-row">
+                    <span>Email updates</span>
+                    <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+                </div>
+                <div class="toggle-row">
+                    <span>Event reminders</span>
+                    <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+                </div>
+                <div class="toggle-row">
+                    <span>Marketing offers</span>
+                    <label class="switch"><input type="checkbox"><span class="slider"></span></label>
+                </div>
+            </section>
+        </main>
+    </div>
+</body>
+</html>

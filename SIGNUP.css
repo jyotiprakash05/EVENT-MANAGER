@@ -1,0 +1,127 @@
+* {
+	box-sizing: border-box;
+}
+
+html,
+body {
+	min-block-size: 100%;
+	margin: 0;
+}
+
+.sign-up-page {
+	display: grid;
+	place-items: center;
+	min-block-size: 100vh;
+	padding: 24px;
+	background-image: linear-gradient(rgba(24, 31, 42, 0.62), rgba(24, 31, 42, 0.62)), url("https://res.cloudinary.com/dw8s2k0a6/image/upload/v1789391304/Gemini_Generated_Image_er5o9der5o9der5o_zaqudm.png");
+	background-position: center;
+	background-size: cover;
+}
+
+.sign-up-card {
+	inline-size: min(100%, 560px);
+	padding: 40px;
+	border-radius: 12px;
+	background: white;
+	box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+}
+
+.sign-up-card h1 {
+	margin-block-end: 8px;
+	color: #212529;
+	font-size: 2rem;
+	text-align: center;
+}
+
+.sign-up-subtitle {
+	margin-block-end: 30px;
+	color: #6c757d;
+	text-align: center;
+}
+
+.sign-up-form label {
+	color: #212529;
+	font-weight: 600;
+}
+
+.sign-up-form .form-control {
+	block-size: 48px;
+}
+
+.role-selection {
+	margin: 0 0 24px;
+	padding: 0;
+	border: 0;
+}
+
+.role-selection legend {
+	margin-block-end: 10px;
+	color: #212529;
+	font-size: 1rem;
+	font-weight: 600;
+}
+
+.role-options {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 12px;
+}
+
+.role-option {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0;
+	padding: 12px;
+	border: 1px solid #ced4da;
+	border-radius: 6px;
+	color: #212529;
+	cursor: pointer;
+}
+
+.role-option:has(input:checked) {
+	border-color: #212529;
+	background: #f1f3f5;
+}
+
+.name-fields {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 16px;
+}
+
+.sign-up-button {
+	inline-size: 100%;
+	margin-block-start: 8px;
+	padding-block: 12px;
+	background: #212529;
+	color: white;
+	font-weight: 600;
+}
+
+.sign-up-button:hover {
+	background: #343a40;
+	color: white;
+}
+
+.sign-in-prompt {
+	margin: 24px 0 0;
+	color: #6c757d;
+	text-align: center;
+}
+
+.sign-in-prompt a {
+	color: #212529;
+	font-weight: 600;
+}
+
+@media (max-width: 576px) {
+	.sign-up-card {
+		padding: 28px 22px;
+	}
+
+	.name-fields {
+		grid-template-columns: 1fr;
+		gap: 0;
+	}
+}
