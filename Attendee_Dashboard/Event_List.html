@@ -4,14 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EventPro | Explore Events</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous">
-    <link rel="stylesheet" href="Event_List.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- CSS -->
+    <link rel="stylesheet" href="Attendee_Dashboard.css">
+    <!-- EmailJS SDK -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script type="text/javascript">
+        (function() {
+            // NOTE: Add your EmailJS public key here
+            emailjs.init("YOUR_PUBLIC_KEY");
+        })();
+    </script>
+    <!-- AWS SDK & Auth Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/amazon-cognito-identity-js@6.3.12/dist/amazon-cognito-identity.min.js"></script>
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1408.0.min.js"></script>
     <script src="../aws-config.js"></script>
     <script src="../dashboard-auth.js"></script>
+    <script src="attendee-backend.js"></script>
 </head>
-<body class="event-list-page" data-required-role="attendee">
+<body class="attendee-dashboard" data-required-role="attendee">
     <div class="page-shell">
+        
+        <!-- Sidebar Navigation -->
         <aside class="sidebar">
             <div>
                 <div class="brand-wrap">
@@ -23,32 +38,44 @@
                 </div>
 
                 <nav class="side-nav">
-                    <a href="Event_List.html" class="active">Explore Events</a>
-                    <a href="Your_Booking.html">My Bookings</a>
-                    <a href="Account_settings.html">Account Settings</a>
-                    <a href="Saved_Events.html">Saved Events</a>
+                    <a href="Event_List.html" class="active">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                        Explore Events
+                    </a>
+                    <a href="Your_Booking.html">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                        My Bookings
+                    </a>
+                    <a href="Saved_Events.html">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+                        Saved Events
+                    </a>
+                    <a href="Account_settings.html">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                        Settings
+                    </a>
                 </nav>
             </div>
-
+            
             <div class="sidebar-card">
                 <p>Trending now</p>
-                <h3>12 live events</h3>
+                <h3 id="liveEventCount">0 live events</h3>
                 <span>Discover and reserve your next experience.</span>
-                <button type="button">View calendar</button>
             </div>
         </aside>
 
+        <!-- Main Workspace -->
         <main class="main-panel">
             <header class="topbar">
                 <div>
-                    <p class="eyebrow">Attendee dashboard</p>
-                    <h1>Explore events</h1>
+                    <p class="eyebrow">Attendee Overview</p>
+                    <h1>Explore Events</h1>
                 </div>
                 <div class="topbar-actions">
-                    <button class="ghost-btn">Filter</button>
-                    <div class="user-pill">
-                        <span class="user-avatar">G</span>
-                        <span>Gourav</span>
+                    <!-- The user pill is updated by dashboard-auth.js -->
+                    <div class="user-pill" onclick="window.location.href='Account_settings.html'" style="cursor:pointer">
+                        <span class="user-avatar">?</span>
+                        <span>Loading...</span>
                     </div>
                 </div>
             </header>
@@ -56,142 +83,204 @@
             <section class="summary-grid">
                 <div class="summary-box accent-blue">
                     <span>Popular</span>
-                    <strong>24</strong>
-                    <small>Curated this week</small>
+                    <strong id="popularCount">0</strong>
+                    <small>Events this week</small>
                 </div>
                 <div class="summary-box accent-purple">
-                    <span>Tickets</span>
-                    <strong>12K</strong>
-                    <small>Available soon</small>
+                    <span>My Bookings</span>
+                    <strong id="bookingCount">-</strong>
+                    <small>Tickets available</small>
                 </div>
                 <div class="summary-box accent-gold">
                     <span>Saved</span>
-                    <strong>08</strong>
+                    <strong id="savedCount">-</strong>
                     <small>Events shortlisted</small>
                 </div>
             </section>
 
             <section class="event-panel">
                 <div class="section-head">
-                    <h3>Upcoming events</h3>
+                    <h3>Upcoming Events</h3>
                     <div class="panel-tools">
                         <input id="eventSearch" type="search" placeholder="Search events..." aria-label="Search events">
-                        <button class="filter-btn" type="button">Popular</button>
                     </div>
                 </div>
 
                 <div class="event-grid" id="eventGrid">
-                    <article class="event-card spotlight">
-                        <div class="event-image gradient-one">TS</div>
-                        <div class="event-body">
-                            <div class="event-row">
-                                <span class="tag">Technology</span>
-                                <span class="rating">★ 4.9</span>
-                            </div>
-                            <h4>Tech Innovators Summit</h4>
-                            <p class="meta-line">24 Oct 2026 • 9:00 AM • Skyline Arena</p>
-                            <div class="event-footer">
-                                <div class="price-box">
-                                    <small>From</small>
-                                    <strong>$120</strong>
-                                </div>
-                                <div class="action-row">
-                                    <button class="save-btn" type="button">Save</button>
-                                    <button class="primary-btn" type="button">Book now</button>
-                                </div>
-                            </div>
-                        </div>
-                    </article>
-
-                    <article class="event-card">
-                        <div class="event-image gradient-two">AI</div>
-                        <div class="event-body">
-                            <div class="event-row">
-                                <span class="tag">AI & Data</span>
-                                <span class="rating">★ 4.8</span>
-                            </div>
-                            <h4>Future of AI</h4>
-                            <p class="meta-line">18 Nov 2026 • 1:00 PM • Austin Hall</p>
-                            <div class="event-footer">
-                                <div class="price-box">
-                                    <small>From</small>
-                                    <strong>$180</strong>
-                                </div>
-                                <div class="action-row">
-                                    <button class="save-btn" type="button">Save</button>
-                                    <button class="primary-btn" type="button">Book now</button>
-                                </div>
-                            </div>
-                        </div>
-                    </article>
-
-                    <article class="event-card">
-                        <div class="event-image gradient-three">MF</div>
-                        <div class="event-body">
-                            <div class="event-row">
-                                <span class="tag">Music</span>
-                                <span class="rating">★ 5.0</span>
-                            </div>
-                            <h4>Moonlight Festival</h4>
-                            <p class="meta-line">02 Nov 2026 • 7:30 PM • Harbor Stage</p>
-                            <div class="event-footer">
-                                <div class="price-box">
-                                    <small>From</small>
-                                    <strong>$90</strong>
-                                </div>
-                                <div class="action-row">
-                                    <button class="save-btn" type="button">Save</button>
-                                    <button class="primary-btn" type="button">Book now</button>
-                                </div>
-                            </div>
-                        </div>
-                    </article>
-
-                    <article class="event-card">
-                        <div class="event-image gradient-four">DS</div>
-                        <div class="event-body">
-                            <div class="event-row">
-                                <span class="tag">Design</span>
-                                <span class="rating">★ 4.7</span>
-                            </div>
-                            <h4>Creative Design Summit</h4>
-                            <p class="meta-line">15 Nov 2026 • 10:30 AM • New York Studio</p>
-                            <div class="event-footer">
-                                <div class="price-box">
-                                    <small>From</small>
-                                    <strong>$150</strong>
-                                </div>
-                                <div class="action-row">
-                                    <button class="save-btn" type="button">Save</button>
-                                    <button class="primary-btn" type="button">Book now</button>
-                                </div>
-                            </div>
-                        </div>
-                    </article>
+                    <p style="color: var(--muted); padding: 20px;">Loading events from database...</p>
                 </div>
             </section>
         </main>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        const searchInput = document.getElementById('eventSearch');
-        const cards = document.querySelectorAll('.event-card');
+        document.addEventListener('DOMContentLoaded', function() {
+            let userProfile = {};
+            let activeEvents = [];
 
-        searchInput.addEventListener('input', function () {
-            const query = this.value.trim().toLowerCase();
-            cards.forEach(card => {
-                const text = card.textContent.toLowerCase();
-                card.style.display = text.includes(query) ? 'flex' : 'none';
-            });
-        });
+            function loadData() {
+                if (window.AttendeeBackend) {
+                    // Fetch user profile first for saved events
+                    window.AttendeeBackend.getUserProfile((err, profile) => {
+                        if (!err) {
+                            userProfile = profile;
+                            document.getElementById('savedCount').textContent = (profile.savedEvents || []).length;
+                        }
 
-        document.querySelectorAll('.save-btn').forEach(button => {
-            button.addEventListener('click', function () {
-                const saved = this.classList.toggle('saved');
-                this.textContent = saved ? 'Saved' : 'Save';
+                        // Fetch Bookings
+                        window.AttendeeBackend.getMyBookings((err, tickets) => {
+                            if (!err) {
+                                document.getElementById('bookingCount').textContent = tickets.length;
+                            }
+                        });
+
+                        // Fetch Events
+                        window.AttendeeBackend.getAllEvents(function(err, events) {
+                            const grid = document.getElementById('eventGrid');
+                            if (err) {
+                                grid.innerHTML = '<p style="color: #ef4444; padding: 20px;">Error loading events: ' + err.message + '</p>';
+                                return;
+                            }
+
+                            if (!events || events.length === 0) {
+                                grid.innerHTML = '<p style="color: var(--muted); padding: 20px;">No upcoming events right now.</p>';
+                                document.getElementById('liveEventCount').textContent = '0 live events';
+                                document.getElementById('popularCount').textContent = '0';
+                                return;
+                            }
+
+                            activeEvents = events;
+                            document.getElementById('liveEventCount').textContent = events.length + ' live events';
+                            document.getElementById('popularCount').textContent = events.length;
+
+                            renderEvents(events);
+                        });
+                    });
+                } else {
+                    setTimeout(loadData, 500);
+                }
+            }
+
+            function renderEvents(events) {
+                const grid = document.getElementById('eventGrid');
+                grid.innerHTML = '';
+                const savedEventsList = userProfile.savedEvents || [];
+
+                events.forEach(function(event, index) {
+                    const isSaved = savedEventsList.includes(event.eventId);
+                    const initial = event.eventName ? event.eventName.substring(0, 2).toUpperCase() : 'EV';
+                    const dateObj = new Date(event.date);
+                    const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                    
+                    const priceDisplay = event.price > 0 ? '$' + parseFloat(event.price).toFixed(2) : 'Free';
+                    
+                    let locationDisplay = event.location || 'TBA';
+                    if (event.googleMapLink) {
+                        locationDisplay = `<a href="${event.googleMapLink}" target="_blank" style="color: var(--primary); text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                        ${locationDisplay}</a>`;
+                    }
+
+                    let bookBtnHTML = `<button class="primary-btn book-btn" data-id="${event.eventId}">Book now</button>`;
+                    if (event.salesDeadline) {
+                        const deadlineDate = new Date(event.salesDeadline);
+                        if (new Date() > deadlineDate) {
+                            bookBtnHTML = `<button class="primary-btn" disabled style="background:var(--border); color:var(--muted); cursor:not-allowed;">Sales Closed</button>`;
+                        }
+                    }
+                    
+                    // Rotate gradient classes
+                    const gradients = ['gradient-one', 'gradient-two', 'gradient-three', 'gradient-four'];
+                    const gradientClass = gradients[index % gradients.length];
+                    
+                    const article = document.createElement('article');
+                    article.className = 'event-card';
+                    
+                    article.innerHTML = `
+                        <div class="event-image ${gradientClass}">${initial}</div>
+                        <div class="event-body">
+                            <div class="event-row">
+                                <span class="tag">Event</span>
+                                <span class="rating">★ 4.9</span>
+                            </div>
+                            <h4>${event.eventName || 'Unnamed Event'}</h4>
+                            <p class="meta-line">${formattedDate} • ${event.time || 'TBD'} • ${locationDisplay}</p>
+                            <div class="event-footer">
+                                <div class="price-box">
+                                    <small>Price</small>
+                                    <strong>${priceDisplay}</strong>
+                                </div>
+                                <div class="action-row">
+                                    <button class="save-btn ${isSaved ? 'saved' : ''}" data-id="${event.eventId}">${isSaved ? 'Saved' : 'Save'}</button>
+                                    ${bookBtnHTML}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    grid.appendChild(article);
+                });
+
+                attachListeners();
+            }
+
+            function attachListeners() {
+                // Save buttons
+                document.querySelectorAll('.save-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const eventId = this.getAttribute('data-id');
+                        const self = this;
+                        window.AttendeeBackend.toggleSavedEvent(eventId, (err, data) => {
+                            if (!err) {
+                                if (data.isSaved) {
+                                    self.classList.add('saved');
+                                    self.textContent = 'Saved';
+                                } else {
+                                    self.classList.remove('saved');
+                                    self.textContent = 'Save';
+                                }
+                                document.getElementById('savedCount').textContent = data.savedEvents.length;
+                            }
+                        });
+                    });
+                });
+
+                // Book buttons
+                document.querySelectorAll('.book-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const eventId = this.getAttribute('data-id');
+                        const event = activeEvents.find(e => e.eventId === eventId);
+                        const self = this;
+
+                        self.disabled = true;
+                        self.textContent = 'Booking...';
+
+                        window.AttendeeBackend.bookTicket(event, (err, ticket) => {
+                            if (err) {
+                                alert("Failed to book ticket: " + err.message);
+                                self.disabled = false;
+                                self.textContent = 'Book now';
+                            } else {
+                                alert("Success! QR code has been emailed via EmailJS. Ticket is in My Bookings.");
+                                self.textContent = 'Booked';
+                                const curr = parseInt(document.getElementById('bookingCount').textContent) || 0;
+                                document.getElementById('bookingCount').textContent = curr + 1;
+                            }
+                        });
+                    });
+                });
+            }
+
+            const searchInput = document.getElementById('eventSearch');
+            searchInput.addEventListener('input', function () {
+                const query = this.value.trim().toLowerCase();
+                const cards = document.querySelectorAll('.event-card');
+                cards.forEach(card => {
+                    const text = card.textContent.toLowerCase();
+                    card.style.display = text.includes(query) ? 'flex' : 'none';
+                });
             });
+
+            setTimeout(loadData, 1000); 
         });
     </script>
 </body>

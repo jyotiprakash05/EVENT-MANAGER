@@ -13,6 +13,7 @@
     <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1408.0.min.js"></script>
     <script src="../aws-config.js"></script>
     <script src="../dashboard-auth.js"></script>
+    <script src="organizer-backend.js"></script>
 </head>
 <body class="organizer-dashboard" data-required-role="organizer">
     <div class="page-shell">
@@ -103,62 +104,70 @@
                             <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr class="event-row">
-                            <td class="event-title-cell">
-                                <div class="event-thumb">TI</div>
-                                <div class="event-info">
-                                    <h4>Tech Innovators Summit</h4>
-                                    <p>180/200 Tickets Sold</p>
-                                </div>
-                            </td>
-                            <td>
-                                <strong>Oct 24, 2026</strong><br>
-                                <small style="color: var(--muted)">9:00 AM</small>
-                            </td>
-                            <td><span class="status-badge status-active">Active</span></td>
-                            <td>
-                                <button class="action-btn">Edit</button>
-                            </td>
-                        </tr>
-                        <tr class="event-row">
-                            <td class="event-title-cell">
-                                <div class="event-thumb">AI</div>
-                                <div class="event-info">
-                                    <h4>Future of AI</h4>
-                                    <p>45/300 Tickets Sold</p>
-                                </div>
-                            </td>
-                            <td>
-                                <strong>Nov 18, 2026</strong><br>
-                                <small style="color: var(--muted)">1:00 PM</small>
-                            </td>
-                            <td><span class="status-badge status-active">Active</span></td>
-                            <td>
-                                <button class="action-btn">Edit</button>
-                            </td>
-                        </tr>
-                        <tr class="event-row">
-                            <td class="event-title-cell">
-                                <div class="event-thumb">MD</div>
-                                <div class="event-info">
-                                    <h4>Midnight Dance Fest</h4>
-                                    <p>0/500 Tickets Sold</p>
-                                </div>
-                            </td>
-                            <td>
-                                <strong>Dec 31, 2026</strong><br>
-                                <small style="color: var(--muted)">9:00 PM</small>
-                            </td>
-                            <td><span class="status-badge status-draft">Draft</span></td>
-                            <td>
-                                <button class="action-btn">Edit</button>
-                            </td>
+                    <tbody id="eventListBody">
+                        <tr>
+                            <td colspan="4" style="text-align: center; color: var(--muted);">Loading events...</td>
                         </tr>
                     </tbody>
                 </table>
             </section>
         </main>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            function loadEvents() {
+                if (window.OrganizerBackend) {
+                    window.OrganizerBackend.getEvents(function(err, events) {
+                        const tbody = document.getElementById('eventListBody');
+                        if (err) {
+                            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #ef4444;">Error loading events: ' + err.message + '</td></tr>';
+                            return;
+                        }
+
+                        if (!events || events.length === 0) {
+                            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--muted);">No events found. Create one to get started!</td></tr>';
+                            return;
+                        }
+
+                        tbody.innerHTML = '';
+                        events.forEach(function(event) {
+                            const initial = event.eventName ? event.eventName.substring(0, 2).toUpperCase() : 'EV';
+                            const dateObj = new Date(event.date);
+                            const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                            const isDraft = event.status === 'Draft';
+                            const statusClass = isDraft ? 'status-draft' : 'status-active';
+                            
+                            const tr = document.createElement('tr');
+                            tr.className = 'event-row';
+                            tr.innerHTML = `
+                                <td class="event-title-cell">
+                                    <div class="event-thumb">${initial}</div>
+                                    <div class="event-info">
+                                        <h4>${event.eventName || 'Unnamed Event'}</h4>
+                                        <p>${event.ticketsSold || 0}/${event.capacity || 0} Tickets Sold</p>
+                                    </div>
+                                </td>
+                                <td>
+                                    <strong>${formattedDate}</strong><br>
+                                    <small style="color: var(--muted)">${event.time || ''}</small>
+                                </td>
+                                <td><span class="status-badge ${statusClass}">${event.status || 'Active'}</span></td>
+                                <td>
+                                    <button class="action-btn" onclick="window.location.href='Event_update.html?id=${event.eventId}'">Edit</button>
+                                </td>
+                            `;
+                            tbody.appendChild(tr);
+                        });
+                    });
+                } else {
+                    setTimeout(loadEvents, 500); // Retry if backend not yet loaded
+                }
+            }
+            
+            // Allow time for dashboard-auth.js to setup AWS credentials before loading
+            setTimeout(loadEvents, 1000); 
+        });
+    </script>
 </body>
 </html>

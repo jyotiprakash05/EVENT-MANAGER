@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventPro | Analytics</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="Organizer_Dashboard.css">
+    <!-- AWS SDK & Auth Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/amazon-cognito-identity-js@6.3.12/dist/amazon-cognito-identity.min.js"></script>
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1408.0.min.js"></script>
+    <script src="../aws-config.js"></script>
+    <script src="../dashboard-auth.js"></script>
+    <script src="organizer-backend.js"></script>
+</head>
+<body class="organizer-dashboard" data-required-role="organizer">
+    <div class="page-shell">
+        
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div>
+                <div class="brand-wrap">
+                    <div class="brand-mark">O</div>
+                    <div>
+                        <p class="brand-mini">Organizer</p>
+                        <h2>EVENTPRO</h2>
+                    </div>
+                </div>
+
+                <nav class="side-nav">
+                    <a href="Event_list_organizer.html">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                        Dashboard
+                    </a>
+                    <a href="Report_Analytics.html" class="active">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                        Analytics
+                    </a>
+                    <a href="Ticket_scanning.html">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+                        Scanning
+                    </a>
+                    <a href="Account_settings_organizer.html">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                        Settings
+                    </a>
+                </nav>
+            </div>
+            
+            <button class="create-btn-sidebar" onclick="window.location.href='Event_update.html'">
+                + Create New Event
+            </button>
+        </aside>
+
+        <!-- Main Workspace -->
+        <main class="main-panel">
+            <header class="topbar">
+                <div>
+                    <p class="eyebrow">Organizer Overview</p>
+                    <h1>Reports & Analytics</h1>
+                </div>
+                <div class="topbar-actions">
+                    <div class="user-pill" onclick="window.location.href='Account_settings_organizer.html'" style="cursor:pointer">
+                        <span class="user-avatar">?</span>
+                        <span>Loading...</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Analytics Summary Grid -->
+            <section class="analytics-grid">
+                <div class="stat-card revenue">
+                    <span>Total Revenue</span>
+                    <strong id="totalRevenue">$0</strong>
+                    <div class="stat-trend trend-up">↑ Based on active events</div>
+                </div>
+                <div class="stat-card tickets">
+                    <span>Tickets Sold</span>
+                    <strong id="totalTickets">0</strong>
+                    <div class="stat-trend trend-up">↑ Based on active events</div>
+                </div>
+                <div class="stat-card views">
+                    <span>Event Page Views</span>
+                    <strong>3,102</strong>
+                    <div class="stat-trend trend-flat">→ Stable</div>
+                </div>
+            </section>
+
+            <!-- Charts Section -->
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+                <!-- Main Chart -->
+                <div class="chart-card">
+                    <h3>Revenue Over Time</h3>
+                    <div class="chart-placeholder">
+                        <div class="bar" style="height: 30%;" title="Jan: $2,000"></div>
+                        <div class="bar" style="height: 45%;" title="Feb: $3,500"></div>
+                        <div class="bar" style="height: 40%;" title="Mar: $3,100"></div>
+                        <div class="bar" style="height: 60%;" title="Apr: $5,200"></div>
+                        <div class="bar" style="height: 55%;" title="May: $4,800"></div>
+                        <div class="bar" style="height: 80%;" title="Jun: $7,100"></div>
+                        <div class="bar" style="height: 75%;" title="Jul: $6,500"></div>
+                        <div class="bar" style="height: 90%;" title="Aug: $8,000"></div>
+                        <div class="bar" style="height: 100%;" title="Sep: $9,500"></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 12px; color: var(--muted); font-size: 0.8rem;">
+                        <span>Jan</span>
+                        <span>Mar</span>
+                        <span>May</span>
+                        <span>Jul</span>
+                        <span>Sep</span>
+                    </div>
+                </div>
+
+                <!-- Secondary Stats -->
+                <div style="display: flex; flex-direction: column; gap: 24px;">
+                    <div class="form-section" style="flex: 1;">
+                        <h3 style="margin: 0 0 16px; font-size: 1.1rem; color: var(--muted);">Top Selling Event</h3>
+                        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 12px;">
+                            <div class="event-thumb" style="width: 48px; height: 48px;">TI</div>
+                            <div>
+                                <h4 style="margin: 0; font-size: 1rem;">Tech Innovators Summit</h4>
+                                <p style="margin: 0; color: var(--primary); font-weight: 600;">$8,400</p>
+                            </div>
+                        </div>
+                        <p style="margin: 0; color: var(--muted); font-size: 0.85rem;">180 Tickets Sold</p>
+                    </div>
+
+                    <div class="form-section" style="flex: 1;">
+                        <h3 style="margin: 0 0 16px; font-size: 1.1rem; color: var(--muted);">Conversion Rate</h3>
+                        <strong style="font-size: 2.5rem; display: block; color: var(--text);">14.7%</strong>
+                        <div class="stat-trend trend-up">↑ 2.1% from last month</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            function loadAnalytics() {
+                if (window.OrganizerBackend) {
+                    window.OrganizerBackend.getEvents(function(err, events) {
+                        if (err) {
+                            console.error("Failed to load events for analytics", err);
+                            return;
+                        }
+
+                        let totalRevenue = 0;
+                        let totalTickets = 0;
+
+                        events.forEach(event => {
+                            // Using fallback defaults if fields don't exist yet
+                            const tickets = event.ticketsSold || 0;
+                            const price = event.price || 0;
+                            
+                            totalTickets += tickets;
+                            totalRevenue += (tickets * price);
+                        });
+
+                        document.getElementById('totalRevenue').textContent = '$' + totalRevenue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                        document.getElementById('totalTickets').textContent = totalTickets.toLocaleString();
+                    });
+                } else {
+                    setTimeout(loadAnalytics, 500);
+                }
+            }
+            setTimeout(loadAnalytics, 1000);
+        });
+    </script>
+</body>
+</html>

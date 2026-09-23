@@ -1,71 +1,91 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EventPro | Your Bookings</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous">
-    <link rel="stylesheet" href="Your_Booking.css">
+    <title>EventPro | My Bookings</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- CSS -->
+    <link rel="stylesheet" href="Attendee_Dashboard.css">
+    <!-- AWS SDK & Auth Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/amazon-cognito-identity-js@6.3.12/dist/amazon-cognito-identity.min.js"></script>
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1408.0.min.js"></script>
     <script src="../aws-config.js"></script>
     <script src="../dashboard-auth.js"></script>
+    <script src="attendee-backend.js"></script>
 </head>
-<body class="booking-page" data-required-role="attendee">
+<body class="attendee-dashboard" data-required-role="attendee">
     <div class="page-shell">
+        
+        <!-- Sidebar Navigation -->
         <aside class="sidebar">
-            <div class="brand-wrap">
-                <div class="brand-mark">E</div>
-                <div>
-                    <p class="brand-mini">Attendee</p>
-                    <h2>EVENTPRO</h2>
+            <div>
+                <div class="brand-wrap">
+                    <div class="brand-mark">E</div>
+                    <div>
+                        <p class="brand-mini">Attendee</p>
+                        <h2>EVENTPRO</h2>
+                    </div>
                 </div>
+
+                <nav class="side-nav">
+                    <a href="Event_List.html">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                        Explore Events
+                    </a>
+                    <a href="Your_Booking.html" class="active">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                        My Bookings
+                    </a>
+                    <a href="Saved_Events.html">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+                        Saved Events
+                    </a>
+                    <a href="Account_settings.html">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                        Settings
+                    </a>
+                </nav>
             </div>
-
-            <nav class="side-nav">
-                <a href="Event_List.html">Explore Events</a>
-                <a href="Your_Booking.html" class="active">My Bookings</a>
-                <a href="Account_settings.html">Account Settings</a>
-                <a href="Saved_Events.html">Saved Events</a>
-            </nav>
-
+            
             <div class="sidebar-card">
                 <p>Quick reminder</p>
-                <h3>3 upcoming events</h3>
+                <h3 id="upcomingCount">0 upcoming events</h3>
                 <span>Keep your tickets ready for this week.</span>
-                <button type="button">View schedule</button>
             </div>
         </aside>
 
+        <!-- Main Workspace -->
         <main class="main-panel">
             <header class="topbar">
                 <div>
-                    <p class="eyebrow">Attendee dashboard</p>
-                    <h1>Your bookings</h1>
+                    <p class="eyebrow">Attendee Overview</p>
+                    <h1>Your Bookings</h1>
                 </div>
                 <div class="topbar-actions">
-                    <button class="ghost-btn">Dashboard</button>
-                    <div class="user-pill">
-                        <span class="user-avatar">G</span>
-                        <span>Gourav</span>
+                    <div class="user-pill" onclick="window.location.href='Account_settings.html'" style="cursor:pointer">
+                        <span class="user-avatar">?</span>
+                        <span>Loading...</span>
                     </div>
                 </div>
             </header>
 
             <section class="summary-grid">
                 <div class="summary-box accent-blue">
-                    <span>Upcoming</span>
-                    <strong>08</strong>
-                    <small>Events scheduled</small>
+                    <span>Tickets Valid</span>
+                    <strong id="validTickets">0</strong>
+                    <small>Ready to use</small>
                 </div>
                 <div class="summary-box accent-purple">
-                    <span>Tickets</span>
-                    <strong>14</strong>
-                    <small>Booked this month</small>
+                    <span>Events Attended</span>
+                    <strong id="usedTickets">0</strong>
+                    <small>History</small>
                 </div>
                 <div class="summary-box accent-gold">
-                    <span>Saved</span>
-                    <strong>$420</strong>
-                    <small>Member discounts</small>
+                    <span>Cancelled</span>
+                    <strong id="cancelledTickets">0</strong>
+                    <small>Refunded</small>
                 </div>
             </section>
 
@@ -74,108 +94,154 @@
                     <h3>Booked events</h3>
                     <div class="panel-tools">
                         <input id="searchInput" type="search" placeholder="Search bookings..." aria-label="Search bookings">
-                        <button class="filter-btn" type="button">Upcoming</button>
                     </div>
                 </div>
 
                 <div class="booking-list" id="bookingList">
-                    <article class="booking-card">
-                        <div class="event-thumb gradient-one">TS</div>
-                        <div class="booking-details">
-                            <div class="booking-topline">
-                                <div>
-                                    <p class="event-tag">Technology</p>
-                                    <h4>Tech Innovators Summit</h4>
-                                </div>
-                                <span class="status confirmed">Confirmed</span>
-                            </div>
-                            <div class="meta-grid">
-                                <div><label>Date</label><span>24 Oct 2026</span></div>
-                                <div><label>Time</label><span>9:00 AM</span></div>
-                                <div><label>Location</label><span>Skyline Arena</span></div>
-                                <div><label>Ticket</label><span>VIP Pass</span></div>
-                            </div>
-                            <div class="booking-actions">
-                                <button class="primary-btn">View ticket</button>
-                                <button class="secondary-btn cancel-btn">Cancel</button>
-                            </div>
-                        </div>
-                    </article>
-
-                    <article class="booking-card">
-                        <div class="event-thumb gradient-two">MF</div>
-                        <div class="booking-details">
-                            <div class="booking-topline">
-                                <div>
-                                    <p class="event-tag">Music</p>
-                                    <h4>Moonlight Festival</h4>
-                                </div>
-                                <span class="status pending">Pending</span>
-                            </div>
-                            <div class="meta-grid">
-                                <div><label>Date</label><span>02 Nov 2026</span></div>
-                                <div><label>Time</label><span>7:30 PM</span></div>
-                                <div><label>Location</label><span>Harbor Stage</span></div>
-                                <div><label>Ticket</label><span>Gold Entry</span></div>
-                            </div>
-                            <div class="booking-actions">
-                                <button class="primary-btn">View ticket</button>
-                                <button class="secondary-btn cancel-btn">Cancel</button>
-                            </div>
-                        </div>
-                    </article>
-
-                    <article class="booking-card">
-                        <div class="event-thumb gradient-three">SM</div>
-                        <div class="booking-details">
-                            <div class="booking-topline">
-                                <div>
-                                    <p class="event-tag">Startup</p>
-                                    <h4>Startup Meetup</h4>
-                                </div>
-                                <span class="status confirmed">Confirmed</span>
-                            </div>
-                            <div class="meta-grid">
-                                <div><label>Date</label><span>15 Nov 2026</span></div>
-                                <div><label>Time</label><span>10:00 AM</span></div>
-                                <div><label>Location</label><span>North Hall</span></div>
-                                <div><label>Ticket</label><span>Standard</span></div>
-                            </div>
-                            <div class="booking-actions">
-                                <button class="primary-btn">View ticket</button>
-                                <button class="secondary-btn cancel-btn">Cancel</button>
-                            </div>
-                        </div>
-                    </article>
+                    <p style="color: var(--muted); padding: 20px;">Loading bookings from database...</p>
                 </div>
             </section>
         </main>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Ticket QR Modal -->
+    <div id="ticketModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;">
+        <div style="background:var(--bg-panel); padding:32px; border-radius:16px; text-align:center; box-shadow:var(--shadow); position:relative; max-width:400px; width:90%;">
+            <button onclick="document.getElementById('ticketModal').style.display='none'" style="position:absolute; top:12px; right:12px; background:transparent; border:none; color:var(--text); cursor:pointer; font-size:1.2rem;">✖</button>
+            <h3 style="margin-top:0;">Your Ticket QR</h3>
+            <p style="color:var(--muted); margin-bottom:24px;">Show this at the entrance.</p>
+            <img id="qrImage" src="" alt="QR Code" style="background:white; padding:16px; border-radius:8px; margin-bottom:16px; width:200px; height:200px;">
+            <p style="margin:0; font-family:monospace; font-size:1.1rem; color:var(--primary);" id="ticketCodeDisplay"></p>
+        </div>
+    </div>
+
     <script>
-        const searchInput = document.getElementById('searchInput');
-        const cards = document.querySelectorAll('.booking-card');
+        document.addEventListener('DOMContentLoaded', function() {
+            function loadBookings() {
+                if (window.AttendeeBackend) {
+                    window.AttendeeBackend.getMyBookings(function(err, tickets) {
+                        const list = document.getElementById('bookingList');
+                        if (err) {
+                            list.innerHTML = '<p style="color: #ef4444; padding: 20px;">Error loading bookings: ' + err.message + '</p>';
+                            return;
+                        }
 
-        searchInput.addEventListener('input', function () {
-            const query = this.value.trim().toLowerCase();
-            cards.forEach(card => {
-                const text = card.textContent.toLowerCase();
-                card.style.display = text.includes(query) ? 'flex' : 'none';
-            });
-        });
+                        if (!tickets || tickets.length === 0) {
+                            list.innerHTML = '<p style="color: var(--muted); padding: 20px;">You haven\'t booked any events yet.</p>';
+                            return;
+                        }
 
-        document.querySelectorAll('.cancel-btn').forEach(button => {
-            button.addEventListener('click', function () {
-                const card = this.closest('.booking-card');
-                const status = card.querySelector('.status');
-                status.textContent = 'Cancelled';
-                status.className = 'status cancelled';
-                this.textContent = 'Cancelled';
-                this.disabled = true;
-                this.classList.add('disabled-btn');
+                        // Update stats
+                        const valid = tickets.filter(t => t.status === 'Valid').length;
+                        const used = tickets.filter(t => t.status === 'Used').length;
+                        const cancelled = tickets.filter(t => t.status === 'Cancelled').length;
+                        
+                        document.getElementById('validTickets').textContent = valid;
+                        document.getElementById('usedTickets').textContent = used;
+                        document.getElementById('cancelledTickets').textContent = cancelled;
+                        document.getElementById('upcomingCount').textContent = valid + ' upcoming events';
+
+                        // Sort by purchase date descending
+                        tickets.sort((a,b) => new Date(b.purchasedAt) - new Date(a.purchasedAt));
+
+                        list.innerHTML = '';
+                        tickets.forEach(function(ticket, index) {
+                            const gradients = ['gradient-one', 'gradient-two', 'gradient-three', 'gradient-four'];
+                            const gradientClass = gradients[index % gradients.length];
+                            
+                            const initial = ticket.eventName ? ticket.eventName.substring(0, 2).toUpperCase() : 'TK';
+                            
+                            const dateObj = new Date(ticket.date);
+                            const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                            
+                            const article = document.createElement('article');
+                            article.className = 'booking-card';
+                            
+                            const isCancelled = ticket.status === 'Cancelled';
+                            const isUsed = ticket.status === 'Used';
+
+                            article.innerHTML = `
+                                <div class="event-thumb ${gradientClass}">${initial}</div>
+                                <div class="booking-details">
+                                    <div class="booking-topline">
+                                        <div>
+                                            <p class="event-tag">Ticket</p>
+                                            <h4>${ticket.eventName || 'Unnamed Event'}</h4>
+                                        </div>
+                                        <span class="status ${ticket.status}">${ticket.status}</span>
+                                    </div>
+                                    <div class="meta-grid">
+                                        <div><label>Date</label><span>${formattedDate}</span></div>
+                                        <div><label>Time</label><span>${ticket.time || 'TBD'}</span></div>
+                                        <div><label>Location</label><span>${ticket.location || 'TBA'}</span></div>
+                                        <div><label>Ticket ID</label><span>${ticket.ticketId.substring(0,8)}...</span></div>
+                                    </div>
+                                    <div class="booking-actions">
+                                        <button class="primary-btn view-ticket-btn" data-id="${ticket.ticketId}" ${isCancelled ? 'disabled' : ''}>View Ticket QR</button>
+                                        <button class="secondary-btn cancel-btn" data-id="${ticket.ticketId}" ${(isCancelled || isUsed) ? 'disabled' : ''}>${isCancelled ? 'Cancelled' : 'Cancel Ticket'}</button>
+                                    </div>
+                                </div>
+                            `;
+                            list.appendChild(article);
+                        });
+
+                        attachListeners();
+                    });
+                } else {
+                    setTimeout(loadBookings, 500);
+                }
+            }
+
+            function attachListeners() {
+                // Cancel buttons
+                document.querySelectorAll('.cancel-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        if (!confirm("Are you sure you want to cancel this ticket? This cannot be undone.")) return;
+                        
+                        const ticketId = this.getAttribute('data-id');
+                        const self = this;
+                        self.disabled = true;
+                        self.textContent = 'Cancelling...';
+
+                        window.AttendeeBackend.cancelBooking(ticketId, (err) => {
+                            if (err) {
+                                alert("Failed to cancel ticket: " + err.message);
+                                self.disabled = false;
+                                self.textContent = 'Cancel Ticket';
+                            } else {
+                                alert("Ticket cancelled.");
+                                loadBookings(); // Reload list to update stats and UI
+                            }
+                        });
+                    });
+                });
+
+                // View Ticket buttons
+                document.querySelectorAll('.view-ticket-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const ticketId = this.getAttribute('data-id');
+                        const modal = document.getElementById('ticketModal');
+                        const img = document.getElementById('qrImage');
+                        const txt = document.getElementById('ticketCodeDisplay');
+                        
+                        img.src = \`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=\${ticketId}\`;
+                        txt.textContent = ticketId;
+                        modal.style.display = 'flex';
+                    });
+                });
+            }
+
+            const searchInput = document.getElementById('searchInput');
+            searchInput.addEventListener('input', function () {
+                const query = this.value.trim().toLowerCase();
+                const cards = document.querySelectorAll('.booking-card');
+                cards.forEach(card => {
+                    const text = card.textContent.toLowerCase();
+                    card.style.display = text.includes(query) ? 'flex' : 'none';
+                });
             });
+
+            setTimeout(loadBookings, 1000); 
         });
     </script>
 </body>

@@ -1,116 +1,202 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EventPro | Account Settings</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous">
-    <link rel="stylesheet" href="Account_settings.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- CSS -->
+    <link rel="stylesheet" href="Attendee_Dashboard.css">
+    <!-- AWS SDK & Auth Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/amazon-cognito-identity-js@6.3.12/dist/amazon-cognito-identity.min.js"></script>
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1408.0.min.js"></script>
     <script src="../aws-config.js"></script>
     <script src="../dashboard-auth.js"></script>
+    <script src="attendee-backend.js"></script>
 </head>
-<body class="account-page" data-required-role="attendee">
+<body class="attendee-dashboard" data-required-role="attendee">
     <div class="page-shell">
+        
+        <!-- Sidebar Navigation -->
         <aside class="sidebar">
-            <div class="brand-wrap">
-                <div class="brand-mark">E</div>
-                <div>
-                    <p class="brand-mini">Attendee</p>
-                    <h2>EVENTPRO</h2>
+            <div>
+                <div class="brand-wrap">
+                    <div class="brand-mark">E</div>
+                    <div>
+                        <p class="brand-mini">Attendee</p>
+                        <h2>EVENTPRO</h2>
+                    </div>
                 </div>
+
+                <nav class="side-nav">
+                    <a href="Event_List.html">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                        Explore Events
+                    </a>
+                    <a href="Your_Booking.html">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                        My Bookings
+                    </a>
+                    <a href="Saved_Events.html">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+                        Saved Events
+                    </a>
+                    <a href="Account_settings.html" class="active">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                        Settings
+                    </a>
+                </nav>
             </div>
-
-            <nav class="side-nav">
-                <a href="Event_List.html">Explore Events</a>
-                <a href="Your_Booking.html">My Bookings</a>
-                <a href="Account_settings.html" class="active">Account Settings</a>
-                <a href="Saved_Events.html">Saved Events</a>
-            </nav>
-
+            
             <div class="sidebar-card">
-                <p>Profile status</p>
-                <h3>Verified account</h3>
-                <span>All security checks are complete.</span>
-                <button type="button">Upgrade plan</button>
+                <p>Support</p>
+                <h3>Need help?</h3>
+                <span>Contact our support team anytime.</span>
+                <button>Contact Support</button>
             </div>
         </aside>
 
+        <!-- Main Workspace -->
         <main class="main-panel">
             <header class="topbar">
                 <div>
-                    <p class="eyebrow">Profile settings</p>
-                    <h1>Account settings</h1>
+                    <p class="eyebrow">Attendee Overview</p>
+                    <h1>Account Settings</h1>
                 </div>
                 <div class="topbar-actions">
-                    <button class="ghost-btn">Support</button>
-                    <div class="user-pill">
-                        <span class="user-avatar">G</span>
-                        <span>Gourav</span>
+                    <div class="user-pill" style="cursor:pointer">
+                        <span class="user-avatar">?</span>
+                        <span>Loading...</span>
                     </div>
                 </div>
             </header>
 
-            <section class="profile-card">
-                <div class="profile-header">
-                    <div class="avatar-large">G</div>
-                    <div>
-                        <h3>Gourav Sharma</h3>
-                        <p>Attendee member</p>
-                    </div>
-                    <button class="primary-btn">Edit profile</button>
+            <div class="settings-layout">
+                <!-- Settings Sidebar -->
+                <div class="settings-nav">
+                    <a href="#" class="active">Profile Information</a>
+                    <a href="#">Notification Preferences</a>
+                    <a href="#">Payment Methods</a>
+                    <a href="#">Privacy & Security</a>
                 </div>
-            </section>
 
-            <section class="settings-grid">
-                <div class="settings-card">
-                    <h4>Personal details</h4>
-                    <form class="form-grid">
-                        <div class="field">
-                            <label>Full name</label>
-                            <input type="text" value="Gourav Sharma">
+                <!-- Settings Content -->
+                <div class="form-section">
+                    <h3 style="margin-top: 0; margin-bottom: 24px;">Profile Information</h3>
+                    
+                    <form id="profileForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="firstName">First Name</label>
+                                <input type="text" id="firstName" class="form-control" placeholder="Jane" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="lastName">Last Name</label>
+                                <input type="text" id="lastName" class="form-control" placeholder="Doe" required>
+                            </div>
                         </div>
-                        <div class="field">
-                            <label>Email</label>
-                            <input type="email" value="gourav@example.com">
+
+                        <div class="form-group">
+                            <label for="email">Email Address</label>
+                            <input type="email" id="email" class="form-control" placeholder="jane.doe@example.com" readonly style="background:var(--bg-dark); cursor:not-allowed;">
                         </div>
-                        <div class="field">
-                            <label>Phone</label>
-                            <input type="tel" value="+1 (555) 321-9876">
-                        </div>
-                        <div class="field">
-                            <label>Location</label>
-                            <input type="text" value="New York, USA">
+
+                        <div class="form-actions">
+                            <button type="submit" class="primary-btn" id="saveProfileBtn">Save Changes</button>
                         </div>
                     </form>
-                </div>
 
-                <div class="settings-card">
-                    <h4>Security</h4>
-                    <ul class="security-list">
-                        <li><span>Password</span><a href="#">Change</a></li>
-                        <li><span>Two-factor auth</span><a href="#">Enabled</a></li>
-                        <li><span>Login activity</span><a href="#">View</a></li>
-                    </ul>
+                    <!-- Danger Zone -->
+                    <div class="danger-zone">
+                        <h3>Account Actions</h3>
+                        <p style="color: var(--muted); margin-bottom: 24px;">Sign out of your session or permanently delete your account.</p>
+                        
+                        <div style="display: flex; gap: 16px;">
+                            <button class="secondary-btn" id="logoutBtn">Log Out</button>
+                            <button class="btn-danger" id="deleteAccountBtn">Delete Account</button>
+                        </div>
+                    </div>
                 </div>
-            </section>
-
-            <section class="settings-card preferences-card">
-                <h4>Notification preferences</h4>
-                <div class="toggle-row">
-                    <span>Email updates</span>
-                    <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
-                </div>
-                <div class="toggle-row">
-                    <span>Event reminders</span>
-                    <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
-                </div>
-                <div class="toggle-row">
-                    <span>Marketing offers</span>
-                    <label class="switch"><input type="checkbox"><span class="slider"></span></label>
-                </div>
-            </section>
+            </div>
         </main>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load Profile Data
+            function loadProfile() {
+                if (window.AttendeeBackend) {
+                    window.AttendeeBackend.getUserProfile(function(err, profile) {
+                        if (err) {
+                            console.error("Error fetching profile:", err);
+                            return;
+                        }
+                        
+                        document.getElementById('firstName').value = profile.firstName || '';
+                        document.getElementById('lastName').value = profile.lastName || '';
+                        document.getElementById('email').value = profile.email || window.EVENTPRO_DASHBOARD_AUTH.userEmail || '';
+                    });
+                } else {
+                    setTimeout(loadProfile, 500);
+                }
+            }
+            
+            // Save Profile
+            document.getElementById('profileForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const btn = document.getElementById('saveProfileBtn');
+                btn.disabled = true;
+                btn.textContent = "Saving...";
+                
+                const data = {
+                    firstName: document.getElementById('firstName').value,
+                    lastName: document.getElementById('lastName').value,
+                    email: document.getElementById('email').value
+                };
+                
+                window.AttendeeBackend.updateUserProfile(data, function(err, result) {
+                    btn.disabled = false;
+                    btn.textContent = "Save Changes";
+                    
+                    if (err) {
+                        alert("Error saving profile: " + err.message);
+                    } else {
+                        alert("Profile updated successfully!");
+                        // Refresh the global auth pill if available
+                        if (window.EVENTPRO_DASHBOARD_AUTH && window.EVENTPRO_DASHBOARD_AUTH.updateUI) {
+                            window.EVENTPRO_DASHBOARD_AUTH.updateUI();
+                        }
+                    }
+                });
+            });
+
+            // Logout Logic
+            document.getElementById('logoutBtn').addEventListener('click', function() {
+                if (confirm("Are you sure you want to log out?")) {
+                    const pool = new AmazonCognitoIdentity.CognitoUserPool({
+                        UserPoolId: window.EVENTPRO_AWS_CONFIG.userPoolId,
+                        ClientId: window.EVENTPRO_AWS_CONFIG.clientId
+                    });
+                    const cognitoUser = pool.getCurrentUser();
+                    
+                    if (cognitoUser != null) {
+                        cognitoUser.signOut();
+                    }
+                    
+                    // Redirect to login
+                    window.location.href = '../login.html';
+                }
+            });
+
+            // Delete Account stub
+            document.getElementById('deleteAccountBtn').addEventListener('click', function() {
+                alert("Account deletion is disabled in this demo environment.");
+            });
+
+            loadProfile();
+        });
+    </script>
 </body>
 </html>
