@@ -12,6 +12,7 @@
     <script src="../aws-config.js"></script>
     <script src="../dashboard-auth.js"></script>
     <script src="organizer-backend.js"></script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 </head>
 <body class="organizer-dashboard" data-required-role="organizer">
     <div class="page-shell">
@@ -69,10 +70,7 @@
                     <p style="color: var(--muted); margin: 0;">Position the QR code within the frame to scan.</p>
                 </div>
                 
-                <div class="camera-viewfinder">
-                    <div class="scan-line"></div>
-                    <span style="color: rgba(255,255,255,0.3); font-weight: 600; font-size: 1.2rem; z-index: 10;">Camera Feed</span>
-                </div>
+                <div id="reader" style="width: 100%; max-width: 500px; border-radius: 16px; overflow: hidden; border: 2px solid var(--border); margin-bottom: 24px; background: #000;"></div>
 
                 <div style="width: 100%; border-top: 1px solid var(--border); margin: 24px 0;"></div>
 
@@ -89,6 +87,23 @@
     </div>
 
     <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            function onScanSuccess(decodedText, decodedResult) {
+                document.getElementById('ticketCode').value = decodedText;
+                document.getElementById('verifyTicketBtn').click();
+            }
+
+            function onScanFailure(error) {
+                // handle scan failure, usually better to ignore and keep scanning
+            }
+
+            let html5QrcodeScanner = new Html5QrcodeScanner(
+                "reader",
+                { fps: 10, qrbox: {width: 250, height: 250} },
+                /* verbose= */ false);
+            html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+        });
+
         document.getElementById('verifyTicketBtn').addEventListener('click', function() {
             const code = document.getElementById('ticketCode').value.trim();
             const resultDiv = document.getElementById('scanResult');
