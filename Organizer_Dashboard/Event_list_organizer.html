@@ -14,6 +14,7 @@
     <script src="../aws-config.js"></script>
     <script src="../dashboard-auth.js"></script>
     <script src="organizer-backend.js"></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </head>
 <body class="organizer-dashboard" data-required-role="organizer">
     <div class="page-shell">
@@ -114,8 +115,115 @@
         </main>
     </div>
 
+    <!-- Payment Overlay -->
+    <div id="paymentOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; justify-content:center; align-items:center;">
+        <div style="background:var(--bg-panel); padding:40px; border-radius:16px; text-align:center; max-width:450px; width:90%; box-shadow:0 10px 30px rgba(0,0,0,0.5);">
+            <h2 style="margin-top:0;">Activate Your Account</h2>
+            <p style="color:var(--muted); margin-bottom:24px;">To start creating and managing events, you need to pay a one-time organizer fee of <strong>₹20</strong>.</p>
+            <button id="paySubscriptionBtn" class="primary-btn" style="width:100%; padding:14px; font-size:1.1rem;">Pay ₹20 Now</button>
+            <p id="paymentError" style="color:#ef4444; margin-top:16px; display:none;"></p>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            function initializeDashboard() {
+                if (window.OrganizerBackend) {
+                    window.OrganizerBackend.getUserProfile(function(err, profile) {
+                        if (err) {
+                            console.error("Error loading profile", err);
+                            setTimeout(initializeDashboard, 1000);
+                            return;
+                        }
+                        
+                        if (!profile.subscriptionActive) {
+                            document.getElementById('paymentOverlay').style.display = 'flex';
+                            setupPayment(profile);
+                        } else {
+                            loadEvents();
+                        }
+                    });
+                } else {
+                    setTimeout(initializeDashboard, 500);
+                }
+            }
+
+            function setupPayment(profile) {
+                const btn = document.getElementById('paySubscriptionBtn');
+                btn.addEventListener('click', async function() {
+                    btn.disabled = true;
+                    btn.textContent = 'Processing...';
+                    document.getElementById('paymentError').style.display = 'none';
+
+                    try {
+                        const response = await fetch('http://localhost:3000/api/payment/create-order', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ amount: 20, receipt: 'sub_' + profile.userId })
+                        });
+                        const data = await response.json();
+                        
+                        if (!data.success) throw new Error(data.error || 'Failed to create order');
+
+                        const options = {
+                            key: 'rzp_test_TfToXPA1e0mdDo', // Provided test key
+                            amount: data.order.amount,
+                            currency: data.order.currency,
+                            name: 'EventPro',
+                            description: 'Organizer Subscription',
+                            order_id: data.order.id,
+                            handler: async function (response) {
+                                // Verify payment
+                                const verifyRes = await fetch('http://localhost:3000/api/payment/verify', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(response)
+                                });
+                                const verifyData = await verifyRes.json();
+                                
+                                if (verifyData.success) {
+                                    btn.textContent = 'Activating...';
+                                    window.OrganizerBackend.activateSubscription(function(err) {
+                                        if (err) {
+                                            document.getElementById('paymentError').textContent = "Payment successful, but failed to activate account. Contact support.";
+                                            document.getElementById('paymentError').style.display = 'block';
+                                        } else {
+                                            document.getElementById('paymentOverlay').style.display = 'none';
+                                            loadEvents();
+                                        }
+                                    });
+                                } else {
+                                    document.getElementById('paymentError').textContent = "Payment verification failed.";
+                                    document.getElementById('paymentError').style.display = 'block';
+                                    btn.disabled = false;
+                                    btn.textContent = 'Pay ₹20 Now';
+                                }
+                            },
+                            prefill: {
+                                name: profile.firstName + ' ' + profile.lastName,
+                                email: profile.email,
+                                contact: profile.phone || ''
+                            },
+                            theme: { color: '#0d6efd' }
+                        };
+                        const rzp1 = new Razorpay(options);
+                        rzp1.on('payment.failed', function (response){
+                            btn.disabled = false;
+                            btn.textContent = 'Pay ₹20 Now';
+                            document.getElementById('paymentError').textContent = response.error.description;
+                            document.getElementById('paymentError').style.display = 'block';
+                        });
+                        rzp1.open();
+                    } catch (error) {
+                        console.error(error);
+                        document.getElementById('paymentError').textContent = error.message;
+                        document.getElementById('paymentError').style.display = 'block';
+                        btn.disabled = false;
+                        btn.textContent = 'Pay ₹20 Now';
+                    }
+                });
+            }
+
             function loadEvents() {
                 if (window.OrganizerBackend) {
                     window.OrganizerBackend.getEvents(function(err, events) {
@@ -137,12 +245,13 @@
                             const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                             const isDraft = event.status === 'Draft';
                             const statusClass = isDraft ? 'status-draft' : 'status-active';
+                            const thumbHtml = event.imageUrl ? `<img src="${event.imageUrl}" alt="${event.eventName}" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover;">` : `<div class="event-thumb">${initial}</div>`;
                             
                             const tr = document.createElement('tr');
                             tr.className = 'event-row';
                             tr.innerHTML = `
                                 <td class="event-title-cell">
-                                    <div class="event-thumb">${initial}</div>
+                                    ${thumbHtml}
                                     <div class="event-info">
                                         <h4>${event.eventName || 'Unnamed Event'}</h4>
                                         <p>${event.ticketsSold || 0}/${event.capacity || 0} Tickets Sold</p>
@@ -155,6 +264,7 @@
                                 <td><span class="status-badge ${statusClass}">${event.status || 'Active'}</span></td>
                                 <td>
                                     <button class="action-btn" onclick="window.location.href='Event_update.html?id=${event.eventId}'">Edit</button>
+                                    <button class="action-btn" style="background: #ef4444; color: white; margin-left: 8px;" onclick="deleteEvent('${event.eventId}')">Delete</button>
                                 </td>
                             `;
                             tbody.appendChild(tr);
@@ -165,8 +275,22 @@
                 }
             }
             
+            window.deleteEvent = function(eventId) {
+                if (confirm("Are you sure you want to delete this event? This action cannot be undone.")) {
+                    if (window.OrganizerBackend) {
+                        window.OrganizerBackend.deleteEvent(eventId, function(err) {
+                            if (err) {
+                                alert("Failed to delete event: " + err.message);
+                            } else {
+                                loadEvents();
+                            }
+                        });
+                    }
+                }
+            };
+            
             // Allow time for dashboard-auth.js to setup AWS credentials before loading
-            setTimeout(loadEvents, 1000); 
+            setTimeout(initializeDashboard, 1000); 
         });
     </script>
 </body>

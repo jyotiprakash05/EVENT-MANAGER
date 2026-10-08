@@ -5,5 +5,9 @@ window.EVENTPRO_AWS_CONFIG = {
     identityPoolId: "ap-south-1:6c21b1cb-b9f5-4979-bcca-cc8c91771719", // Add your Cognito Identity Pool ID here
     dynamoDBTableName: "EventProUsers", // Your DynamoDB table name
     eventsTableName: "EventProEvents",
-    ticketsTableName: "EventProTickets"
+    ticketsTableName: "EventProTickets",
+    paymentsTableName: "EventProPayments",
+    checkinsTableName: "EventProCheckins",
+    reviewsTableName: "EventProReviews",
+    s3BucketName: "eventpro-images" // Replace with your actual S3 bucket name
 };

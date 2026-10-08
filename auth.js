@@ -161,7 +161,11 @@
                                             showMessage(form, "Your account is not assigned to that role.", true);
                                             return;
                                         }
-                                        redirectForRole(role);
+                                        if (role === 'organizer' && !data.Item.subscriptionActive) {
+                                            window.location.replace("Organizer_Dashboard/payment.html");
+                                        } else {
+                                            redirectForRole(role);
+                                        }
                                     } else {
                                         // First time login! Save the role.
                                         const putParams = {
@@ -173,6 +177,7 @@
                                                 lastName: payload.family_name || "",
                                                 phone: payload.phone_number || "",
                                                 role: role,
+                                                subscriptionActive: role === 'attendee', // Attendees don't need subscriptions
                                                 lastLogin: new Date().toISOString()
                                             }
                                         };
@@ -184,7 +189,11 @@
                                                 showMessage(form, "Error setting up your account.", true);
                                             } else {
                                                 console.log("User successfully recorded in DynamoDB");
-                                                redirectForRole(role);
+                                                if (role === 'organizer' && !putParams.Item.subscriptionActive) {
+                                                    window.location.replace("Organizer_Dashboard/payment.html");
+                                                } else {
+                                                    redirectForRole(role);
+                                                }
                                             }
                                         });
                                     }

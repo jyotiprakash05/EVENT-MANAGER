@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventPro | Choose Subscription</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="Organizer_Dashboard.css">
+    <!-- AWS SDK & Auth Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/amazon-cognito-identity-js@6.3.12/dist/amazon-cognito-identity.min.js"></script>
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1408.0.min.js"></script>
+    <script src="../aws-config.js"></script>
+    <script src="../dashboard-auth.js"></script>
+    <script src="organizer-backend.js"></script>
+    <style>
+        .payment-container {
+            max-width: 800px;
+            margin: 60px auto;
+            text-align: center;
+            padding: 20px;
+        }
+        .payment-plans {
+            display: flex;
+            gap: 24px;
+            margin-top: 40px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .plan-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 32px;
+            width: 300px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .plan-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+        }
+        .plan-card h3 {
+            font-size: 24px;
+            margin-bottom: 12px;
+        }
+        .plan-card .price {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 24px;
+        }
+        .plan-card ul {
+            list-style: none;
+            padding: 0;
+            text-align: left;
+            margin-bottom: 32px;
+        }
+        .plan-card ul li {
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+        }
+        .plan-card ul li::before {
+            content: "✓";
+            color: #10b981;
+            margin-right: 8px;
+            font-weight: bold;
+        }
+        .payment-message {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: 600;
+            display: none;
+            padding: 16px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .payment-message.processing {
+            display: block;
+            background: #f8fafc;
+            color: #334155;
+            border: 1px solid #e2e8f0;
+        }
+        .payment-message.success {
+            display: block;
+            background: #ecfdf5;
+            color: #059669;
+            border: 1px solid #10b981;
+        }
+        .payment-message.error {
+            display: block;
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #ef4444;
+        }
+    </style>
+</head>
+<body class="organizer-dashboard" data-required-role="organizer">
+    <div class="payment-container">
+        <h1>Unlock Your Organizer Dashboard</h1>
+        <p style="color: var(--muted); margin-top: 12px;">Choose a subscription plan to start creating and managing your events.</p>
+        
+        <div class="payment-plans">
+            <div class="plan-card">
+                <h3>Monthly</h3>
+                <div class="price">$29</div>
+                <ul>
+                    <li>Unlimited Events</li>
+                    <li>Ticket Scanning</li>
+                    <li>Basic Analytics</li>
+                    <li>30 Days Access</li>
+                </ul>
+                <button class="btn-primary" style="width: 100%;" onclick="processPayment(30)">Select Monthly</button>
+            </div>
+            
+            <div class="plan-card" style="border-color: var(--primary);">
+                <h3>Annual</h3>
+                <div class="price">$299</div>
+                <ul>
+                    <li>Unlimited Events</li>
+                    <li>Ticket Scanning</li>
+                    <li>Advanced Analytics</li>
+                    <li>365 Days Access</li>
+                </ul>
+                <button class="btn-primary" style="width: 100%;" onclick="processPayment(365)">Select Annual</button>
+            </div>
+        </div>
+        
+        <div id="payment-message" class="payment-message"></div>
+    </div>
+
+    <!-- Razorpay SDK -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script>
+        function processPayment(days) {
+            const msgEl = document.getElementById('payment-message');
+            msgEl.className = 'payment-message processing';
+            msgEl.innerHTML = '<span style="display:inline-block; animation: spin 1s linear infinite; margin-right:8px;">⏳</span> Initializing payment...';
+            
+            // Add keyframes for spinner if not exists
+            if (!document.getElementById('spin-style')) {
+                const style = document.createElement('style');
+                style.id = 'spin-style';
+                style.innerHTML = '@keyframes spin { 100% { transform: rotate(360deg); } }';
+                document.head.appendChild(style);
+            }
+            
+            // Disable buttons during processing
+            document.querySelectorAll('button').forEach(btn => btn.disabled = true);
+            
+            // Determine price based on days
+            const priceInPaise = days === 30 ? 2900 : 29900; // $29.00 or $299.00
+            
+            var options = {
+                "key": "rzp_test_TfToXPA1e0mdDo", // User's Razorpay Test Key
+                "amount": priceInPaise, 
+                "currency": "USD",
+                "name": "EventPro",
+                "description": days === 30 ? "Monthly Subscription" : "Annual Subscription",
+                "image": "https://dummyimage.com/150x150/087443/fff&text=E",
+                "handler": function (response){
+                    // Payment successful
+                    msgEl.innerHTML = '<span style="display:inline-block; animation: spin 1s linear infinite; margin-right:8px;">⏳</span> Verifying & activating...';
+                    
+                    if (window.OrganizerBackend) {
+                        const paymentDetails = {
+                            paymentId: response.razorpay_payment_id,
+                            amount: priceInPaise,
+                            currency: "USD",
+                            planDays: days
+                        };
+                        
+                        window.OrganizerBackend.recordPayment(paymentDetails, function(err) {
+                            if (err) {
+                                console.error("Could not record payment", err);
+                                // We might still want to activate subscription so user isn't stuck, but typically you'd handle this securely.
+                            }
+                            
+                            window.OrganizerBackend.activateSubscription(days, function(err, data) {
+                                if (err) {
+                                    msgEl.className = 'payment-message error';
+                                    msgEl.innerHTML = '❌ Error activating subscription: ' + err.message;
+                                    document.querySelectorAll('button').forEach(btn => btn.disabled = false);
+                                } else {
+                                    msgEl.className = 'payment-message success';
+                                    msgEl.innerHTML = '✅ Payment successful! Redirecting to your dashboard...';
+                                    setTimeout(() => {
+                                        window.location.href = "Event_list_organizer.html";
+                                    }, 2000);
+                                }
+                            });
+                        });
+                    } else {
+                        msgEl.className = 'payment-message error';
+                        msgEl.innerHTML = '❌ Backend not initialized yet. Please try again.';
+                        document.querySelectorAll('button').forEach(btn => btn.disabled = false);
+                    }
+                },
+                "modal": {
+                    "ondismiss": function(){
+                        msgEl.className = 'payment-message error';
+                        msgEl.innerHTML = '❌ Payment cancelled by user.';
+                        document.querySelectorAll('button').forEach(btn => btn.disabled = false);
+                    }
+                },
+                "theme": {
+                    "color": "#087443"
+                }
+            };
+            
+            var rzp1 = new Razorpay(options);
+            
+            rzp1.on('payment.failed', function (response){
+                msgEl.className = 'payment-message error';
+                msgEl.innerHTML = '❌ Payment failed. Reason: ' + response.error.description;
+                document.querySelectorAll('button').forEach(btn => btn.disabled = false);
+            });
+            
+            rzp1.open();
+        }
+    </script>
+</body>
+</html>

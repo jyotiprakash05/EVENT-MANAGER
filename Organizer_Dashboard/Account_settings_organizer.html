@@ -68,14 +68,15 @@
             </header>
 
             <section class="settings-layout">
-                <nav class="settings-nav">
-                    <a href="#" class="active">Profile</a>
-                    <a href="#">Security</a>
-                    <a href="#">Notifications</a>
-                    <a href="#">Billing</a>
+                <nav class="settings-nav" id="settingsNav">
+                    <a href="#" class="active" data-target="sectionProfile">Profile</a>
+                    <a href="#" data-target="sectionPayouts">Payouts</a>
+                    <a href="#" data-target="sectionSecurity">Security</a>
+                    <a href="#" data-target="sectionNotifications">Notifications</a>
+                    <a href="#" data-target="sectionBilling">Billing</a>
                 </nav>
 
-                <div class="form-section">
+                <div id="sectionProfile" class="form-section">
                     <h3>Personal Information</h3>
                     <form id="profileForm">
                         <div class="form-row">
@@ -98,6 +99,14 @@
                         </div>
                     </form>
 
+                    <div class="subscription-section" style="margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--border);">
+                        <h3>Subscription Details</h3>
+                        <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 24px;">
+                            <p style="margin-bottom: 8px;"><strong>Status:</strong> <span id="subscriptionStatus">Loading...</span></p>
+                            <p style="margin-bottom: 0;"><strong>Access Remaining:</strong> <span id="subscriptionDays">Loading...</span></p>
+                        </div>
+                    </div>
+
                     <div class="danger-zone">
                         <h3>Account Actions</h3>
                         <p style="color: var(--muted); margin-bottom: 24px;">Logout of your current session on this device.</p>
@@ -106,6 +115,49 @@
                             Logout
                         </button>
                     </div>
+                </div>
+
+                <div id="sectionPayouts" class="form-section" style="display: none;">
+                    <h3>Financial Summary</h3>
+                    <div class="analytics-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 30px; gap: 16px; display: grid;">
+                        <div class="stat-card" style="padding: 20px; background: var(--bg-panel); border-radius: 12px; border: 1px solid var(--border);">
+                            <span style="color: var(--muted); font-size: 0.9rem;">Total Revenue</span>
+                            <strong id="payoutTotalRev" style="display: block; font-size: 1.8rem; margin-top: 8px;">₹0.00</strong>
+                        </div>
+                        <div class="stat-card" style="padding: 20px; background: var(--bg-panel); border-radius: 12px; border: 1px solid var(--border);">
+                            <span style="color: var(--muted); font-size: 0.9rem;">Total Withdrawn</span>
+                            <strong id="payoutTotalWithdrawn" style="display: block; font-size: 1.8rem; margin-top: 8px;">₹0.00</strong>
+                        </div>
+                        <div class="stat-card" style="padding: 20px; background: var(--primary); color: white; border-radius: 12px;">
+                            <span style="opacity: 0.8; font-size: 0.9rem;">Available Balance</span>
+                            <strong id="payoutAvailable" style="display: block; font-size: 1.8rem; margin-top: 8px;">₹0.00</strong>
+                        </div>
+                    </div>
+
+                    <h3>Request Withdrawal</h3>
+                    <form id="withdrawForm">
+                        <div class="form-group">
+                            <label>Amount to Withdraw (₹)</label>
+                            <input type="number" id="withdrawAmount" class="form-control" placeholder="0.00" min="1" step="0.01" required>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Account Holder Name</label>
+                                <input type="text" id="bankName" class="form-control" placeholder="As per bank records" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Bank Account Number</label>
+                                <input type="text" id="bankAccount" class="form-control" placeholder="Account Number" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>IFSC Code</label>
+                            <input type="text" id="bankIFSC" class="form-control" placeholder="e.g. HDFC0001234" required>
+                        </div>
+                        <div class="form-actions" style="justify-content: flex-start; margin-top: 24px;">
+                            <button type="submit" id="withdrawBtn" class="btn-primary">Submit Request</button>
+                        </div>
+                    </form>
                 </div>
             </section>
         </main>
@@ -132,6 +184,73 @@
         });
 
         document.addEventListener('DOMContentLoaded', function() {
+            // Tab switching logic
+            document.querySelectorAll('#settingsNav a').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if(!this.dataset.target) return;
+                    
+                    document.querySelectorAll('#settingsNav a').forEach(a => a.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    document.querySelectorAll('.form-section').forEach(sec => sec.style.display = 'none');
+                    const target = document.getElementById(this.dataset.target);
+                    if(target) target.style.display = 'block';
+                });
+            });
+
+            let currentAvailableBalance = 0;
+            let currentWithdrawnAmount = 0;
+
+            function loadPayouts() {
+                if (window.OrganizerBackend) {
+                    window.OrganizerBackend.getEvents(function(err, events) {
+                        if (!err && events) {
+                            let totalRev = 0;
+                            events.forEach(e => { totalRev += (e.revenue || 0); });
+                            document.getElementById('payoutTotalRev').textContent = '₹' + totalRev.toFixed(2);
+                            
+                            currentAvailableBalance = totalRev - currentWithdrawnAmount;
+                            document.getElementById('payoutAvailable').textContent = '₹' + currentAvailableBalance.toFixed(2);
+                        }
+                    });
+                }
+            }
+
+            document.getElementById('withdrawForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const amount = parseFloat(document.getElementById('withdrawAmount').value);
+                if (amount <= 0 || amount > currentAvailableBalance) {
+                    alert('Invalid withdrawal amount. Must be greater than 0 and less than or equal to your available balance.');
+                    return;
+                }
+
+                const details = {
+                    bankName: document.getElementById('bankName').value,
+                    bankAccount: document.getElementById('bankAccount').value,
+                    bankIFSC: document.getElementById('bankIFSC').value,
+                    requestedAt: new Date().toISOString()
+                };
+
+                const btn = document.getElementById('withdrawBtn');
+                btn.textContent = 'Submitting...';
+                btn.disabled = true;
+
+                window.OrganizerBackend.requestWithdrawal(amount, details, function(err) {
+                    btn.disabled = false;
+                    btn.textContent = 'Submit Request';
+                    if (err) {
+                        alert('Error submitting withdrawal: ' + err.message);
+                    } else {
+                        alert('Withdrawal request submitted successfully!');
+                        document.getElementById('withdrawForm').reset();
+                        currentWithdrawnAmount += amount;
+                        document.getElementById('payoutTotalWithdrawn').textContent = '₹' + currentWithdrawnAmount.toFixed(2);
+                        loadPayouts();
+                    }
+                });
+            });
+
             function loadProfile() {
                 if (window.OrganizerBackend) {
                     window.OrganizerBackend.getUserProfile(function(err, data) {
@@ -139,6 +258,39 @@
                             document.getElementById('firstName').value = data.firstName || '';
                             document.getElementById('lastName').value = data.lastName || '';
                             document.getElementById('email').value = data.email || '';
+                            
+                            currentWithdrawnAmount = data.withdrawnAmount || 0;
+                            document.getElementById('payoutTotalWithdrawn').textContent = '₹' + currentWithdrawnAmount.toFixed(2);
+                            loadPayouts();
+                            
+                            // Load Subscription Details
+                            const subStatusEl = document.getElementById('subscriptionStatus');
+                            const subDaysEl = document.getElementById('subscriptionDays');
+                            if (data.subscriptionActive) {
+                                subStatusEl.textContent = 'Active';
+                                subStatusEl.style.color = '#10b981'; // Green
+                                
+                                if (data.subscriptionExpiry) {
+                                    const expiryDate = new Date(data.subscriptionExpiry);
+                                    const today = new Date();
+                                    const diffTime = expiryDate - today;
+                                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                                    
+                                    if (diffDays > 0) {
+                                        subDaysEl.textContent = diffDays + ' Days';
+                                    } else {
+                                        subStatusEl.textContent = 'Expired';
+                                        subStatusEl.style.color = '#ef4444'; // Red
+                                        subDaysEl.textContent = '0 Days';
+                                    }
+                                } else {
+                                    subDaysEl.textContent = 'Lifetime';
+                                }
+                            } else {
+                                subStatusEl.textContent = 'Inactive';
+                                subStatusEl.style.color = '#ef4444';
+                                subDaysEl.textContent = 'Plan not purchased';
+                            }
                         }
                     });
                 } else {

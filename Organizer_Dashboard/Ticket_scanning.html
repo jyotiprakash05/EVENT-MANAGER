@@ -110,20 +110,19 @@
             btn.disabled = true;
             resultDiv.textContent = '';
 
-            window.OrganizerBackend.verifyTicket(code, function(err, ticket) {
+            window.OrganizerBackend.checkInTicket(code, function(err, result) {
                 btn.textContent = 'Verify';
                 btn.disabled = false;
                 
                 if (err) {
                     resultDiv.textContent = '❌ Invalid or not found: ' + err.message;
                     resultDiv.style.color = '#ef4444';
-                } else if (ticket.status === 'Used') {
-                    resultDiv.textContent = '⚠️ Ticket valid but already used!';
+                } else if (!result.success) {
+                    resultDiv.textContent = '⚠️ ' + result.message;
                     resultDiv.style.color = '#f59e0b';
                 } else {
-                    resultDiv.textContent = '✅ Ticket Valid! Admit one.';
+                    resultDiv.textContent = '✅ ' + result.message;
                     resultDiv.style.color = '#10b981';
-                    // Optional: You could update the ticket status to 'Used' here in a real scenario
                 }
             });
         });

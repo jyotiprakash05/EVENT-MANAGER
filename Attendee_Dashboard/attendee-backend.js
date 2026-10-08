@@ -77,60 +77,77 @@
                 if (err) return callback(err);
                 
                 const ticketId = "TKT-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
+                
                 const ticketParams = {
                     TableName: config.ticketsTableName,
                     Item: {
                         ticketId: ticketId,
                         eventId: event.eventId,
-                        eventName: event.eventName,
+                        eventName: event.eventName || "Unnamed Event",
                         attendeeId: currentUserSub,
                         status: "Valid",
-                        date: event.date,
-                        time: event.time,
-                        location: event.location,
+                        date: event.date || "TBD",
+                        time: event.time || "TBD",
+                        location: event.location || "TBA",
                         purchasedAt: new Date().toISOString()
                     }
                 };
                 
-                docClient.put(ticketParams, function(err, data) {
-                    if (err) {
-                        callback(err);
+                docClient.put(ticketParams, function(putErr) {
+                    if (putErr) {
+                        console.error("Failed to save ticket", putErr);
+                        callback(putErr);
                         return;
                     }
                     
-                    // Increment ticketsSold in the event
                     const updateEventParams = {
                         TableName: config.eventsTableName,
                         Key: { eventId: event.eventId },
-                        UpdateExpression: "set ticketsSold = if_not_exists(ticketsSold, :start) + :inc",
+                        UpdateExpression: "set ticketsSold = if_not_exists(ticketsSold, :start) + :inc, revenue = if_not_exists(revenue, :startRev) + :price",
+                        ConditionExpression: "attribute_exists(eventId)",
                         ExpressionAttributeValues: {
                             ":inc": 1,
-                            ":start": 0
+                            ":start": 0,
+                            ":price": event.price || 0,
+                            ":startRev": 0
                         }
                     };
                     
                     docClient.update(updateEventParams, function(updateErr) {
-                        if (updateErr) console.error("Could not update ticketsSold for event", updateErr);
+                        if (updateErr) {
+                            console.error("Could not update ticketsSold for event", updateErr);
+                            if (updateErr.code === 'ConditionalCheckFailedException') {
+                                // Event was deleted, but ticket was already saved.
+                                // We'll still return the ticket to not break the UI.
+                            }
+                        }
                         
-                        // Send EmailJS Email (Needs configuration)
-                        // Make sure you include the EmailJS SDK in the HTML!
                         if (window.emailjs) {
-                            const templateParams = {
-                                to_email: "attendee@example.com", // In a real app, use the actual user's email from their profile
-                                event_name: event.eventName,
-                                ticket_id: ticketId,
-                                date: event.date,
-                                location: event.location,
-                                qr_url: `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${ticketId}`
-                            };
-                            
-                            // NOTE: Replace 'YOUR_SERVICE_ID' and 'YOUR_TEMPLATE_ID' with actual EmailJS details
-                            emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', templateParams)
-                                .then(function(response) {
-                                    console.log('Email sent!', response.status, response.text);
-                                }, function(error) {
-                                    console.log('Failed to send email...', error);
-                                });
+                            window.AttendeeBackend.getUserProfile((profileErr, profile) => {
+                                const userEmail = (!profileErr && profile && profile.email) ? profile.email : "attendee@example.com";
+                                const userName = (!profileErr && profile && profile.firstName) ? profile.firstName : "Attendee";
+                                
+                                const qrPayload = `Ticket ID: ${ticketId}\nEvent: ${event.eventName || "Unnamed Event"}\nDate: ${event.date || "TBD"} at ${event.time || "TBD"}\nVenue: ${event.location || "TBA"}\nAttendee: ${userName}`;
+
+                                const templateParams = {
+                                    to_email: userEmail,
+                                    to_name: userName,
+                                    event_title: event.eventName || "Unnamed Event",
+                                    event_date: event.date || "TBD",
+                                    event_venue: event.location || "TBA",
+                                    ticket_id: ticketId,
+                                    order_id: ticketId,
+                                    // Use quickchart or put data first so that if & is escaped to &amp; by EmailJS, the QR code still generates
+                                    qr_url: `https://quickchart.io/qr?text=${encodeURIComponent(qrPayload)}&size=200`
+                                };
+                                
+                                emailjs.send('service_w5mpz2s', 'template_cqxegxr', templateParams)
+                                    .then(function(response) {
+                                        console.log('Email sent!', response.status, response.text);
+                                    }, function(error) {
+                                        console.log('Failed to send email...', error);
+                                    });
+                            });
                         }
                         
                         callback(null, ticketParams.Item);
@@ -147,7 +164,6 @@
                     TableName: config.ticketsTableName
                 };
                 
-                // Using scan here. In production, use query with a GSI on attendeeId
                 docClient.scan(params, function(err, data) {
                     if (err) callback(err);
                     else {
@@ -247,6 +263,81 @@
                         if (err) callback(err);
                         else callback(null, { isSaved, savedEvents });
                     });
+                });
+            });
+        },
+
+        joinWaitlist: function(event, callback) {
+            initAWS((err) => {
+                if (err) return callback(err);
+
+                const waitlistTicket = {
+                    ticketId: "WTL-" + Date.now() + "-" + Math.floor(Math.random() * 1000),
+                    eventId: event.eventId,
+                    eventName: event.eventName,
+                    date: event.date,
+                    time: event.time,
+                    location: event.location,
+                    userId: currentUserSub,
+                    status: "Waitlisted",
+                    purchaseDate: new Date().toISOString()
+                };
+
+                const params = {
+                    TableName: config.ticketsTableName,
+                    Item: waitlistTicket
+                };
+
+                docClient.put(params, function(err, data) {
+                    if (err) callback(err);
+                    else callback(null, waitlistTicket);
+                });
+            });
+        },
+
+        submitReview: function(eventId, rating, comment, callback) {
+            initAWS((err) => {
+                if (err) return callback(err);
+                
+                window.AttendeeBackend.getUserProfile((profileErr, profile) => {
+                    const userName = (!profileErr && profile) ? (profile.firstName + " " + profile.lastName) : "Anonymous Attendee";
+                    
+                    const params = {
+                        TableName: config.reviewsTableName,
+                        Item: {
+                            reviewId: "REV-" + Date.now() + "-" + Math.floor(Math.random() * 1000),
+                            eventId: eventId,
+                            userId: currentUserSub,
+                            userName: userName,
+                            rating: rating,
+                            comment: comment,
+                            timestamp: new Date().toISOString()
+                        }
+                    };
+                    
+                    docClient.put(params, function(err, data) {
+                        if (err) callback(err);
+                        else callback(null, params.Item);
+                    });
+                });
+            });
+        },
+
+        getEventReviews: function(eventId, callback) {
+            initAWS((err) => {
+                if (err) return callback(err);
+                
+                const params = {
+                    TableName: config.reviewsTableName,
+                    FilterExpression: "eventId = :eid",
+                    ExpressionAttributeValues: {
+                        ":eid": eventId
+                    }
+                };
+                
+                docClient.scan(params, function(err, data) {
+                    if (err) callback(err);
+                    else callback(null, data.Items);
                 });
             });
         }

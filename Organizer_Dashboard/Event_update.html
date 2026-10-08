@@ -81,7 +81,13 @@
                         </div>
                         <div class="form-group">
                             <label>Time</label>
-                            <input type="time" id="eventTime" class="form-control" required>
+                            <div style="display: flex; gap: 8px;">
+                                <input type="text" id="eventTime" class="form-control" placeholder="12:00" pattern="^(0?[1-9]|1[0-2]):[0-5][0-9]$" title="Format: HH:MM (12-hour)" required>
+                                <select id="eventAmPm" class="form-control" style="width: auto; flex-shrink: 0;">
+                                    <option value="AM">AM</option>
+                                    <option value="PM">PM</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
 
@@ -107,7 +113,7 @@
                             <input type="number" id="eventCapacity" class="form-control" placeholder="E.g., 500" required>
                         </div>
                         <div class="form-group">
-                            <label>Ticket Price ($)</label>
+                            <label>Ticket Price (₹)</label>
                             <input type="number" step="0.01" id="eventPrice" class="form-control" placeholder="0.00 for free" required>
                         </div>
                     </div>
@@ -119,9 +125,10 @@
 
                     <div class="form-group">
                         <label>Event Cover Image</label>
-                        <div class="image-upload-zone">
+                        <div class="image-upload-zone" onclick="document.getElementById('eventImage').click()" style="cursor: pointer;">
                             <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                            <p>Drag and drop an image, or click to browse</p>
+                            <p id="imageNameDisplay">Click to browse or upload an image</p>
+                            <input type="file" id="eventImage" accept="image/*" style="display: none;">
                         </div>
                     </div>
 
@@ -135,40 +142,121 @@
     </div>
 
     <script>
-        document.getElementById('eventForm').addEventListener('submit', function(e) {
+        let existingEventData = null;
+        const urlParams = new URLSearchParams(window.location.search);
+        const eventId = urlParams.get('id');
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (eventId) {
+                document.querySelector('h1').textContent = "Update Event";
+                document.getElementById('saveEventBtn').textContent = "Update Event";
+                loadExistingEvent();
+            }
+        });
+
+        function loadExistingEvent() {
+            if (window.OrganizerBackend) {
+                window.OrganizerBackend.getEvent(eventId, (err, event) => {
+                    if (err) {
+                        alert("Error loading event details: " + err.message);
+                        return;
+                    }
+                    existingEventData = event;
+                    
+                    document.getElementById('eventName').value = event.eventName || "";
+                    document.getElementById('eventDate').value = event.date || "";
+                    if (event.time) {
+                        const parts = event.time.split(' ');
+                        document.getElementById('eventTime').value = parts[0] || "";
+                        if (parts.length > 1) {
+                            document.getElementById('eventAmPm').value = parts[1];
+                        }
+                    }
+                    document.getElementById('eventLocation').value = event.location || "";
+                    document.getElementById('googleMapLink').value = event.googleMapLink || "";
+                    if (event.salesDeadline) {
+                        document.getElementById('salesDeadline').value = event.salesDeadline;
+                    }
+                    document.getElementById('eventCapacity').value = event.capacity || "";
+                    document.getElementById('eventPrice').value = event.price || 0;
+                    document.getElementById('eventDescription').value = event.description || "";
+                    if (event.imageUrl) {
+                        document.getElementById('imageNameDisplay').textContent = "Image already uploaded (Click to change)";
+                    }
+                });
+            } else {
+                setTimeout(loadExistingEvent, 500);
+            }
+        }
+
+        document.getElementById('eventImage').addEventListener('change', function(e) {
+            if (this.files && this.files[0]) {
+                document.getElementById('imageNameDisplay').textContent = this.files[0].name;
+            }
+        });
+
+        document.getElementById('eventForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const btn = document.getElementById('saveEventBtn');
-            btn.textContent = "Saving...";
+            btn.textContent = eventId ? "Updating..." : "Saving...";
             btn.disabled = true;
 
+            const fileInput = document.getElementById('eventImage');
+            let uploadedImageUrl = existingEventData ? existingEventData.imageUrl : "";
+
+            if (!window.OrganizerBackend) {
+                alert("Backend not loaded.");
+                btn.disabled = false;
+                btn.textContent = eventId ? "Update Event" : "Save Event";
+                return;
+            }
+
+            try {
+                if (fileInput.files && fileInput.files.length > 0) {
+                    btn.textContent = "Uploading Image...";
+                    uploadedImageUrl = await new Promise((resolve, reject) => {
+                        window.OrganizerBackend.uploadImage(fileInput.files[0], (err, url) => {
+                            if (err) reject(err);
+                            else resolve(url);
+                        });
+                    });
+                }
+            } catch (err) {
+                alert("Image upload failed: " + err.message);
+                btn.disabled = false;
+                btn.textContent = eventId ? "Update Event" : "Save Event";
+                return;
+            }
+
+            btn.textContent = eventId ? "Updating Event..." : "Saving Event...";
             const eventData = {
+                eventId: eventId,
                 eventName: document.getElementById('eventName').value,
                 date: document.getElementById('eventDate').value,
-                time: document.getElementById('eventTime').value,
+                time: document.getElementById('eventTime').value + ' ' + document.getElementById('eventAmPm').value,
                 location: document.getElementById('eventLocation').value,
                 googleMapLink: document.getElementById('googleMapLink').value,
                 salesDeadline: document.getElementById('salesDeadline').value,
                 capacity: parseInt(document.getElementById('eventCapacity').value),
                 price: parseFloat(document.getElementById('eventPrice').value),
-                description: document.getElementById('eventDescription').value
+                description: document.getElementById('eventDescription').value,
+                imageUrl: uploadedImageUrl,
+                status: existingEventData ? existingEventData.status : "Active",
+                ticketsSold: existingEventData ? existingEventData.ticketsSold : 0,
+                revenue: existingEventData ? existingEventData.revenue : 0,
+                createdAt: existingEventData ? existingEventData.createdAt : new Date().toISOString()
             };
 
-            if (window.OrganizerBackend) {
-                window.OrganizerBackend.saveEvent(eventData, function(err, savedItem) {
-                    btn.disabled = false;
-                    btn.textContent = "Save Event";
-                    if (err) {
-                        alert("Error saving event: " + err.message);
-                    } else {
-                        alert("Event saved successfully!");
-                        window.location.href = "Event_list_organizer.html";
-                    }
-                });
-            } else {
-                alert("Backend not loaded.");
+            window.OrganizerBackend.saveEvent(eventData, function(err, savedItem) {
                 btn.disabled = false;
-                btn.textContent = "Save Event";
-            }
+                btn.textContent = eventId ? "Update Event" : "Save Event";
+                if (err) {
+                    alert("Error saving event: " + err.message);
+                } else {
+                    alert(eventId ? "Event updated successfully!" : "Event saved successfully!");
+                    window.location.href = "Event_list_organizer.html";
+                }
+            });
         });
     </script>
 </body>

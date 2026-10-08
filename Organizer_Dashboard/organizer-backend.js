@@ -10,6 +10,7 @@
     });
     
     let docClient = null;
+    let s3Client = null;
     let currentUserSub = null;
     
     function initAWS(callback) {
@@ -48,17 +49,42 @@
                     return;
                 }
                 docClient = new AWS.DynamoDB.DocumentClient();
+                s3Client = new AWS.S3({ apiVersion: '2006-03-01' });
                 callback(null);
             });
         });
     }
 
     window.OrganizerBackend = {
+        uploadImage: function(file, callback) {
+            initAWS((err) => {
+                if (err) return callback(err);
+                
+                const fileExt = file.name.split('.').pop();
+                const fileName = `events/${currentUserSub}/${Date.now()}.${fileExt}`;
+                
+                const params = {
+                    Bucket: config.s3BucketName,
+                    Key: fileName,
+                    Body: file,
+                    ContentType: file.type
+                };
+                
+                s3Client.upload(params, function(err, data) {
+                    if (err) {
+                        console.error("S3 Upload Error:", err);
+                        return callback(err);
+                    }
+                    callback(null, data.Location);
+                });
+            });
+        },
+
         saveEvent: function(eventData, callback) {
             initAWS((err) => {
                 if (err) return callback(err);
                 
-                const eventId = "EVT-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
+                const eventId = eventData.eventId || ("EVT-" + Date.now() + "-" + Math.floor(Math.random() * 1000));
                 const params = {
                     TableName: config.eventsTableName,
                     Item: {
@@ -73,16 +99,34 @@
                         capacity: eventData.capacity,
                         price: eventData.price,
                         description: eventData.description,
-                        status: "Active",
-                        ticketsSold: 0,
-                        revenue: 0,
-                        createdAt: new Date().toISOString()
+                        imageUrl: eventData.imageUrl || "",
+                        status: eventData.status || "Active",
+                        ticketsSold: eventData.ticketsSold || 0,
+                        revenue: eventData.revenue || 0,
+                        createdAt: eventData.createdAt || new Date().toISOString()
                     }
                 };
                 
                 docClient.put(params, function(err, data) {
                     if (err) callback(err);
                     else callback(null, params.Item);
+                });
+            });
+        },
+        
+        getEvent: function(eventId, callback) {
+            initAWS((err) => {
+                if (err) return callback(err);
+                
+                const params = {
+                    TableName: config.eventsTableName,
+                    Key: { eventId: eventId }
+                };
+                
+                docClient.get(params, function(err, data) {
+                    if (err) callback(err);
+                    else if (!data.Item) callback(new Error("Event not found"));
+                    else callback(null, data.Item);
                 });
             });
         },
@@ -123,6 +167,52 @@
             });
         },
         
+        checkInTicket: function(ticketId, callback) {
+            initAWS((err) => {
+                if (err) return callback(err);
+                
+                // First verify the ticket
+                this.verifyTicket(ticketId, (err, ticket) => {
+                    if (err) return callback(err);
+                    
+                    if (ticket.status === 'Used') {
+                        return callback(null, { success: false, message: 'Ticket already used', ticket: ticket });
+                    }
+                    
+                    // 1. Update ticket status to Used
+                    const updateParams = {
+                        TableName: config.ticketsTableName,
+                        Key: { ticketId: ticketId },
+                        UpdateExpression: "set #s = :status",
+                        ExpressionAttributeNames: { "#s": "status" },
+                        ExpressionAttributeValues: { ":status": "Used" }
+                    };
+                    
+                    docClient.update(updateParams, (updateErr) => {
+                        if (updateErr) return callback(updateErr);
+                        
+                        // 2. Log check-in
+                        const checkinParams = {
+                            TableName: config.checkinsTableName,
+                            Item: {
+                                checkinId: "CHK-" + Date.now(),
+                                ticketId: ticketId,
+                                eventId: ticket.eventId || "UNKNOWN",
+                                scannedBy: currentUserSub,
+                                timestamp: new Date().toISOString()
+                            }
+                        };
+                        
+                        docClient.put(checkinParams, (checkinErr) => {
+                            if (checkinErr) console.error("Failed to log checkin", checkinErr);
+                            // We still return success because the ticket was marked used
+                            callback(null, { success: true, message: 'Ticket verified and checked in!', ticket: ticket });
+                        });
+                    });
+                });
+            });
+        },
+        
         getUserProfile: function(callback) {
             initAWS((err) => {
                 if (err) return callback(err);
@@ -135,6 +225,54 @@
                 docClient.get(params, function(err, data) {
                     if (err) callback(err);
                     else callback(null, data.Item);
+                });
+            });
+        },
+        
+        recordPayment: function(paymentDetails, callback) {
+            initAWS((err) => {
+                if (err) return callback(err);
+                
+                const params = {
+                    TableName: config.paymentsTableName,
+                    Item: {
+                        paymentId: paymentDetails.paymentId || "PAY-" + Date.now(),
+                        userId: currentUserSub,
+                        amount: paymentDetails.amount,
+                        currency: paymentDetails.currency || "USD",
+                        planDays: paymentDetails.planDays,
+                        status: paymentDetails.status || "Completed",
+                        timestamp: new Date().toISOString()
+                    }
+                };
+                
+                docClient.put(params, function(err, data) {
+                    if (err) callback(err);
+                    else callback(null, params.Item);
+                });
+            });
+        },
+        
+        activateSubscription: function(days, callback) {
+            initAWS((err) => {
+                if (err) return callback(err);
+                
+                const expiryDate = new Date();
+                expiryDate.setDate(expiryDate.getDate() + days);
+                
+                const params = {
+                    TableName: config.dynamoDBTableName,
+                    Key: { userId: currentUserSub },
+                    UpdateExpression: "set subscriptionActive = :active, subscriptionExpiry = :expiry",
+                    ExpressionAttributeValues: {
+                        ":active": true,
+                        ":expiry": expiryDate.toISOString()
+                    }
+                };
+                
+                docClient.update(params, function(err, data) {
+                    if (err) callback(err);
+                    else callback(null, data);
                 });
             });
         },
@@ -157,6 +295,50 @@
                 docClient.update(params, function(err, data) {
                     if (err) callback(err);
                     else callback(null, data);
+                });
+            });
+        },
+        
+        deleteEvent: function(eventId, callback) {
+            initAWS((err) => {
+                if (err) return callback(err);
+                
+                const params = {
+                    TableName: config.eventsTableName,
+                    Key: { eventId: eventId }
+                };
+                
+                docClient.delete(params, function(err, data) {
+                    if (err) callback(err);
+                    else callback(null, data);
+                });
+            });
+        },
+        
+        requestWithdrawal: function(amount, details, callback) {
+            initAWS((err) => {
+                if (err) return callback(err);
+                
+                window.OrganizerBackend.getUserProfile((err, profile) => {
+                    if (err) return callback(err);
+                    
+                    const currentWithdrawn = profile.withdrawnAmount || 0;
+                    const newWithdrawn = currentWithdrawn + amount;
+                    
+                    const updateParams = {
+                        TableName: config.dynamoDBTableName,
+                        Key: { userId: currentUserSub },
+                        UpdateExpression: "set withdrawnAmount = :w, withdrawalDetails = :d",
+                        ExpressionAttributeValues: {
+                            ":w": newWithdrawn,
+                            ":d": details
+                        }
+                    };
+                    
+                    docClient.update(updateParams, function(updateErr) {
+                        if (updateErr) callback(updateErr);
+                        else callback(null);
+                    });
                 });
             });
         }

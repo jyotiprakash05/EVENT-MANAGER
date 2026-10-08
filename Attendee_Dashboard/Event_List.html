@@ -12,8 +12,8 @@
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script type="text/javascript">
         (function() {
-            // NOTE: Add your EmailJS public key here
-            emailjs.init("YOUR_PUBLIC_KEY");
+            // Initializing EmailJS with the provided public key
+            emailjs.init("ZhY8nu-13U5N_I5Zf");
         })();
     </script>
     <!-- AWS SDK & Auth Scripts -->
@@ -22,6 +22,7 @@
     <script src="../aws-config.js"></script>
     <script src="../dashboard-auth.js"></script>
     <script src="attendee-backend.js"></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </head>
 <body class="attendee-dashboard" data-required-role="attendee">
     <div class="page-shell">
@@ -102,6 +103,20 @@
                 <div class="section-head">
                     <h3>Upcoming Events</h3>
                     <div class="panel-tools">
+                        <select id="locationFilter" class="filter-select">
+                            <option value="">All Locations</option>
+                        </select>
+                        <select id="dateFilter" class="filter-select">
+                            <option value="">All Dates</option>
+                            <option value="today">Today</option>
+                            <option value="week">Next 7 Days</option>
+                            <option value="month">This Month</option>
+                        </select>
+                        <select id="priceFilter" class="filter-select">
+                            <option value="">Any Price</option>
+                            <option value="free">Free</option>
+                            <option value="paid">Paid</option>
+                        </select>
                         <input id="eventSearch" type="search" placeholder="Search events..." aria-label="Search events">
                     </div>
                 </div>
@@ -153,6 +168,16 @@
                             document.getElementById('liveEventCount').textContent = events.length + ' live events';
                             document.getElementById('popularCount').textContent = events.length;
 
+                            const locSelect = document.getElementById('locationFilter');
+                            const locations = new Set(events.map(e => (e.location || 'TBA').trim()).filter(l => l !== 'TBA'));
+                            locSelect.innerHTML = '<option value="">All Locations</option>';
+                            locations.forEach(loc => {
+                                const opt = document.createElement('option');
+                                opt.value = loc;
+                                opt.textContent = loc;
+                                locSelect.appendChild(opt);
+                            });
+
                             renderEvents(events);
                         });
                     });
@@ -169,10 +194,15 @@
                 events.forEach(function(event, index) {
                     const isSaved = savedEventsList.includes(event.eventId);
                     const initial = event.eventName ? event.eventName.substring(0, 2).toUpperCase() : 'EV';
-                    const dateObj = new Date(event.date);
-                    const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                    let formattedDate = 'TBD';
+                    if (event.date && event.date !== 'TBD') {
+                        const dateObj = new Date(event.date);
+                        if (!isNaN(dateObj)) {
+                            formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                        }
+                    }
                     
-                    const priceDisplay = event.price > 0 ? '$' + parseFloat(event.price).toFixed(2) : 'Free';
+                    const priceDisplay = event.price > 0 ? '₹' + parseFloat(event.price).toFixed(2) : 'Free';
                     
                     let locationDisplay = event.location || 'TBA';
                     if (event.googleMapLink) {
@@ -181,7 +211,35 @@
                         ${locationDisplay}</a>`;
                     }
 
+                    // Calendar link generation
+                    const eventTitle = encodeURIComponent(event.eventName || 'Unnamed Event');
+                    const eventDetails = encodeURIComponent(event.description || 'Join us for this amazing event!');
+                    const eventLoc = encodeURIComponent(event.location || '');
+                    // Format dates for Google Calendar (YYYYMMDDTHHMMSSZ)
+                    let startDate = new Date().toISOString().replace(/-|:|\.\d\d\d/g, ""); 
+                    let endDate = new Date(Date.now() + 3600000).toISOString().replace(/-|:|\.\d\d\d/g, ""); // +1 hr default
+                    if (event.date && event.date !== 'TBD') {
+                        const parsedDate = new Date(event.date + " " + (event.time || "12:00 PM"));
+                        if (!isNaN(parsedDate)) {
+                            startDate = parsedDate.toISOString().replace(/-|:|\.\d\d\d/g, "");
+                            endDate = new Date(parsedDate.getTime() + 7200000).toISOString().replace(/-|:|\.\d\d\d/g, ""); // +2 hours
+                        }
+                    }
+                    const googleCalLink = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${eventTitle}&dates=${startDate}/${endDate}&details=${eventDetails}&location=${eventLoc}`;
+                    
+                    // Social sharing links (using current window location as placeholder link)
+                    const shareLink = encodeURIComponent(window.location.href);
+                    const whatsappLink = `https://wa.me/?text=${eventTitle}%20-%20Get%20tickets%20at:%20${shareLink}`;
+                    const xLink = `https://twitter.com/intent/tweet?text=${eventTitle}&url=${shareLink}`;
+
                     let bookBtnHTML = `<button class="primary-btn book-btn" data-id="${event.eventId}">Book now</button>`;
+                    const ticketsSold = event.ticketsSold || 0;
+                    const capacity = event.capacity || 0;
+                    
+                    if (capacity > 0 && ticketsSold >= capacity) {
+                        bookBtnHTML = `<button class="primary-btn waitlist-btn" style="background:var(--accent-purple);" data-id="${event.eventId}">Join Waitlist</button>`;
+                    }
+                    
                     if (event.salesDeadline) {
                         const deadlineDate = new Date(event.salesDeadline);
                         if (new Date() > deadlineDate) {
@@ -195,17 +253,26 @@
                     
                     const article = document.createElement('article');
                     article.className = 'event-card';
+                    article.dataset.location = (event.location || 'TBA').trim();
+                    article.dataset.price = (event.price && event.price > 0) ? 'paid' : 'free';
+                    article.dataset.date = event.date || '';
                     
+                    const coverHtml = event.imageUrl ? `<img src="${event.imageUrl}" style="width: 100%; height: 160px; object-fit: cover; border-radius: 12px 12px 0 0;">` : `<div class="event-image ${gradientClass}">${initial}</div>`;
+
                     article.innerHTML = `
-                        <div class="event-image ${gradientClass}">${initial}</div>
+                        ${coverHtml}
                         <div class="event-body">
                             <div class="event-row">
                                 <span class="tag">Event</span>
-                                <span class="rating">★ 4.9</span>
+                                <div style="display: flex; gap: 8px;">
+                                    <a href="${whatsappLink}" target="_blank" title="Share on WhatsApp" style="color: #25D366; text-decoration: none;"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 0C5.385 0 0 5.385 0 12.03c0 2.122.553 4.148 1.597 5.952L.21 24l6.19-1.62c1.745.94 3.708 1.436 5.631 1.436 6.646 0 12.03-5.384 12.03-12.03C24 5.385 18.616 0 12.03 0zm5.666 17.172c-.237.669-1.378 1.25-1.921 1.341-.5.084-1.157.147-3.234-.716-2.553-1.062-4.188-3.666-4.316-3.835-.125-.172-1.03-1.373-1.03-2.618 0-1.246.643-1.859.873-2.1.21-.22.457-.275.609-.275.15 0 .3 0 .428.006.132.006.31.05.485.47.22.525.753 1.838.82 1.97.067.13.111.282.028.45-.081.166-.123.269-.247.412-.123.144-.26.313-.372.438-.12.13-.247.275-.11.512.138.238.614 1.015 1.319 1.642.91.81 1.68 1.066 1.918 1.181.237.113.377.094.516-.062.137-.156.593-.693.753-.93.159-.237.316-.197.536-.113.22.084 1.385.656 1.623.775.237.119.395.178.454.275.059.097.059.562-.178 1.231z"/></svg></a>
+                                    <a href="${xLink}" target="_blank" title="Share on X" style="color: var(--text); text-decoration: none;"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
+                                </div>
                             </div>
                             <h4>${event.eventName || 'Unnamed Event'}</h4>
                             <p class="meta-line">${formattedDate} • ${event.time || 'TBD'} • ${locationDisplay}</p>
-                            <div class="event-footer">
+                            <a href="${googleCalLink}" target="_blank" style="font-size: 0.8rem; color: var(--primary); text-decoration: none; display: inline-flex; align-items: center; gap: 4px; margin-top: 4px;"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> Add to Google Calendar</a>
+                            <div class="event-footer" style="margin-top: 12px;">
                                 <div class="price-box">
                                     <small>Price</small>
                                     <strong>${priceDisplay}</strong>
@@ -244,41 +311,157 @@
                     });
                 });
 
+                // Waitlist buttons
+                document.querySelectorAll('.waitlist-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const eventId = this.getAttribute('data-id');
+                        const event = activeEvents.find(e => e.eventId === eventId);
+                        const self = this;
+                        
+                        self.disabled = true;
+                        self.textContent = 'Joining...';
+                        
+                        window.AttendeeBackend.joinWaitlist(event, (err) => {
+                            if (err) {
+                                alert("Failed to join waitlist: " + err.message);
+                                self.disabled = false;
+                                self.textContent = 'Join Waitlist';
+                            } else {
+                                alert("You're on the waitlist! We'll email you if a spot opens up.");
+                                self.textContent = 'Waitlisted';
+                            }
+                        });
+                    });
+                });
+
                 // Book buttons
                 document.querySelectorAll('.book-btn').forEach(btn => {
-                    btn.addEventListener('click', function() {
+                    btn.addEventListener('click', async function() {
                         const eventId = this.getAttribute('data-id');
                         const event = activeEvents.find(e => e.eventId === eventId);
                         const self = this;
 
                         self.disabled = true;
-                        self.textContent = 'Booking...';
+                        self.textContent = 'Processing...';
 
-                        window.AttendeeBackend.bookTicket(event, (err, ticket) => {
-                            if (err) {
-                                alert("Failed to book ticket: " + err.message);
+                        if (event.price && event.price > 0) {
+                            try {
+                                const response = await fetch('http://localhost:3000/api/payment/create-order', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ amount: event.price, receipt: 'tkt_' + eventId })
+                                });
+                                const data = await response.json();
+                                if (!data.success) throw new Error(data.error);
+
+                                const options = {
+                                    key: 'rzp_test_TfToXPA1e0mdDo',
+                                    amount: data.order.amount,
+                                    currency: data.order.currency,
+                                    name: 'EventPro',
+                                    description: 'Ticket for ' + event.eventName,
+                                    order_id: data.order.id,
+                                    handler: async function (response) {
+                                        const verifyRes = await fetch('http://localhost:3000/api/payment/verify', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify(response)
+                                        });
+                                        const verifyData = await verifyRes.json();
+                                        if (verifyData.success) {
+                                            processBooking(event, self);
+                                        } else {
+                                            alert("Payment verification failed.");
+                                            self.disabled = false;
+                                            self.textContent = 'Book now';
+                                        }
+                                    },
+                                    prefill: {
+                                        name: userProfile.firstName + ' ' + userProfile.lastName,
+                                        email: userProfile.email,
+                                        contact: userProfile.phone || ''
+                                    },
+                                    theme: { color: '#8b5cf6' }
+                                };
+                                const rzp1 = new Razorpay(options);
+                                rzp1.on('payment.failed', function (response){
+                                    self.disabled = false;
+                                    self.textContent = 'Book now';
+                                    alert('Payment Failed: ' + response.error.description);
+                                });
+                                rzp1.open();
+                            } catch (error) {
+                                console.error(error);
+                                alert("Payment Error: " + error.message);
                                 self.disabled = false;
                                 self.textContent = 'Book now';
-                            } else {
-                                alert("Success! QR code has been emailed via EmailJS. Ticket is in My Bookings.");
-                                self.textContent = 'Booked';
-                                const curr = parseInt(document.getElementById('bookingCount').textContent) || 0;
-                                document.getElementById('bookingCount').textContent = curr + 1;
                             }
-                        });
+                        } else {
+                            processBooking(event, self);
+                        }
                     });
                 });
             }
 
-            const searchInput = document.getElementById('eventSearch');
-            searchInput.addEventListener('input', function () {
-                const query = this.value.trim().toLowerCase();
-                const cards = document.querySelectorAll('.event-card');
-                cards.forEach(card => {
-                    const text = card.textContent.toLowerCase();
-                    card.style.display = text.includes(query) ? 'flex' : 'none';
+            function processBooking(event, btnElement) {
+                btnElement.textContent = 'Booking...';
+                window.AttendeeBackend.bookTicket(event, (err, ticket) => {
+                    if (err) {
+                        alert("Failed to book ticket: " + err.message);
+                        btnElement.disabled = false;
+                        btnElement.textContent = 'Book now';
+                    } else {
+                        alert("Success! Ticket confirmed. QR code receipt emailed.");
+                        btnElement.textContent = 'Booked';
+                        const curr = parseInt(document.getElementById('bookingCount').textContent) || 0;
+                        document.getElementById('bookingCount').textContent = curr + 1;
+                    }
                 });
-            });
+            }
+
+            function applyFilters() {
+                const query = document.getElementById('eventSearch').value.trim().toLowerCase();
+                const location = document.getElementById('locationFilter').value;
+                const dateFilter = document.getElementById('dateFilter').value;
+                const priceFilter = document.getElementById('priceFilter').value;
+
+                const cards = document.querySelectorAll('.event-card');
+                const now = new Date();
+                now.setHours(0,0,0,0);
+
+                cards.forEach(card => {
+                    let show = true;
+                    
+                    if (query && !card.textContent.toLowerCase().includes(query)) show = false;
+                    
+                    if (location && card.dataset.location !== location) show = false;
+                    
+                    if (priceFilter && card.dataset.price !== priceFilter) show = false;
+                    
+                    if (show && dateFilter && card.dataset.date) {
+                        const evtDate = new Date(card.dataset.date);
+                        if (!isNaN(evtDate)) {
+                            evtDate.setHours(0,0,0,0);
+                            if (dateFilter === 'today') {
+                                if (evtDate.getTime() !== now.getTime()) show = false;
+                            } else if (dateFilter === 'week') {
+                                const endOfWeek = new Date(now);
+                                endOfWeek.setDate(now.getDate() + 7);
+                                if (evtDate < now || evtDate > endOfWeek) show = false;
+                            } else if (dateFilter === 'month') {
+                                if (evtDate.getMonth() !== now.getMonth() || evtDate.getFullYear() !== now.getFullYear()) show = false;
+                            }
+                        }
+                    }
+
+                    card.style.display = show ? 'flex' : 'none';
+                });
+            }
+
+            document.getElementById('eventSearch').addEventListener('input', applyFilters);
+            document.getElementById('locationFilter').addEventListener('change', applyFilters);
+            document.getElementById('dateFilter').addEventListener('change', applyFilters);
+            document.getElementById('priceFilter').addEventListener('change', applyFilters);
 
             setTimeout(loadData, 1000); 
         });

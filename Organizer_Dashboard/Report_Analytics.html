@@ -70,9 +70,12 @@
             <!-- Analytics Summary Grid -->
             <section class="analytics-grid">
                 <div class="stat-card revenue">
-                    <span>Total Revenue</span>
-                    <strong id="totalRevenue">$0</strong>
-                    <div class="stat-trend trend-up">↑ Based on active events</div>
+                    <span>Available Balance</span>
+                    <strong id="availableBalance">₹0</strong>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+                        <span style="font-size: 0.85rem; color: var(--muted);" id="totalRevenueText">Total Earned: ₹0</span>
+                        <button id="withdrawBtn" class="primary-btn" style="padding: 4px 12px; font-size: 0.85rem;">Withdraw</button>
+                    </div>
                 </div>
                 <div class="stat-card tickets">
                     <span>Tickets Sold</span>
@@ -116,13 +119,13 @@
                     <div class="form-section" style="flex: 1;">
                         <h3 style="margin: 0 0 16px; font-size: 1.1rem; color: var(--muted);">Top Selling Event</h3>
                         <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 12px;">
-                            <div class="event-thumb" style="width: 48px; height: 48px;">TI</div>
+                            <div class="event-thumb" id="topEventInitial" style="width: 48px; height: 48px;">--</div>
                             <div>
-                                <h4 style="margin: 0; font-size: 1rem;">Tech Innovators Summit</h4>
-                                <p style="margin: 0; color: var(--primary); font-weight: 600;">$8,400</p>
+                                <h4 id="topEventName" style="margin: 0; font-size: 1rem;">No sales yet</h4>
+                                <p id="topEventRevenue" style="margin: 0; color: var(--primary); font-weight: 600;">₹0</p>
                             </div>
                         </div>
-                        <p style="margin: 0; color: var(--muted); font-size: 0.85rem;">180 Tickets Sold</p>
+                        <p id="topEventTickets" style="margin: 0; color: var(--muted); font-size: 0.85rem;">0 Tickets Sold</p>
                     </div>
 
                     <div class="form-section" style="flex: 1;">
@@ -135,35 +138,162 @@
         </main>
     </div>
 
+    <!-- Withdrawal Modal -->
+    <div id="withdrawModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; justify-content:center; align-items:center;">
+        <div style="background:var(--bg-panel); padding:32px; border-radius:16px; width:90%; max-width:400px; box-shadow:0 10px 30px rgba(0,0,0,0.5); position:relative;">
+            <button onclick="document.getElementById('withdrawModal').style.display='none'" style="position:absolute; top:12px; right:12px; background:transparent; border:none; color:var(--text); cursor:pointer; font-size:1.2rem;">✖</button>
+            <h2 style="margin-top:0;">Withdraw Funds</h2>
+            <p style="color:var(--muted); margin-bottom:24px;">Transfer your available balance to your bank account or UPI.</p>
+            
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label>Amount to Withdraw (₹)</label>
+                <input type="number" id="withdrawAmount" max="0" min="1" step="0.01" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--bg-body); color:var(--text);" placeholder="0.00">
+                <small style="color:var(--muted); display:block; margin-top:4px;">Available: <span id="withdrawAvailable">₹0</span></small>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label>Transfer Method</label>
+                <select id="withdrawMethod" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--bg-body); color:var(--text);" onchange="document.getElementById('upiFields').style.display = this.value==='upi'?'block':'none'; document.getElementById('bankFields').style.display = this.value==='bank'?'block':'none';">
+                    <option value="upi">UPI ID</option>
+                    <option value="bank">Bank Account</option>
+                </select>
+            </div>
+            
+            <div id="upiFields" class="form-group" style="margin-bottom: 24px;">
+                <label>UPI ID</label>
+                <input type="text" id="upiId" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--bg-body); color:var(--text);" placeholder="example@okhdfcbank">
+            </div>
+            
+            <div id="bankFields" style="display:none; margin-bottom: 24px;">
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label>Account Number</label>
+                    <input type="text" id="bankAcc" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--bg-body); color:var(--text);">
+                </div>
+                <div class="form-group">
+                    <label>IFSC Code</label>
+                    <input type="text" id="bankIfsc" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--bg-body); color:var(--text);">
+                </div>
+            </div>
+            
+            <button id="submitWithdrawBtn" class="primary-btn" style="width:100%; padding:14px;">Confirm Withdrawal</button>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            let maxAvailable = 0;
+            
             function loadAnalytics() {
                 if (window.OrganizerBackend) {
-                    window.OrganizerBackend.getEvents(function(err, events) {
-                        if (err) {
-                            console.error("Failed to load events for analytics", err);
-                            return;
-                        }
+                    window.OrganizerBackend.getUserProfile((err, profile) => {
+                        const withdrawnAmount = profile?.withdrawnAmount || 0;
+                        
+                        window.OrganizerBackend.getEvents(function(err, events) {
+                            if (err) {
+                                console.error("Failed to load events for analytics", err);
+                                return;
+                            }
 
-                        let totalRevenue = 0;
-                        let totalTickets = 0;
+                            let totalRevenue = 0;
+                            let totalTickets = 0;
+                            let topEvent = null;
+                            let maxRevenue = -1;
 
-                        events.forEach(event => {
-                            // Using fallback defaults if fields don't exist yet
-                            const tickets = event.ticketsSold || 0;
-                            const price = event.price || 0;
+                            events.forEach(event => {
+                                const tickets = event.ticketsSold || 0;
+                                const price = event.price || 0;
+                                const rev = tickets * price;
+                                
+                                totalTickets += tickets;
+                                totalRevenue += rev;
+                                
+                                if (rev > maxRevenue) {
+                                    maxRevenue = rev;
+                                    topEvent = { ...event, revenue: rev };
+                                }
+                            });
                             
-                            totalTickets += tickets;
-                            totalRevenue += (tickets * price);
-                        });
+                            // Platform Fee Logic (5%)
+                            const PLATFORM_FEE_PERCENT = 0.05;
+                            const platformFee = totalRevenue * PLATFORM_FEE_PERCENT;
+                            const netEarnings = totalRevenue - platformFee;
+                            
+                            maxAvailable = netEarnings - withdrawnAmount;
+                            if (maxAvailable < 0) maxAvailable = 0;
 
-                        document.getElementById('totalRevenue').textContent = '$' + totalRevenue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                        document.getElementById('totalTickets').textContent = totalTickets.toLocaleString();
+                            document.getElementById('availableBalance').textContent = '₹' + maxAvailable.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                            document.getElementById('totalRevenueText').textContent = `Gross: ₹${totalRevenue.toLocaleString()} | Fee (5%): -₹${platformFee.toLocaleString()}`;
+                            document.getElementById('totalTickets').textContent = totalTickets.toLocaleString();
+                            
+                            document.getElementById('withdrawAvailable').textContent = '₹' + maxAvailable.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                            document.getElementById('withdrawAmount').max = maxAvailable;
+                            document.getElementById('withdrawAmount').value = maxAvailable > 0 ? maxAvailable : '';
+                            
+                            if (topEvent && topEvent.revenue > 0) {
+                                document.getElementById('topEventName').textContent = topEvent.eventName;
+                                document.getElementById('topEventRevenue').textContent = '₹' + topEvent.revenue.toLocaleString();
+                                document.getElementById('topEventTickets').textContent = (topEvent.ticketsSold || 0) + ' Tickets Sold';
+                                document.getElementById('topEventInitial').textContent = topEvent.eventName.substring(0,2).toUpperCase();
+                            } else {
+                                document.getElementById('topEventName').textContent = "No sales yet";
+                                document.getElementById('topEventRevenue').textContent = "₹0";
+                                document.getElementById('topEventTickets').textContent = "0 Tickets Sold";
+                            }
+                        });
                     });
                 } else {
                     setTimeout(loadAnalytics, 500);
                 }
             }
+            
+            document.getElementById('withdrawBtn').addEventListener('click', () => {
+                if (maxAvailable <= 0) {
+                    alert("No available balance to withdraw.");
+                    return;
+                }
+                document.getElementById('withdrawModal').style.display = 'flex';
+            });
+            
+            document.getElementById('submitWithdrawBtn').addEventListener('click', () => {
+                const amount = parseFloat(document.getElementById('withdrawAmount').value);
+                const method = document.getElementById('withdrawMethod').value;
+                const upi = document.getElementById('upiId').value;
+                const bankAcc = document.getElementById('bankAcc').value;
+                const bankIfsc = document.getElementById('bankIfsc').value;
+                
+                if (isNaN(amount) || amount <= 0 || amount > maxAvailable) {
+                    alert("Please enter a valid amount up to your available balance.");
+                    return;
+                }
+                
+                if (method === 'upi' && !upi.trim()) {
+                    alert("Please enter your UPI ID.");
+                    return;
+                }
+                if (method === 'bank' && (!bankAcc.trim() || !bankIfsc.trim())) {
+                    alert("Please enter your Bank Account and IFSC code.");
+                    return;
+                }
+                
+                const btn = document.getElementById('submitWithdrawBtn');
+                btn.disabled = true;
+                btn.textContent = "Processing...";
+                
+                const details = method === 'upi' ? { type: 'UPI', id: upi } : { type: 'Bank', acc: bankAcc, ifsc: bankIfsc };
+                
+                window.OrganizerBackend.requestWithdrawal(amount, details, (err) => {
+                    btn.disabled = false;
+                    btn.textContent = "Confirm Withdrawal";
+                    if (err) {
+                        alert("Withdrawal failed: " + err.message);
+                    } else {
+                        alert(`Withdrawal of ₹${amount} initiated successfully!`);
+                        document.getElementById('withdrawModal').style.display = 'none';
+                        loadAnalytics(); // Reload to update available balance
+                    }
+                });
+            });
+
             setTimeout(loadAnalytics, 1000);
         });
     </script>
