@@ -64,12 +64,12 @@ window.AdminBackend = (function() {
             });
         },
 
-        deleteUser: function(email, callback) {
+        deleteUser: function(userId, callback) {
             if (!docClient && !init()) return callback(new Error("AWS not initialized"));
             
             const params = {
                 TableName: window.EVENTPRO_AWS_CONFIG.dynamoDBTableName,
-                Key: { email: email }
+                Key: { userId: userId }
             };
 
             docClient.delete(params, function(err) {

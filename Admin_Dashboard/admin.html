@@ -88,7 +88,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Wait a moment for dashboard-auth to initialize AWS
             setTimeout(function() {
-                loadDashboard();
+                verifyAdmin();
             }, 1000);
 
             document.getElementById('logoutBtn').addEventListener('click', function(e) {
@@ -105,6 +105,74 @@
                 window.location.href = '../HOME.html';
             });
         });
+
+        function verifyAdmin() {
+            if (!window.AWS || !AWS.config.credentials) return setTimeout(verifyAdmin, 500);
+
+            const poolData = {
+                UserPoolId: window.EVENTPRO_AWS_CONFIG.userPoolId,
+                ClientId: window.EVENTPRO_AWS_CONFIG.clientId
+            };
+            const userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
+            const cognitoUser = userPool.getCurrentUser();
+            
+            if (!cognitoUser) {
+                window.location.href = '../SIGNIN.html';
+                return;
+            }
+
+            cognitoUser.getSession(function(err, session) {
+                if (err || !session.isValid()) {
+                    window.location.href = '../SIGNIN.html';
+                    return;
+                }
+                
+                const idToken = session.getIdToken().getJwtToken();
+                const logins = {};
+                logins[`cognito-idp.${window.EVENTPRO_AWS_CONFIG.region}.amazonaws.com/${window.EVENTPRO_AWS_CONFIG.userPoolId}`] = idToken;
+                
+                AWS.config.region = window.EVENTPRO_AWS_CONFIG.region;
+                AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+                    IdentityPoolId: window.EVENTPRO_AWS_CONFIG.identityPoolId,
+                    Logins: logins
+                });
+
+                AWS.config.credentials.get(function(err) {
+                    if (err) {
+                        alert("Could not load AWS credentials.");
+                        window.location.href = '../SIGNIN.html';
+                        return;
+                    }
+
+                    const payload = session.getIdToken().payload;
+                    const docClient = new AWS.DynamoDB.DocumentClient();
+                    const params = {
+                        TableName: window.EVENTPRO_AWS_CONFIG.dynamoDBTableName,
+                        Key: { userId: payload.sub }
+                    };
+                    
+                    docClient.get(params, function(err, data) {
+                        if (err || !data || !data.Item) {
+                            alert("Could not verify your account.");
+                            window.location.href = '../SIGNIN.html';
+                            return;
+                        }
+                        
+                        // Allow if role is admin, or as a fallback for this demo, allow a specific email
+                        const isAdmin = data.Item.role === 'admin' || data.Item.email === 'admin@eventpro.com';
+                        
+                        if (!isAdmin) {
+                            alert("Access Denied: You do not have administrator privileges.");
+                            window.location.href = '../HOME.html';
+                            return;
+                        }
+                        
+                        // User is an admin, proceed to load data
+                        loadDashboard();
+                    });
+                });
+            });
+        }
 
         function loadDashboard() {
             if (!window.AdminBackend) return setTimeout(loadDashboard, 500);
@@ -143,7 +211,7 @@
                         <td><span class="badge ${roleClass}">${role}</span></td>
                         <td>${dateStr}</td>
                         <td>
-                            <button class="btn btn-danger" onclick="deleteUser('${user.email}')">Ban / Delete</button>
+                            <button class="btn btn-danger" onclick="deleteUser('${user.userId}')">Ban / Delete</button>
                         </td>
                     `;
                     tbody.appendChild(tr);
@@ -151,9 +219,9 @@
             });
         }
 
-        window.deleteUser = function(email) {
-            if (confirm(`Are you sure you want to delete user ${email}?`)) {
-                window.AdminBackend.deleteUser(email, function(err) {
+        window.deleteUser = function(userId) {
+            if (confirm(`Are you sure you want to delete this user?`)) {
+                window.AdminBackend.deleteUser(userId, function(err) {
                     if (err) {
                         alert("Failed to delete user: " + err.message);
                     } else {
