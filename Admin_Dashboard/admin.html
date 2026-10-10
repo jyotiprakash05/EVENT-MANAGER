@@ -176,7 +176,7 @@
         }
 
         function verifyAdmin() {
-            if (!window.AWS || !AWS.config.credentials) return setTimeout(verifyAdmin, 500);
+            if (!window.AWS || !window.AmazonCognitoIdentity || !window.EVENTPRO_AWS_CONFIG) return setTimeout(verifyAdmin, 500);
 
             const poolData = {
                 UserPoolId: window.EVENTPRO_AWS_CONFIG.userPoolId,
