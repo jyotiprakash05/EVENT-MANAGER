@@ -125,7 +125,9 @@
                         if (window.emailjs) {
                             window.AttendeeBackend.getUserProfile((profileErr, profile) => {
                                 const userEmail = (!profileErr && profile && profile.email) ? profile.email : "attendee@example.com";
-                                const userName = (!profileErr && profile && profile.firstName) ? profile.firstName : "Attendee";
+                                const userName = (!profileErr && profile) ? 
+                                    (profile.firstName && profile.lastName ? (profile.firstName + " " + profile.lastName).trim() : (profile.firstName || "Attendee")) 
+                                    : "Attendee";
                                 
                                 const qrPayload = `Ticket ID: ${ticketId}\nEvent: ${event.eventName || "Unnamed Event"}\nDate: ${event.date || "TBD"} at ${event.time || "TBD"}\nVenue: ${event.location || "TBA"}\nAttendee: ${userName}`;
 

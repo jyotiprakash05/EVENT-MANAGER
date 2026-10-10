@@ -93,6 +93,10 @@
                             <label>Email Address</label>
                             <input type="email" id="email" class="form-control" placeholder="Email Address" required>
                         </div>
+                        <div class="form-group">
+                            <label>Organizer Bio / Company</label>
+                            <textarea id="organizerBio" class="form-control" placeholder="Tell attendees about yourself or your organization..." rows="3"></textarea>
+                        </div>
                         
                         <div class="form-actions" style="justify-content: flex-start;">
                             <button type="submit" id="saveProfileBtn" class="btn-primary">Save Changes</button>
@@ -258,6 +262,9 @@
                             document.getElementById('firstName').value = data.firstName || '';
                             document.getElementById('lastName').value = data.lastName || '';
                             document.getElementById('email').value = data.email || '';
+                            if (document.getElementById('organizerBio')) {
+                                document.getElementById('organizerBio').value = data.bio || '';
+                            }
                             
                             currentWithdrawnAmount = data.withdrawnAmount || 0;
                             document.getElementById('payoutTotalWithdrawn').textContent = '₹' + currentWithdrawnAmount.toFixed(2);
@@ -308,7 +315,8 @@
                 const userData = {
                     firstName: document.getElementById('firstName').value,
                     lastName: document.getElementById('lastName').value,
-                    email: document.getElementById('email').value
+                    email: document.getElementById('email').value,
+                    bio: document.getElementById('organizerBio') ? document.getElementById('organizerBio').value : ''
                 };
 
                 window.OrganizerBackend.updateUserProfile(userData, function(err, data) {
@@ -320,8 +328,9 @@
                         alert('Profile updated successfully!');
                         // Also update UI elements
                         const initial = userData.firstName ? userData.firstName.charAt(0).toUpperCase() : '?';
+                        const fullName = ((userData.firstName || '') + ' ' + (userData.lastName || '')).trim();
                         document.querySelectorAll('.user-avatar').forEach(el => el.textContent = initial);
-                        document.querySelectorAll('.user-pill span:not(.user-avatar)').forEach(el => el.textContent = userData.firstName);
+                        document.querySelectorAll('.user-pill span:not(.user-avatar)').forEach(el => el.textContent = fullName);
                     }
                 });
             });

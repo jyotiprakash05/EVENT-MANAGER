@@ -1,0 +1,9 @@
+{
+  "name": "event-manager-payment-lambda",
+  "version": "1.0.0",
+  "description": "AWS Lambda function for handling Razorpay payments",
+  "main": "index.js",
+  "dependencies": {
+    "razorpay": "^2.9.8"
+  }
+}

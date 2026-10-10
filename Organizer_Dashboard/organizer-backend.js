@@ -84,32 +84,48 @@
             initAWS((err) => {
                 if (err) return callback(err);
                 
-                const eventId = eventData.eventId || ("EVT-" + Date.now() + "-" + Math.floor(Math.random() * 1000));
-                const params = {
-                    TableName: config.eventsTableName,
-                    Item: {
-                        eventId: eventId,
-                        organizerId: currentUserSub,
-                        eventName: eventData.eventName,
-                        date: eventData.date,
-                        time: eventData.time,
-                        location: eventData.location,
-                        googleMapLink: eventData.googleMapLink || "",
-                        salesDeadline: eventData.salesDeadline || "",
-                        capacity: eventData.capacity,
-                        price: eventData.price,
-                        description: eventData.description,
-                        imageUrl: eventData.imageUrl || "",
-                        status: eventData.status || "Active",
-                        ticketsSold: eventData.ticketsSold || 0,
-                        revenue: eventData.revenue || 0,
-                        createdAt: eventData.createdAt || new Date().toISOString()
+                window.OrganizerBackend.getUserProfile((profileErr, profile) => {
+                    let orgName = "Unknown Organizer";
+                    let orgBio = "No bio available.";
+                    
+                    if (!profileErr && profile) {
+                        if (profile.firstName && profile.lastName) {
+                            orgName = (profile.firstName + " " + profile.lastName).trim();
+                        } else if (profile.firstName) {
+                            orgName = profile.firstName;
+                        }
+                        if (profile.bio) orgBio = profile.bio;
                     }
-                };
-                
-                docClient.put(params, function(err, data) {
-                    if (err) callback(err);
-                    else callback(null, params.Item);
+                    
+                    const eventId = eventData.eventId || ("EVT-" + Date.now() + "-" + Math.floor(Math.random() * 1000));
+                    const params = {
+                        TableName: config.eventsTableName,
+                        Item: {
+                            eventId: eventId,
+                            organizerId: currentUserSub,
+                            organizerName: orgName,
+                            organizerBio: orgBio,
+                            eventName: eventData.eventName,
+                            date: eventData.date,
+                            time: eventData.time,
+                            location: eventData.location,
+                            googleMapLink: eventData.googleMapLink || "",
+                            salesDeadline: eventData.salesDeadline || "",
+                            capacity: eventData.capacity,
+                            price: eventData.price,
+                            description: eventData.description,
+                            imageUrl: eventData.imageUrl || "",
+                            status: eventData.status || "Active",
+                            ticketsSold: eventData.ticketsSold || 0,
+                            revenue: eventData.revenue || 0,
+                            createdAt: eventData.createdAt || new Date().toISOString()
+                        }
+                    };
+                    
+                    docClient.put(params, function(err, data) {
+                        if (err) callback(err);
+                        else callback(null, params.Item);
+                    });
                 });
             });
         },
@@ -284,11 +300,12 @@
                 const params = {
                     TableName: config.dynamoDBTableName,
                     Key: { userId: currentUserSub },
-                    UpdateExpression: "set firstName = :f, lastName = :l, email = :e",
+                    UpdateExpression: "set firstName = :f, lastName = :l, email = :e, bio = :b",
                     ExpressionAttributeValues: {
                         ":f": userData.firstName,
                         ":l": userData.lastName,
-                        ":e": userData.email
+                        ":e": userData.email,
+                        ":b": userData.bio || ""
                     }
                 };
                 

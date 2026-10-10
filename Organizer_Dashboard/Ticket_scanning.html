@@ -88,8 +88,35 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {
+            let lastScannedCode = null;
+            let scanTimeout = null;
+
             function onScanSuccess(decodedText, decodedResult) {
-                document.getElementById('ticketCode').value = decodedText;
+                // Extract Ticket ID if it's the multi-line format
+                let ticketId = decodedText;
+                if (decodedText.includes('Ticket ID:')) {
+                    const match = decodedText.match(/Ticket ID:\s*([^\n]+)/);
+                    if (match && match[1]) {
+                        ticketId = match[1].trim();
+                    }
+                } else {
+                    ticketId = decodedText.trim();
+                }
+
+                // Avoid duplicate scans
+                if (ticketId === lastScannedCode) {
+                    return;
+                }
+
+                lastScannedCode = ticketId;
+                
+                // Reset the last scanned code after 5 seconds to allow re-scanning if necessary
+                if (scanTimeout) clearTimeout(scanTimeout);
+                scanTimeout = setTimeout(() => {
+                    lastScannedCode = null;
+                }, 5000);
+
+                document.getElementById('ticketCode').value = ticketId;
                 document.getElementById('verifyTicketBtn').click();
             }
 

@@ -164,10 +164,10 @@
                         alert("Error saving profile: " + err.message);
                     } else {
                         alert("Profile updated successfully!");
-                        // Refresh the global auth pill if available
-                        if (window.EVENTPRO_DASHBOARD_AUTH && window.EVENTPRO_DASHBOARD_AUTH.updateUI) {
-                            window.EVENTPRO_DASHBOARD_AUTH.updateUI();
-                        }
+                        const initial = data.firstName ? data.firstName.charAt(0).toUpperCase() : '?';
+                        const fullName = ((data.firstName || '') + ' ' + (data.lastName || '')).trim();
+                        document.querySelectorAll('.user-avatar').forEach(el => el.textContent = initial);
+                        document.querySelectorAll('.user-pill span:not(.user-avatar)').forEach(el => el.textContent = fullName);
                     }
                 });
             });
