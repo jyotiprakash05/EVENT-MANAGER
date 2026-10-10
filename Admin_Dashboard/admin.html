@@ -224,14 +224,22 @@
                         btn.textContent = 'Login';
                         btn.disabled = false;
 
+                        // Always allow access for the master admin email directly from the verified Cognito token
+                        const tokenEmail = payload.email || '';
+                        if (tokenEmail === 'admin@eventpro.com') {
+                            document.getElementById('admin-login-container').style.display = 'none';
+                            document.getElementById('dashboard-layout').style.display = 'flex';
+                            loadDashboard();
+                            return;
+                        }
+
                         if (err || !data || !data.Item) {
                             cognitoUser.signOut();
-                            showLogin("Could not verify your account in the database.");
+                            showLogin("Could not verify your account in the database. Please sign in via the main page first.");
                             return;
                         }
                         
-                        // Allow if role is admin, or as a fallback for this demo, allow a specific email
-                        const isAdmin = data.Item.role === 'admin' || data.Item.email === 'admin@eventpro.com';
+                        const isAdmin = data.Item.role === 'admin';
                         
                         if (!isAdmin) {
                             cognitoUser.signOut();
