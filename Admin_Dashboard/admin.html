@@ -11,14 +11,33 @@
     
     <!-- Config and Auth -->
     <script src="../aws-config.js"></script>
-    <script src="../dashboard-auth.js"></script>
     <script src="admin-backend.js"></script>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="admin.css">
 </head>
 <body>
-    <div class="dashboard-layout">
+    <!-- Login State -->
+    <div id="admin-login-container" class="admin-login-container" style="display: none;">
+        <div class="admin-login-box">
+            <h2>Admin Login</h2>
+            <div id="adminLoginError" class="admin-login-error"></div>
+            <form id="adminLoginForm">
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" id="adminEmail" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="adminPassword" required>
+                </div>
+                <button type="submit" id="adminLoginBtn">Login</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Dashboard State -->
+    <div id="dashboard-layout" class="dashboard-layout" style="display: none;">
         <!-- Sidebar -->
         <aside class="sidebar">
             <h2>
@@ -86,10 +105,9 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Wait a moment for dashboard-auth to initialize AWS
             setTimeout(function() {
                 verifyAdmin();
-            }, 1000);
+            }, 500);
 
             document.getElementById('logoutBtn').addEventListener('click', function(e) {
                 e.preventDefault();
@@ -102,9 +120,60 @@
                 if (cognitoUser != null) {
                     cognitoUser.signOut();
                 }
-                window.location.href = '../HOME.html';
+                showLogin();
+            });
+
+            document.getElementById('adminLoginForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                handleLogin();
             });
         });
+
+        function showLogin(errorMsg) {
+            document.getElementById('dashboard-layout').style.display = 'none';
+            document.getElementById('admin-login-container').style.display = 'flex';
+            const errEl = document.getElementById('adminLoginError');
+            if (errorMsg) {
+                errEl.textContent = errorMsg;
+                errEl.style.display = 'block';
+            } else {
+                errEl.style.display = 'none';
+            }
+        }
+
+        function handleLogin() {
+            const email = document.getElementById('adminEmail').value;
+            const password = document.getElementById('adminPassword').value;
+            const btn = document.getElementById('adminLoginBtn');
+            btn.textContent = 'Logging in...';
+            btn.disabled = true;
+
+            const poolData = {
+                UserPoolId: window.EVENTPRO_AWS_CONFIG.userPoolId,
+                ClientId: window.EVENTPRO_AWS_CONFIG.clientId
+            };
+            const userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
+            const authenticationDetails = new AmazonCognitoIdentity.AuthenticationDetails({
+                Username: email,
+                Password: password
+            });
+            const userData = {
+                Username: email,
+                Pool: userPool
+            };
+            const cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
+
+            cognitoUser.authenticateUser(authenticationDetails, {
+                onSuccess: function (result) {
+                    verifyAdmin(); // Now verify if they actually have the admin role
+                },
+                onFailure: function(err) {
+                    btn.textContent = 'Login';
+                    btn.disabled = false;
+                    showLogin(err.message || 'Login failed.');
+                }
+            });
+        }
 
         function verifyAdmin() {
             if (!window.AWS || !AWS.config.credentials) return setTimeout(verifyAdmin, 500);
@@ -117,13 +186,13 @@
             const cognitoUser = userPool.getCurrentUser();
             
             if (!cognitoUser) {
-                window.location.href = '../SIGNIN.html';
+                showLogin();
                 return;
             }
 
             cognitoUser.getSession(function(err, session) {
                 if (err || !session.isValid()) {
-                    window.location.href = '../SIGNIN.html';
+                    showLogin();
                     return;
                 }
                 
@@ -139,8 +208,7 @@
 
                 AWS.config.credentials.get(function(err) {
                     if (err) {
-                        alert("Could not load AWS credentials.");
-                        window.location.href = '../SIGNIN.html';
+                        showLogin("Could not load AWS credentials.");
                         return;
                     }
 
@@ -152,9 +220,13 @@
                     };
                     
                     docClient.get(params, function(err, data) {
+                        const btn = document.getElementById('adminLoginBtn');
+                        btn.textContent = 'Login';
+                        btn.disabled = false;
+
                         if (err || !data || !data.Item) {
-                            alert("Could not verify your account.");
-                            window.location.href = '../SIGNIN.html';
+                            cognitoUser.signOut();
+                            showLogin("Could not verify your account in the database.");
                             return;
                         }
                         
@@ -162,12 +234,14 @@
                         const isAdmin = data.Item.role === 'admin' || data.Item.email === 'admin@eventpro.com';
                         
                         if (!isAdmin) {
-                            alert("Access Denied: You do not have administrator privileges.");
-                            window.location.href = '../HOME.html';
+                            cognitoUser.signOut();
+                            showLogin("Access Denied: You do not have administrator privileges.");
                             return;
                         }
                         
                         // User is an admin, proceed to load data
+                        document.getElementById('admin-login-container').style.display = 'none';
+                        document.getElementById('dashboard-layout').style.display = 'flex';
                         loadDashboard();
                     });
                 });

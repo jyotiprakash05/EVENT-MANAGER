@@ -170,3 +170,61 @@ body {
     color: #dc2626;
 }
 .btn-danger:hover { background: #fecaca; }
+
+.admin-login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: var(--dark);
+}
+.admin-login-box {
+    background: var(--bg-white);
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 400px;
+}
+.admin-login-box h2 {
+    margin-bottom: 24px;
+    font-size: 1.5rem;
+    color: var(--text);
+    text-align: center;
+}
+.admin-login-box .form-group {
+    margin-bottom: 16px;
+}
+.admin-login-box label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+.admin-login-box input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.95rem;
+}
+.admin-login-box button {
+    width: 100%;
+    padding: 12px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 12px;
+}
+.admin-login-box button:hover {
+    background: var(--primary-hover);
+}
+.admin-login-error {
+    color: var(--danger);
+    font-size: 0.85rem;
+    margin-bottom: 12px;
+    display: none;
+}
