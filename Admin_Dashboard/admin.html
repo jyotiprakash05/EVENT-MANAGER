@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | EventPro</title>
+    
+    <!-- AWS SDKs -->
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1000.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/amazon-cognito-identity-js@5.2.3/dist/amazon-cognito-identity.min.js"></script>
+    
+    <!-- Config and Auth -->
+    <script src="../aws-config.js"></script>
+    <script src="../dashboard-auth.js"></script>
+    <script src="admin-backend.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+    <div class="dashboard-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <h2>
+                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                Admin Panel
+            </h2>
+            <ul class="nav-links">
+                <li><a href="#" class="active">Overview</a></li>
+                <li style="margin-top: auto;"><a href="#" id="logoutBtn" style="color: #ef4444;">Logout</a></li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="header">
+                <div>
+                    <h1 style="font-size: 1.8rem; margin-bottom: 4px;">Platform Overview</h1>
+                    <p style="color: var(--text-light);">Monitor users and revenue across EventPro.</p>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Total Users</h3>
+                    <div class="value" id="stat-total-users">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Organizers</h3>
+                    <div class="value" id="stat-organizers">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Attendees</h3>
+                    <div class="value" id="stat-attendees">0</div>
+                </div>
+                <div class="stat-card" style="border-left: 4px solid var(--gold);">
+                    <h3>Platform Revenue</h3>
+                    <div class="value" id="stat-revenue">₹0</div>
+                    <small style="color: var(--text-light); font-size: 0.75rem;">(0.5% fee + org fees)</small>
+                </div>
+            </div>
+
+            <!-- Users Table -->
+            <div class="data-table-wrapper">
+                <div class="table-header">
+                    <h2 style="font-size: 1.2rem;">Registered Users</h2>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Registered</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersListBody">
+                        <tr><td colspan="5" style="text-align: center; padding: 24px; color: var(--text-light);">Loading users...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Wait a moment for dashboard-auth to initialize AWS
+            setTimeout(function() {
+                loadDashboard();
+            }, 1000);
+
+            document.getElementById('logoutBtn').addEventListener('click', function(e) {
+                e.preventDefault();
+                const poolData = {
+                    UserPoolId: window.EVENTPRO_AWS_CONFIG.userPoolId,
+                    ClientId: window.EVENTPRO_AWS_CONFIG.clientId
+                };
+                const userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
+                const cognitoUser = userPool.getCurrentUser();
+                if (cognitoUser != null) {
+                    cognitoUser.signOut();
+                }
+                window.location.href = '../HOME.html';
+            });
+        });
+
+        function loadDashboard() {
+            if (!window.AdminBackend) return setTimeout(loadDashboard, 500);
+
+            window.AdminBackend.getDashboardStats(function(err, stats) {
+                if (err) {
+                    document.getElementById('usersListBody').innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--danger);">Error loading data: ${err.message}</td></tr>`;
+                    return;
+                }
+
+                document.getElementById('stat-total-users').textContent = stats.totalUsers;
+                document.getElementById('stat-organizers').textContent = stats.organizers;
+                document.getElementById('stat-attendees').textContent = stats.attendees;
+                document.getElementById('stat-revenue').textContent = '₹' + stats.platformRevenue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+                const tbody = document.getElementById('usersListBody');
+                if (stats.usersList.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No users found.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = '';
+                stats.usersList.sort((a,b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+
+                stats.usersList.forEach(user => {
+                    const name = user.firstName ? `${user.firstName} ${user.lastName || ''}` : 'Unknown';
+                    const role = user.userType === 'organizer' ? 'Organizer' : 'Attendee';
+                    const roleClass = user.userType === 'organizer' ? 'organizer' : 'attendee';
+                    
+                    const dateStr = user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A';
+                    
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>${name}</strong></td>
+                        <td>${user.email}</td>
+                        <td><span class="badge ${roleClass}">${role}</span></td>
+                        <td>${dateStr}</td>
+                        <td>
+                            <button class="btn btn-danger" onclick="deleteUser('${user.email}')">Ban / Delete</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            });
+        }
+
+        window.deleteUser = function(email) {
+            if (confirm(`Are you sure you want to delete user ${email}?`)) {
+                window.AdminBackend.deleteUser(email, function(err) {
+                    if (err) {
+                        alert("Failed to delete user: " + err.message);
+                    } else {
+                        loadDashboard(); // reload table
+                    }
+                });
+            }
+        };
+    </script>
+</body>
+</html>

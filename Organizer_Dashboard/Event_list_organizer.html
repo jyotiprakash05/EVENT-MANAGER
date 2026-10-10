@@ -75,18 +75,18 @@
             <section class="analytics-grid">
                 <div class="stat-card revenue">
                     <span>Total Revenue</span>
-                    <strong>$14,250</strong>
-                    <div class="stat-trend trend-up">↑ 12% this month</div>
+                    <strong id="totalRevenueText">₹0</strong>
+                    <div class="stat-trend trend-up">↑ Based on active events</div>
                 </div>
                 <div class="stat-card tickets">
                     <span>Tickets Sold</span>
-                    <strong>458</strong>
-                    <div class="stat-trend trend-up">↑ 48 this week</div>
+                    <strong id="totalTicketsText">0</strong>
+                    <div class="stat-trend trend-up">↑ Based on active events</div>
                 </div>
                 <div class="stat-card views">
                     <span>Event Page Views</span>
-                    <strong>3,102</strong>
-                    <div class="stat-trend trend-flat">→ Stable</div>
+                    <strong id="totalViewsText">0</strong>
+                    <div class="stat-trend trend-flat">→ Based on active events</div>
                 </div>
             </section>
 
@@ -238,8 +238,16 @@
                             return;
                         }
 
+                        let totalRevenue = 0;
+                        let totalTickets = 0;
+                        let totalViews = 0;
+
                         tbody.innerHTML = '';
                         events.forEach(function(event) {
+                            totalRevenue += (event.revenue || ((event.ticketsSold || 0) * (event.price || 0)) || 0);
+                            totalTickets += (event.ticketsSold || 0);
+                            totalViews += (event.views || ((event.ticketsSold || 0) * 3) || 0);
+
                             const initial = event.eventName ? event.eventName.substring(0, 2).toUpperCase() : 'EV';
                             const dateObj = new Date(event.date);
                             const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -269,6 +277,10 @@
                             `;
                             tbody.appendChild(tr);
                         });
+
+                        document.getElementById('totalRevenueText').textContent = '₹' + totalRevenue.toLocaleString();
+                        document.getElementById('totalTicketsText').textContent = totalTickets.toLocaleString();
+                        document.getElementById('totalViewsText').textContent = totalViews.toLocaleString();
                     });
                 } else {
                     setTimeout(loadEvents, 500); // Retry if backend not yet loaded

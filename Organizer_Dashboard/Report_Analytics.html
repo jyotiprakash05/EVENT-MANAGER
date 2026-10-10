@@ -84,8 +84,8 @@
                 </div>
                 <div class="stat-card views">
                     <span>Event Page Views</span>
-                    <strong>3,102</strong>
-                    <div class="stat-trend trend-flat">→ Stable</div>
+                    <strong id="totalViews">0</strong>
+                    <div class="stat-trend trend-flat">→ Based on active events</div>
                 </div>
             </section>
 
@@ -196,16 +196,18 @@
 
                             let totalRevenue = 0;
                             let totalTickets = 0;
+                            let totalViews = 0;
                             let topEvent = null;
                             let maxRevenue = -1;
 
                             events.forEach(event => {
                                 const tickets = event.ticketsSold || 0;
                                 const price = event.price || 0;
-                                const rev = tickets * price;
+                                const rev = event.revenue || (tickets * price) || 0;
                                 
                                 totalTickets += tickets;
                                 totalRevenue += rev;
+                                totalViews += (event.views || (tickets * 3) || 0);
                                 
                                 if (rev > maxRevenue) {
                                     maxRevenue = rev;
@@ -213,8 +215,8 @@
                                 }
                             });
                             
-                            // Platform Fee Logic (5%)
-                            const PLATFORM_FEE_PERCENT = 0.05;
+                            // Platform Fee Logic (0.5%)
+                            const PLATFORM_FEE_PERCENT = 0.005;
                             const platformFee = totalRevenue * PLATFORM_FEE_PERCENT;
                             const netEarnings = totalRevenue - platformFee;
                             
@@ -222,8 +224,9 @@
                             if (maxAvailable < 0) maxAvailable = 0;
 
                             document.getElementById('availableBalance').textContent = '₹' + maxAvailable.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                            document.getElementById('totalRevenueText').textContent = `Gross: ₹${totalRevenue.toLocaleString()} | Fee (5%): -₹${platformFee.toLocaleString()}`;
+                            document.getElementById('totalRevenueText').textContent = `Gross: ₹${totalRevenue.toLocaleString()} | Fee (0.5%): -₹${platformFee.toLocaleString()}`;
                             document.getElementById('totalTickets').textContent = totalTickets.toLocaleString();
+                            document.getElementById('totalViews').textContent = totalViews.toLocaleString();
                             
                             document.getElementById('withdrawAvailable').textContent = '₹' + maxAvailable.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
                             document.getElementById('withdrawAmount').max = maxAvailable;
