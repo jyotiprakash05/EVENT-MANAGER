@@ -214,7 +214,9 @@
                             events.forEach(e => { totalRev += (e.revenue || 0); });
                             document.getElementById('payoutTotalRev').textContent = '₹' + totalRev.toFixed(2);
                             
-                            currentAvailableBalance = totalRev - currentWithdrawnAmount;
+                            const PLATFORM_FEE_PERCENT = 0.03; // 3% platform fee
+                            const netEarnings = totalRev * (1 - PLATFORM_FEE_PERCENT);
+                            currentAvailableBalance = Math.max(0, netEarnings - currentWithdrawnAmount);
                             document.getElementById('payoutAvailable').textContent = '₹' + currentAvailableBalance.toFixed(2);
                         }
                     });

@@ -46,7 +46,7 @@ window.AdminBackend = (function() {
                     if (err) return callback(err);
 
                     const events = eventsData.Items || [];
-                    const PLATFORM_FEE_PERCENT = 0.005; // 0.5%
+                    const PLATFORM_FEE_PERCENT = 0.03; // 3%
                     
                     let totalGross = 0;
                     events.forEach(e => {
@@ -56,7 +56,7 @@ window.AdminBackend = (function() {
                         totalGross += rev;
                     });
                     
-                    // The platform makes 0.5% of ticket sales; organizers join completely free of charge
+                    // The platform makes 3% of ticket sales; organizers join completely free of charge
                     stats.platformRevenue = totalGross * PLATFORM_FEE_PERCENT;
 
                     callback(null, stats);

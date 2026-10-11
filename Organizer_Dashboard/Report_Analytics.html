@@ -395,7 +395,8 @@
                             }
                         });
 
-                        const platformFee = totalRevenue * 0.005;
+                        const PLATFORM_FEE_PERCENT = 0.03; // 3% platform fee
+                        const platformFee = totalRevenue * PLATFORM_FEE_PERCENT;
                         const netEarnings = totalRevenue - platformFee;
                         maxAvailable = Math.max(0, netEarnings - withdrawnAmount);
 
