@@ -1,0 +1,24 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 20
+    commands:
+      - echo "Installing project dependencies..."
+      - npm install
+  pre_build:
+    commands:
+      - echo "Running automated test suite..."
+      - npm test
+  build:
+    commands:
+      - echo "All tests completed successfully. Ready for deployment."
+
+artifacts:
+  files:
+    - '**/*'
+  exclude-paths:
+    - 'tests/**/*'
+    - 'node_modules/**/*'
+    - '.git/**/*'
