@@ -104,10 +104,10 @@
                     </form>
 
                     <div class="subscription-section" style="margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--border);">
-                        <h3>Subscription Details</h3>
+                        <h3>Account Membership</h3>
                         <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 24px;">
-                            <p style="margin-bottom: 8px;"><strong>Status:</strong> <span id="subscriptionStatus">Loading...</span></p>
-                            <p style="margin-bottom: 0;"><strong>Access Remaining:</strong> <span id="subscriptionDays">Loading...</span></p>
+                            <p style="margin-bottom: 8px;"><strong>Status:</strong> <span id="subscriptionStatus" style="color: #10b981; font-weight: 600;">Active (Free Organizer Tier)</span></p>
+                            <p style="margin-bottom: 0;"><strong>Joining & Platform Access Fee:</strong> <span id="subscriptionDays" style="color: #10b981; font-weight: 600;">₹0 (Free Lifetime Access)</span></p>
                         </div>
                     </div>
 
@@ -270,33 +270,16 @@
                             document.getElementById('payoutTotalWithdrawn').textContent = '₹' + currentWithdrawnAmount.toFixed(2);
                             loadPayouts();
                             
-                            // Load Subscription Details
+                            // Account Membership Details
                             const subStatusEl = document.getElementById('subscriptionStatus');
                             const subDaysEl = document.getElementById('subscriptionDays');
-                            if (data.subscriptionActive) {
-                                subStatusEl.textContent = 'Active';
-                                subStatusEl.style.color = '#10b981'; // Green
-                                
-                                if (data.subscriptionExpiry) {
-                                    const expiryDate = new Date(data.subscriptionExpiry);
-                                    const today = new Date();
-                                    const diffTime = expiryDate - today;
-                                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                                    
-                                    if (diffDays > 0) {
-                                        subDaysEl.textContent = diffDays + ' Days';
-                                    } else {
-                                        subStatusEl.textContent = 'Expired';
-                                        subStatusEl.style.color = '#ef4444'; // Red
-                                        subDaysEl.textContent = '0 Days';
-                                    }
-                                } else {
-                                    subDaysEl.textContent = 'Lifetime';
-                                }
-                            } else {
-                                subStatusEl.textContent = 'Inactive';
-                                subStatusEl.style.color = '#ef4444';
-                                subDaysEl.textContent = 'Plan not purchased';
+                            if (subStatusEl) {
+                                subStatusEl.textContent = 'Active (Free Organizer Tier)';
+                                subStatusEl.style.color = '#10b981';
+                            }
+                            if (subDaysEl) {
+                                subDaysEl.textContent = '₹0 (Free Lifetime Access)';
+                                subDaysEl.style.color = '#10b981';
                             }
                         }
                     });

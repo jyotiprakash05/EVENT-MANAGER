@@ -161,11 +161,8 @@
                                             showMessage(form, "Your account is not assigned to that role.", true);
                                             return;
                                         }
-                                        if (role === 'organizer' && !data.Item.subscriptionActive) {
-                                            window.location.replace("Organizer_Dashboard/payment.html");
-                                        } else {
-                                            redirectForRole(role);
-                                        }
+                                        // Organizers and attendees both have free, unrestricted access with zero joining fees
+                                        redirectForRole(role);
                                     } else {
                                         // First time login! Save the role.
                                         const putParams = {
@@ -177,7 +174,7 @@
                                                 lastName: payload.family_name || "",
                                                 phone: payload.phone_number || "",
                                                 role: role,
-                                                subscriptionActive: role === 'attendee', // Attendees don't need subscriptions
+                                                subscriptionActive: true, // Free access for all organizers and attendees
                                                 lastLogin: new Date().toISOString()
                                             }
                                         };
@@ -189,11 +186,7 @@
                                                 showMessage(form, "Error setting up your account.", true);
                                             } else {
                                                 console.log("User successfully recorded in DynamoDB");
-                                                if (role === 'organizer' && !putParams.Item.subscriptionActive) {
-                                                    window.location.replace("Organizer_Dashboard/payment.html");
-                                                } else {
-                                                    redirectForRole(role);
-                                                }
+                                                redirectForRole(role);
                                             }
                                         });
                                     }

@@ -56,8 +56,8 @@ window.AdminBackend = (function() {
                         totalGross += rev;
                     });
                     
-                    // The platform makes 0.5% of all gross sales + ₹20 one-time fee from organizers
-                    stats.platformRevenue = (totalGross * PLATFORM_FEE_PERCENT) + (stats.organizers * 20);
+                    // The platform makes 0.5% of ticket sales; organizers join completely free of charge
+                    stats.platformRevenue = totalGross * PLATFORM_FEE_PERCENT;
 
                     callback(null, stats);
                 });

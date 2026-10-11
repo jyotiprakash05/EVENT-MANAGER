@@ -521,8 +521,13 @@
         },
         
         activateSubscription: function(days, callback) {
+            if (typeof days === 'function') {
+                callback = days;
+                days = 3650; // Free lifetime access
+            }
+            days = days || 3650;
             initAWS((err) => {
-                if (err) return callback(err);
+                if (err) return callback ? callback(err) : null;
                 
                 const expiryDate = new Date();
                 expiryDate.setDate(expiryDate.getDate() + days);
@@ -538,8 +543,10 @@
                 };
                 
                 docClient.update(params, function(err, data) {
-                    if (err) callback(err);
-                    else callback(null, data);
+                    if (callback) {
+                        if (err) callback(err);
+                        else callback(null, data);
+                    }
                 });
             });
         },
