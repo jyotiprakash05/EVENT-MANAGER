@@ -132,6 +132,17 @@
                         </div>
                     </div>
 
+                    <!-- Automatic Schedule / Venue Change Broadcast Option -->
+                    <div id="broadcastAlertContainer" style="display: none; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 12px; padding: 16px; margin: 20px 0;">
+                        <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; color: var(--text);">
+                            <input type="checkbox" id="broadcastUpdateAlert" checked style="accent-color: var(--primary); width: 18px; height: 18px; margin-top: 2px;">
+                            <div>
+                                <strong style="color: #93c5fd; display: block; font-size: 0.95rem;">📢 Auto-Broadcast Schedule / Venue Change Alert</strong>
+                                <span style="font-size: 0.85rem; color: var(--muted);">Automatically notify all registered attendees via in-app alert & email about updates to date, time, or venue.</span>
+                            </div>
+                        </label>
+                    </div>
+
                     <div class="form-actions">
                         <button type="button" class="btn-secondary" onclick="window.location.href='Event_list_organizer.html'">Cancel</button>
                         <button type="submit" class="btn-primary" id="saveEventBtn">Save Event</button>
@@ -150,6 +161,7 @@
             if (eventId) {
                 document.querySelector('h1').textContent = "Update Event";
                 document.getElementById('saveEventBtn').textContent = "Update Event";
+                document.getElementById('broadcastAlertContainer').style.display = "block";
                 loadExistingEvent();
             }
         });
@@ -229,12 +241,24 @@
             }
 
             btn.textContent = eventId ? "Updating Event..." : "Saving Event...";
+            const newDate = document.getElementById('eventDate').value;
+            const newTime = document.getElementById('eventTime').value + ' ' + document.getElementById('eventAmPm').value;
+            const newLocation = document.getElementById('eventLocation').value;
+            const newEventName = document.getElementById('eventName').value;
+
+            // Check if schedule or venue changed
+            const isScheduleChanged = existingEventData && (
+                existingEventData.date !== newDate ||
+                existingEventData.time !== newTime ||
+                existingEventData.location !== newLocation
+            );
+
             const eventData = {
                 eventId: eventId,
-                eventName: document.getElementById('eventName').value,
-                date: document.getElementById('eventDate').value,
-                time: document.getElementById('eventTime').value + ' ' + document.getElementById('eventAmPm').value,
-                location: document.getElementById('eventLocation').value,
+                eventName: newEventName,
+                date: newDate,
+                time: newTime,
+                location: newLocation,
                 googleMapLink: document.getElementById('googleMapLink').value,
                 salesDeadline: document.getElementById('salesDeadline').value,
                 capacity: parseInt(document.getElementById('eventCapacity').value),
@@ -252,6 +276,28 @@
                 btn.textContent = eventId ? "Update Event" : "Save Event";
                 if (err) {
                     alert("Error saving event: " + err.message);
+                    return;
+                }
+
+                // If schedule changed and organizer opted into broadcast alert
+                const shouldBroadcast = document.getElementById('broadcastUpdateAlert') && document.getElementById('broadcastUpdateAlert').checked;
+                if (eventId && isScheduleChanged && shouldBroadcast) {
+                    const changeDetails = [];
+                    if (existingEventData.date !== newDate) changeDetails.push(`New Date: ${newDate}`);
+                    if (existingEventData.time !== newTime) changeDetails.push(`New Time: ${newTime}`);
+                    if (existingEventData.location !== newLocation) changeDetails.push(`New Venue: ${newLocation}`);
+
+                    window.OrganizerBackend.broadcastEventAlert({
+                        eventId: eventId,
+                        eventName: newEventName,
+                        title: `Schedule Update: ${newEventName}`,
+                        message: `The organizer updated the event details. ${changeDetails.join(" | ")}. Please check your updated booking pass.`,
+                        priority: "high",
+                        sendEmail: true
+                    }, function(alertErr, alertRes) {
+                        alert(`Event updated and alert broadcast to ${alertRes?.recipientCount || 0} registered attendee(s)!`);
+                        window.location.href = "Event_list_organizer.html";
+                    });
                 } else {
                     alert(eventId ? "Event updated successfully!" : "Event saved successfully!");
                     window.location.href = "Event_list_organizer.html";

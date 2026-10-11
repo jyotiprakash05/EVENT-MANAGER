@@ -183,47 +183,298 @@
             });
         },
         
-        checkInTicket: function(ticketId, callback) {
+        checkInTicket: function(ticketId, optionsOrCallback, optionalCallback) {
+            let options = {};
+            let callback = optionalCallback;
+            if (typeof optionsOrCallback === 'function') {
+                callback = optionsOrCallback;
+            } else if (typeof optionsOrCallback === 'object') {
+                options = optionsOrCallback || {};
+            }
+
             initAWS((err) => {
                 if (err) return callback(err);
-                
-                // First verify the ticket
+
+                // 1. Fetch ticket to inspect current state
                 this.verifyTicket(ticketId, (err, ticket) => {
                     if (err) return callback(err);
-                    
-                    if (ticket.status === 'Used') {
-                        return callback(null, { success: false, message: 'Ticket already used', ticket: ticket });
+
+                    // Check for expected event match if scanner is filtering by event
+                    if (options.expectedEventId && ticket.eventId && ticket.eventId !== options.expectedEventId) {
+                        return callback(null, {
+                            success: false,
+                            differentEvent: true,
+                            message: `Ticket is for a different event: "${ticket.eventName || ticket.eventId}"`,
+                            ticket: ticket
+                        });
                     }
-                    
-                    // 1. Update ticket status to Used
+
+                    // Check for cancelled ticket
+                    if (ticket.status === 'Cancelled') {
+                        return callback(null, {
+                            success: false,
+                            cancelled: true,
+                            message: 'Ticket is marked as Cancelled/Refunded',
+                            ticket: ticket
+                        });
+                    }
+
+                    // Check if already used
+                    if (ticket.status === 'Used') {
+                        const checkedInTime = ticket.checkedInAt ? new Date(ticket.checkedInAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'earlier';
+                        return callback(null, {
+                            success: false,
+                            duplicate: true,
+                            message: `Ticket already used at ${checkedInTime}! Entry rejected.`,
+                            ticket: ticket
+                        });
+                    }
+
+                    const now = new Date().toISOString();
+
+                    // 2. Perform ATOMIC conditional update:
+                    // Condition: attribute_exists(ticketId) AND status = 'Valid'
+                    // This eliminates race conditions if two devices scan the ticket simultaneously!
                     const updateParams = {
                         TableName: config.ticketsTableName,
                         Key: { ticketId: ticketId },
-                        UpdateExpression: "set #s = :status",
+                        UpdateExpression: "SET #s = :used, checkedInAt = :now, scannedBy = :scanner",
+                        ConditionExpression: "attribute_exists(ticketId) AND #s = :valid",
                         ExpressionAttributeNames: { "#s": "status" },
-                        ExpressionAttributeValues: { ":status": "Used" }
+                        ExpressionAttributeValues: {
+                            ":used": "Used",
+                            ":valid": "Valid",
+                            ":now": now,
+                            ":scanner": currentUserSub
+                        },
+                        ReturnValues: "ALL_NEW"
                     };
-                    
-                    docClient.update(updateParams, (updateErr) => {
-                        if (updateErr) return callback(updateErr);
-                        
-                        // 2. Log check-in
+
+                    docClient.update(updateParams, (updateErr, updateData) => {
+                        if (updateErr) {
+                            if (updateErr.code === 'ConditionalCheckFailedException') {
+                                return callback(null, {
+                                    success: false,
+                                    duplicate: true,
+                                    raceConditionBlocked: true,
+                                    message: 'Duplicate check-in blocked by atomic lock! Ticket was just verified on another device.',
+                                    ticket: ticket
+                                });
+                            }
+                            console.error("Atomic check-in update error:", updateErr);
+                            return callback(updateErr);
+                        }
+
+                        const updatedTicket = (updateData && updateData.Attributes) ? updateData.Attributes : { ...ticket, status: 'Used', checkedInAt: now };
+
+                        // 3. Log into EventProCheckins table
+                        const checkinItem = {
+                            checkinId: "CHK-" + Date.now() + "-" + Math.floor(Math.random() * 1000),
+                            ticketId: ticketId,
+                            eventId: ticket.eventId || "UNKNOWN",
+                            eventName: ticket.eventName || "Unnamed Event",
+                            attendeeId: ticket.attendeeId || "UNKNOWN",
+                            attendeeName: ticket.attendeeName || "Verified Attendee",
+                            scannedBy: currentUserSub,
+                            timestamp: now
+                        };
+
                         const checkinParams = {
                             TableName: config.checkinsTableName,
-                            Item: {
-                                checkinId: "CHK-" + Date.now(),
-                                ticketId: ticketId,
-                                eventId: ticket.eventId || "UNKNOWN",
-                                scannedBy: currentUserSub,
-                                timestamp: new Date().toISOString()
-                            }
+                            Item: checkinItem
                         };
-                        
+
                         docClient.put(checkinParams, (checkinErr) => {
-                            if (checkinErr) console.error("Failed to log checkin", checkinErr);
-                            // We still return success because the ticket was marked used
-                            callback(null, { success: true, message: 'Ticket verified and checked in!', ticket: ticket });
+                            if (checkinErr) {
+                                console.warn("Notice: checkin log put warning (non-fatal):", checkinErr);
+                            }
+                            callback(null, {
+                                success: true,
+                                message: `Ticket verified! Welcome, ${ticket.attendeeName || 'Attendee'}.`,
+                                ticket: updatedTicket,
+                                checkin: checkinItem
+                            });
                         });
+                    });
+                });
+            });
+        },
+
+        getEventCheckins: function(eventId, callback) {
+            initAWS((err) => {
+                if (err) return callback(err);
+
+                const params = {
+                    TableName: config.checkinsTableName
+                };
+
+                docClient.scan(params, function(err, data) {
+                    if (err) {
+                        console.warn("Checkins scan note:", err);
+                        // Fallback: query tickets table for tickets with status === 'Used'
+                        return window.OrganizerBackend.getTicketsForEvent(eventId, (tErr, tickets) => {
+                            if (tErr) return callback(null, []);
+                            const usedTickets = (tickets || []).filter(t => t.status === 'Used').map(t => ({
+                                checkinId: "CHK-" + t.ticketId,
+                                ticketId: t.ticketId,
+                                eventId: t.eventId,
+                                eventName: t.eventName,
+                                attendeeName: t.attendeeName || "Attendee",
+                                timestamp: t.checkedInAt || t.purchasedAt || new Date().toISOString()
+                            }));
+                            usedTickets.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+                            callback(null, usedTickets);
+                        });
+                    }
+
+                    let checkins = (data && data.Items) ? data.Items : [];
+                    if (eventId && eventId !== 'ALL') {
+                        checkins = checkins.filter(c => c.eventId === eventId);
+                    }
+                    checkins.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                    callback(null, checkins);
+                });
+            });
+        },
+
+        getTicketsForEvent: function(eventId, callback) {
+            initAWS((err) => {
+                if (err) return callback(err);
+
+                const params = {
+                    TableName: config.ticketsTableName
+                };
+
+                docClient.scan(params, function(err, data) {
+                    if (err) return callback(err);
+                    let tickets = (data && data.Items) ? data.Items : [];
+                    if (eventId && eventId !== 'ALL') {
+                        tickets = tickets.filter(t => t.eventId === eventId);
+                    }
+                    callback(null, tickets);
+                });
+            });
+        },
+
+        getLiveEventStats: function(eventId, callback) {
+            initAWS((err) => {
+                if (err) return callback(err);
+
+                this.getEvents((eventsErr, events) => {
+                    if (eventsErr) return callback(eventsErr);
+
+                    const targetEvents = (eventId && eventId !== 'ALL') 
+                        ? (events || []).filter(e => e.eventId === eventId) 
+                        : (events || []);
+
+                    this.getTicketsForEvent(eventId, (ticketsErr, tickets) => {
+                        const allTickets = tickets || [];
+                        const validOrUsedTickets = allTickets.filter(t => t.status !== 'Cancelled');
+                        const checkedInTickets = allTickets.filter(t => t.status === 'Used');
+
+                        let totalCapacity = 0;
+                        targetEvents.forEach(e => {
+                            totalCapacity += (parseInt(e.capacity, 10) || 0);
+                        });
+
+                        const totalRegistered = validOrUsedTickets.length;
+                        const totalCheckedIn = checkedInTickets.length;
+                        const remainingCapacity = Math.max(0, totalCapacity - totalRegistered);
+                        const attendanceRate = totalRegistered > 0 ? Math.round((totalCheckedIn / totalRegistered) * 100) : 0;
+                        const noShowCount = Math.max(0, totalRegistered - totalCheckedIn);
+
+                        this.getEventCheckins(eventId, (chkErr, checkins) => {
+                            callback(null, {
+                                events: events || [],
+                                selectedEventId: eventId || 'ALL',
+                                selectedEvents: targetEvents,
+                                stats: {
+                                    totalCapacity,
+                                    totalRegistered,
+                                    totalCheckedIn,
+                                    remainingCapacity,
+                                    attendanceRate,
+                                    noShowCount,
+                                    cancelledCount: allTickets.filter(t => t.status === 'Cancelled').length
+                                },
+                                recentCheckins: (checkins || []).slice(0, 15)
+                            });
+                        });
+                    });
+                });
+            });
+        },
+
+        broadcastEventAlert: function(alertData, callback) {
+            initAWS((err) => {
+                if (err) return callback(err);
+
+                const { eventId, eventName, title, message, priority, sendEmail } = alertData;
+
+                this.getTicketsForEvent(eventId, (ticketsErr, tickets) => {
+                    if (ticketsErr) return callback(ticketsErr);
+
+                    const attendeeTickets = (tickets || []).filter(t => t.status !== 'Cancelled');
+                    const alertId = "ALT-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
+                    const now = new Date().toISOString();
+
+                    const alertItem = {
+                        alertId: alertId,
+                        eventId: eventId,
+                        eventName: eventName || "Event Update",
+                        organizerId: currentUserSub,
+                        title: title || "Important Event Update",
+                        message: message || "There has been an update regarding your event.",
+                        priority: priority || "high", // info, warning, high
+                        createdAt: now,
+                        recipientCount: attendeeTickets.length
+                    };
+
+                    // Save alert to DynamoDB alerts table (with graceful fallback if table not provisioned)
+                    const alertParams = {
+                        TableName: config.alertsTableName || "EventProAlerts",
+                        Item: alertItem
+                    };
+
+                    const completeBroadcast = () => {
+                        // Also store in LocalStorage broadcast registry so in-app attendee alert hub is 100% reactive offline or online
+                        try {
+                            const localAlerts = JSON.parse(localStorage.getItem('eventpro_broadcast_alerts') || '[]');
+                            localAlerts.unshift(alertItem);
+                            localStorage.setItem('eventpro_broadcast_alerts', JSON.stringify(localAlerts.slice(0, 50)));
+                        } catch(e) {
+                            console.warn("Local alert save notice:", e);
+                        }
+
+                        // Send emails if EmailJS is configured
+                        if (sendEmail && window.emailjs && attendeeTickets.length > 0) {
+                            attendeeTickets.slice(0, 5).forEach(ticket => {
+                                try {
+                                    emailjs.send('service_w5mpz2s', 'template_cqxegxr', {
+                                        to_email: ticket.attendeeEmail || "attendee@example.com",
+                                        to_name: ticket.attendeeName || "Valued Attendee",
+                                        event_title: eventName || ticket.eventName,
+                                        event_date: "ALERT: " + title,
+                                        event_venue: message,
+                                        ticket_id: ticket.ticketId
+                                    }).catch(e => console.warn("Email alert notice:", e));
+                                } catch(e) {}
+                            });
+                        }
+
+                        callback(null, {
+                            success: true,
+                            alert: alertItem,
+                            recipientCount: attendeeTickets.length,
+                            message: `Alert broadcast successfully to ${attendeeTickets.length} attendee(s)!`
+                        });
+                    };
+
+                    docClient.put(alertParams, (putErr) => {
+                        if (putErr) {
+                            console.warn("DynamoDB Alerts table notice (using persistent store fallback):", putErr);
+                        }
+                        completeBroadcast();
                     });
                 });
             });

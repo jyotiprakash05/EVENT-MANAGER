@@ -342,6 +342,114 @@
                     else callback(null, data.Items);
                 });
             });
+        },
+
+        getAttendeeAlerts: function(callback) {
+            initAWS((err) => {
+                if (err) return callback(err);
+
+                this.getMyBookings((bookErr, tickets) => {
+                    const myTickets = (tickets || []).filter(t => t.status !== 'Cancelled');
+                    const myEventIds = myTickets.map(t => t.eventId).filter(Boolean);
+
+                    const readList = JSON.parse(localStorage.getItem('eventpro_read_alerts_' + (currentUserSub || 'anon')) || '[]');
+
+                    // 1. Gather DynamoDB / stored broadcast alerts
+                    const fetchStoredAlerts = (done) => {
+                        const params = {
+                            TableName: config.alertsTableName || "EventProAlerts"
+                        };
+
+                        docClient.scan(params, (scanErr, data) => {
+                            let rawAlerts = [];
+                            if (!scanErr && data && data.Items) {
+                                rawAlerts = data.Items;
+                            }
+                            // Merge with local persistent broadcast pool
+                            try {
+                                const localPool = JSON.parse(localStorage.getItem('eventpro_broadcast_alerts') || '[]');
+                                localPool.forEach(lp => {
+                                    if (!rawAlerts.some(ra => ra.alertId === lp.alertId)) {
+                                        rawAlerts.push(lp);
+                                    }
+                                });
+                            } catch(e) {}
+                            done(rawAlerts);
+                        });
+                    };
+
+                    fetchStoredAlerts((allAlerts) => {
+                        // Filter for alerts matching the attendee's booked events
+                        let relevantAlerts = allAlerts.filter(a => myEventIds.includes(a.eventId) || a.eventId === 'ALL');
+
+                        // 2. Automated Smart Reminders for upcoming events
+                        const now = new Date();
+                        myTickets.forEach(ticket => {
+                            if (ticket.date && ticket.date !== 'TBD') {
+                                const eventDate = new Date(ticket.date);
+                                if (!isNaN(eventDate.getTime())) {
+                                    const diffHours = (eventDate - now) / (1000 * 60 * 60);
+                                    // Event happening within the next 48 hours or today
+                                    if (diffHours >= -6 && diffHours <= 48) {
+                                        const reminderId = `REM-${ticket.ticketId}`;
+                                        if (!relevantAlerts.some(a => a.alertId === reminderId)) {
+                                            relevantAlerts.push({
+                                                alertId: reminderId,
+                                                eventId: ticket.eventId,
+                                                eventName: ticket.eventName,
+                                                title: `⏰ Event Reminder: ${ticket.eventName}`,
+                                                message: `Your event is scheduled for ${ticket.date} at ${ticket.time || 'TBD'} (${ticket.location || 'TBA'}). Keep your ticket QR pass ready for check-in!`,
+                                                priority: "important",
+                                                type: "reminder",
+                                                createdAt: new Date().toISOString()
+                                            });
+                                        }
+                                    }
+                                }
+                            }
+                        });
+
+                        // Tag read state
+                        relevantAlerts.forEach(a => {
+                            a.isRead = readList.includes(a.alertId);
+                        });
+
+                        // Sort by createdAt descending
+                        relevantAlerts.sort((a,b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+                        const unreadCount = relevantAlerts.filter(a => !a.isRead).length;
+                        callback(null, relevantAlerts, unreadCount);
+                    });
+                });
+            });
+        },
+
+        markAlertAsRead: function(alertId, callback) {
+            try {
+                const key = 'eventpro_read_alerts_' + (currentUserSub || 'anon');
+                const readList = JSON.parse(localStorage.getItem(key) || '[]');
+                if (!readList.includes(alertId)) {
+                    readList.push(alertId);
+                    localStorage.setItem(key, JSON.stringify(readList));
+                }
+                if (callback) callback(null);
+            } catch(e) {
+                if (callback) callback(e);
+            }
+        },
+
+        markAllAlertsAsRead: function(alertIds, callback) {
+            try {
+                const key = 'eventpro_read_alerts_' + (currentUserSub || 'anon');
+                let readList = JSON.parse(localStorage.getItem(key) || '[]');
+                (alertIds || []).forEach(id => {
+                    if (!readList.includes(id)) readList.push(id);
+                });
+                localStorage.setItem(key, JSON.stringify(readList));
+                if (callback) callback(null);
+            } catch(e) {
+                if (callback) callback(e);
+            }
         }
     };
 })();

@@ -64,35 +64,179 @@
                 </div>
             </header>
 
-            <section class="scanner-container">
-                <div style="text-align: center; margin-bottom: 24px;">
-                    <h3 style="margin: 0 0 8px;">Scan QR Code</h3>
-                    <p style="color: var(--muted); margin: 0;">Position the QR code within the frame to scan.</p>
-                </div>
-                
-                <div id="reader" style="width: 100%; max-width: 500px; border-radius: 16px; overflow: hidden; border: 2px solid var(--border); margin-bottom: 24px; background: #000;"></div>
-
-                <div style="width: 100%; border-top: 1px solid var(--border); margin: 24px 0;"></div>
-
-                <div style="width: 100%;">
-                    <h4 style="margin: 0 0 12px; color: var(--muted);">Manual Entry</h4>
-                    <div class="manual-entry">
-                        <input type="text" id="ticketCode" class="form-control" placeholder="Enter ticket code (e.g. TKT-1234)">
-                        <button type="button" id="verifyTicketBtn" class="btn-primary">Verify</button>
+            <!-- Scanner Configuration Bar -->
+            <section style="background: var(--bg-panel); border: 1px solid var(--border); border-radius: 16px; padding: 18px 24px; margin-bottom: 24px; display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between;">
+                <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: center;">
+                    <div>
+                        <label style="font-size: 0.8rem; color: var(--muted); display: block; margin-bottom: 4px; font-weight: 600;">ACTIVE EVENT FILTER</label>
+                        <select id="eventFilterSelect" class="form-control" style="background: var(--bg-dark); color: var(--text); border: 1px solid var(--border); padding: 8px 14px; border-radius: 8px; font-size: 0.9rem; min-width: 240px;">
+                            <option value="ALL">All Active Events</option>
+                        </select>
                     </div>
-                    <div id="scanResult" style="margin-top: 16px; font-weight: 600; text-align: center;"></div>
+                </div>
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--muted); cursor: pointer; user-select: none;">
+                        <input type="checkbox" id="soundToggle" checked style="accent-color: var(--primary); width: 16px; height: 16px;">
+                        <span>🔊 Audio Feedback</span>
+                    </label>
+                    <span id="scanModeBadge" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; background: rgba(16, 185, 129, 0.15); color: var(--primary); border: 1px solid rgba(16, 185, 129, 0.3);">
+                        <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--primary); display: inline-block;"></span>
+                        Duplicate-Proof Active
+                    </span>
                 </div>
             </section>
+
+            <div style="display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 24px; align-items: start;">
+                <!-- Left Column: Camera Reader & Manual Entry -->
+                <section class="scanner-container" style="margin-top: 0;">
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <h3 style="margin: 0 0 6px;">Camera QR Scanner</h3>
+                        <p style="color: var(--muted); margin: 0; font-size: 0.9rem;">Position the attendee ticket QR code inside the viewfinder</p>
+                    </div>
+                    
+                    <div id="reader" style="width: 100%; border-radius: 16px; overflow: hidden; border: 2px solid var(--border); margin-bottom: 20px; background: #000;"></div>
+
+                    <div style="width: 100%; border-top: 1px solid var(--border); margin: 20px 0;"></div>
+
+                    <div style="width: 100%;">
+                        <h4 style="margin: 0 0 10px; color: var(--muted); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em;">Manual Ticket Verification</h4>
+                        <div class="manual-entry" style="display: flex; gap: 10px;">
+                            <input type="text" id="ticketCode" class="form-control" placeholder="Enter Ticket ID (e.g. TKT-1728...)" style="flex: 1; padding: 12px 16px; border-radius: 10px; background: var(--bg-dark); border: 1px solid var(--border); color: var(--text);">
+                            <button type="button" id="verifyTicketBtn" class="btn-primary" style="padding: 12px 24px; border-radius: 10px; font-weight: 700; background: var(--primary); color: #fff; border: none; cursor: pointer;">Verify</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Right Column: Instant Verification Card & Scan Feed -->
+                <div style="display: flex; flex-direction: column; gap: 24px;">
+                    <!-- Verification Result Display Box -->
+                    <div id="verificationResultCard" style="background: var(--bg-panel); border: 1px solid var(--border); border-radius: 16px; padding: 24px; min-height: 200px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; transition: all 0.3s ease;">
+                        <div id="resultPlaceholder">
+                            <div style="font-size: 2.8rem; margin-bottom: 12px; opacity: 0.5;">🎟️</div>
+                            <h4 style="margin: 0 0 6px; color: var(--text);">Ready to Scan</h4>
+                            <p style="margin: 0; color: var(--muted); font-size: 0.85rem;">Scan a QR code or enter a Ticket ID to verify admission instantly.</p>
+                        </div>
+
+                        <!-- Dynamic Content Inserted Here -->
+                        <div id="resultContent" style="display: none; width: 100%;"></div>
+                    </div>
+
+                    <!-- Live Check-in Stream at this Scanner -->
+                    <div style="background: var(--bg-panel); border: 1px solid var(--border); border-radius: 16px; padding: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                            <h4 style="margin: 0; font-size: 1rem; display: flex; align-items: center; gap: 8px;">
+                                <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #10b981;"></span>
+                                Live Check-in Stream
+                            </h4>
+                            <span id="sessionScanCount" style="font-size: 0.8rem; background: rgba(255,255,255,0.08); padding: 4px 10px; border-radius: 12px; color: var(--muted);">0 verified this session</span>
+                        </div>
+                        <div id="recentScansList" style="display: flex; flex-direction: column; gap: 10px; max-height: 260px; overflow-y: auto;">
+                            <p style="color: var(--muted); font-size: 0.85rem; text-align: center; margin: 20px 0;">No check-ins recorded yet in this session.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
 
     <script>
+        // Web Audio API Synthesizer for high-throughput gate operations
+        const GateAudio = {
+            ctx: null,
+            init: function() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) this.ctx = new AudioCtx();
+                }
+            },
+            playSuccess: function() {
+                if (!document.getElementById('soundToggle').checked) return;
+                try {
+                    this.init();
+                    if (!this.ctx) return;
+                    if (this.ctx.state === 'suspended') this.ctx.resume();
+
+                    const now = this.ctx.currentTime;
+                    // First harmonic chime
+                    const osc1 = this.ctx.createOscillator();
+                    const gain1 = this.ctx.createGain();
+                    osc1.type = 'sine';
+                    osc1.frequency.setValueAtTime(880, now); // A5
+                    gain1.gain.setValueAtTime(0.2, now);
+                    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+                    osc1.connect(gain1);
+                    gain1.connect(this.ctx.destination);
+                    osc1.start(now);
+                    osc1.stop(now + 0.15);
+
+                    // Second harmonic chime (Major third up)
+                    const osc2 = this.ctx.createOscillator();
+                    const gain2 = this.ctx.createGain();
+                    osc2.type = 'sine';
+                    osc2.frequency.setValueAtTime(1320, now + 0.10); // E6
+                    gain2.gain.setValueAtTime(0.25, now + 0.10);
+                    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+                    osc2.connect(gain2);
+                    gain2.connect(this.ctx.destination);
+                    osc2.start(now + 0.10);
+                    osc2.stop(now + 0.35);
+                } catch(e) {
+                    console.warn("Audio chime notice:", e);
+                }
+            },
+            playError: function() {
+                if (!document.getElementById('soundToggle').checked) return;
+                try {
+                    this.init();
+                    if (!this.ctx) return;
+                    if (this.ctx.state === 'suspended') this.ctx.resume();
+
+                    const now = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(200, now);
+                    osc.frequency.linearRampToValueAtTime(110, now + 0.35);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.35);
+                } catch(e) {
+                    console.warn("Audio buzz notice:", e);
+                }
+            }
+        };
+
         document.addEventListener("DOMContentLoaded", function() {
             let lastScannedCode = null;
             let scanTimeout = null;
+            let sessionScans = [];
 
+            // 1. Populate Event Filter with Organizer's Active Events
+            function loadOrganizerEvents() {
+                if (!window.OrganizerBackend) {
+                    setTimeout(loadOrganizerEvents, 400);
+                    return;
+                }
+                window.OrganizerBackend.getEvents((err, events) => {
+                    if (!err && events && events.length > 0) {
+                        const select = document.getElementById('eventFilterSelect');
+                        select.innerHTML = '<option value="ALL">All Active Events</option>';
+                        events.forEach(evt => {
+                            const opt = document.createElement('option');
+                            opt.value = evt.eventId;
+                            opt.textContent = `${evt.eventName} (${evt.date || 'TBD'})`;
+                            select.appendChild(opt);
+                        });
+                    }
+                });
+            }
+            loadOrganizerEvents();
+
+            // 2. Setup QR Scanner Viewfinder
             function onScanSuccess(decodedText, decodedResult) {
-                // Extract Ticket ID if it's the multi-line format
                 let ticketId = decodedText;
                 if (decodedText.includes('Ticket ID:')) {
                     const match = decodedText.match(/Ticket ID:\s*([^\n]+)/);
@@ -103,70 +247,203 @@
                     ticketId = decodedText.trim();
                 }
 
-                // Avoid duplicate scans
                 if (ticketId === lastScannedCode) {
                     return;
                 }
 
                 lastScannedCode = ticketId;
-                
-                // Reset the last scanned code after 5 seconds to allow re-scanning if necessary
                 if (scanTimeout) clearTimeout(scanTimeout);
                 scanTimeout = setTimeout(() => {
                     lastScannedCode = null;
-                }, 5000);
+                }, 4000);
 
                 document.getElementById('ticketCode').value = ticketId;
                 document.getElementById('verifyTicketBtn').click();
             }
 
             function onScanFailure(error) {
-                // handle scan failure, usually better to ignore and keep scanning
+                // Ignore transient frame scan errors
             }
 
-            let html5QrcodeScanner = new Html5QrcodeScanner(
-                "reader",
-                { fps: 10, qrbox: {width: 250, height: 250} },
-                /* verbose= */ false);
-            html5QrcodeScanner.render(onScanSuccess, onScanFailure);
-        });
-
-        document.getElementById('verifyTicketBtn').addEventListener('click', function() {
-            const code = document.getElementById('ticketCode').value.trim();
-            const resultDiv = document.getElementById('scanResult');
-            const btn = document.getElementById('verifyTicketBtn');
-
-            if (!code) {
-                resultDiv.textContent = 'Please enter a ticket code.';
-                resultDiv.style.color = '#ef4444';
-                return;
+            try {
+                let html5QrcodeScanner = new Html5QrcodeScanner(
+                    "reader",
+                    { fps: 12, qrbox: { width: 260, height: 260 } },
+                    /* verbose= */ false
+                );
+                html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+            } catch(e) {
+                console.warn("Html5QrcodeScanner init notice:", e);
             }
 
-            if (!window.OrganizerBackend) {
-                resultDiv.textContent = 'Backend not initialized.';
-                resultDiv.style.color = '#ef4444';
-                return;
-            }
+            // 3. Process Ticket Verification with Atomic Concurrency
+            document.getElementById('verifyTicketBtn').addEventListener('click', function() {
+                const code = document.getElementById('ticketCode').value.trim();
+                const card = document.getElementById('verificationResultCard');
+                const placeholder = document.getElementById('resultPlaceholder');
+                const content = document.getElementById('resultContent');
+                const btn = document.getElementById('verifyTicketBtn');
+                const selectedEventId = document.getElementById('eventFilterSelect').value;
 
-            btn.textContent = 'Checking...';
-            btn.disabled = true;
-            resultDiv.textContent = '';
-
-            window.OrganizerBackend.checkInTicket(code, function(err, result) {
-                btn.textContent = 'Verify';
-                btn.disabled = false;
-                
-                if (err) {
-                    resultDiv.textContent = '❌ Invalid or not found: ' + err.message;
-                    resultDiv.style.color = '#ef4444';
-                } else if (!result.success) {
-                    resultDiv.textContent = '⚠️ ' + result.message;
-                    resultDiv.style.color = '#f59e0b';
-                } else {
-                    resultDiv.textContent = '✅ ' + result.message;
-                    resultDiv.style.color = '#10b981';
+                if (!code) {
+                    showWarningCard("Empty Code", "Please scan a QR code or type a ticket ID.");
+                    return;
                 }
+
+                if (!window.OrganizerBackend) {
+                    showWarningCard("Connecting...", "Organizer backend is initializing. Please retry in a moment.");
+                    return;
+                }
+
+                btn.textContent = 'Verifying...';
+                btn.disabled = true;
+
+                const options = {
+                    expectedEventId: selectedEventId !== 'ALL' ? selectedEventId : null
+                };
+
+                window.OrganizerBackend.checkInTicket(code, options, function(err, result) {
+                    btn.textContent = 'Verify';
+                    btn.disabled = false;
+
+                    if (err) {
+                        GateAudio.playError();
+                        showErrorCard("Validation Error", err.message || "Ticket could not be verified in database.");
+                        return;
+                    }
+
+                    if (!result.success) {
+                        GateAudio.playError();
+                        if (result.duplicate) {
+                            showDuplicateCard(result.ticket, result.message, result.raceConditionBlocked);
+                        } else if (result.differentEvent) {
+                            showWarningCard("Wrong Event Venue", result.message);
+                        } else {
+                            showWarningCard("Entry Prohibited", result.message);
+                        }
+                    } else {
+                        GateAudio.playSuccess();
+                        showSuccessCard(result.ticket, result.checkin);
+                        addSessionScan(result.ticket, "Valid");
+                    }
+                });
             });
+
+            // Card Rendering Helpers
+            function showSuccessCard(ticket, checkin) {
+                const card = document.getElementById('verificationResultCard');
+                const placeholder = document.getElementById('resultPlaceholder');
+                const content = document.getElementById('resultContent');
+
+                placeholder.style.display = 'none';
+                content.style.display = 'block';
+
+                card.style.borderColor = '#10b981';
+                card.style.background = 'linear-gradient(180deg, rgba(16, 185, 129, 0.12) 0%, var(--bg-panel) 100%)';
+
+                content.innerHTML = `
+                    <div style="font-size: 3rem; margin-bottom: 8px;">✅</div>
+                    <span style="background: #10b981; color: #fff; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; padding: 4px 14px; border-radius: 20px; display: inline-block; margin-bottom: 12px;">ENTRY APPROVED</span>
+                    <h3 style="margin: 0 0 4px; color: var(--text); font-size: 1.3rem;">${ticket.attendeeName || 'Attendee'}</h3>
+                    <p style="margin: 0 0 16px; color: var(--muted); font-size: 0.9rem;">${ticket.eventName || 'Event'}</p>
+                    
+                    <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(16,185,129,0.3); border-radius: 12px; padding: 12px 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; text-align: left; font-size: 0.85rem;">
+                        <div><strong style="color:var(--muted); display:block; font-size:0.75rem;">TICKET ID</strong><span style="font-family:monospace; color:#34d399;">${ticket.ticketId.substring(0, 14)}...</span></div>
+                        <div><strong style="color:var(--muted); display:block; font-size:0.75rem;">STATUS</strong><span style="color:#10b981; font-weight:700;">Verified Admitted</span></div>
+                        <div><strong style="color:var(--muted); display:block; font-size:0.75rem;">ATTENDEE</strong><span style="color:#f8fafc;">${ticket.attendeeName || 'Attendee'}</span></div>
+                        <div><strong style="color:var(--muted); display:block; font-size:0.75rem;">TIME</strong><span style="color:#f8fafc;">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'})}</span></div>
+                    </div>
+                `;
+            }
+
+            function showDuplicateCard(ticket, message, isAtomicBlocked) {
+                const card = document.getElementById('verificationResultCard');
+                const placeholder = document.getElementById('resultPlaceholder');
+                const content = document.getElementById('resultContent');
+
+                placeholder.style.display = 'none';
+                content.style.display = 'block';
+
+                card.style.borderColor = '#ef4444';
+                card.style.background = 'linear-gradient(180deg, rgba(239, 68, 68, 0.16) 0%, var(--bg-panel) 100%)';
+
+                const firstTime = ticket && ticket.checkedInAt ? new Date(ticket.checkedInAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'}) : 'earlier';
+
+                content.innerHTML = `
+                    <div style="font-size: 3rem; margin-bottom: 8px;">🚫</div>
+                    <span style="background: #ef4444; color: #fff; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; padding: 4px 14px; border-radius: 20px; display: inline-block; margin-bottom: 12px;">DUPLICATE REJECTED</span>
+                    <h3 style="margin: 0 0 6px; color: #fca5a5; font-size: 1.2rem;">Pass Already Used</h3>
+                    <p style="margin: 0 0 16px; color: var(--muted); font-size: 0.85rem;">${message}</p>
+                    
+                    <div style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); border-radius: 12px; padding: 12px 16px; text-align: left; font-size: 0.85rem; color: #fecaca;">
+                        <p style="margin: 0 0 4px;"><strong>Original Check-in Time:</strong> ${firstTime}</p>
+                        <p style="margin: 0; font-size: 0.8rem; color: #f87171;">${isAtomicBlocked ? '⚡ Atomic concurrency lock blocked simultaneous multi-device scan.' : 'Second admittance attempt blocked. Ticket has already been validated.'}</p>
+                    </div>
+                `;
+            }
+
+            function showWarningCard(title, message) {
+                const card = document.getElementById('verificationResultCard');
+                const placeholder = document.getElementById('resultPlaceholder');
+                const content = document.getElementById('resultContent');
+
+                placeholder.style.display = 'none';
+                content.style.display = 'block';
+
+                card.style.borderColor = '#f59e0b';
+                card.style.background = 'linear-gradient(180deg, rgba(245, 158, 11, 0.12) 0%, var(--bg-panel) 100%)';
+
+                content.innerHTML = `
+                    <div style="font-size: 2.8rem; margin-bottom: 8px;">⚠️</div>
+                    <span style="background: #f59e0b; color: #111; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; padding: 4px 14px; border-radius: 20px; display: inline-block; margin-bottom: 12px;">ATTENTION</span>
+                    <h3 style="margin: 0 0 6px; color: #fde68a;">${title}</h3>
+                    <p style="margin: 0; color: var(--muted); font-size: 0.9rem;">${message}</p>
+                `;
+            }
+
+            function showErrorCard(title, message) {
+                const card = document.getElementById('verificationResultCard');
+                const placeholder = document.getElementById('resultPlaceholder');
+                const content = document.getElementById('resultContent');
+
+                placeholder.style.display = 'none';
+                content.style.display = 'block';
+
+                card.style.borderColor = '#ef4444';
+                card.style.background = 'linear-gradient(180deg, rgba(239, 68, 68, 0.12) 0%, var(--bg-panel) 100%)';
+
+                content.innerHTML = `
+                    <div style="font-size: 2.8rem; margin-bottom: 8px;">❌</div>
+                    <h3 style="margin: 0 0 6px; color: #fca5a5;">${title}</h3>
+                    <p style="margin: 0; color: var(--muted); font-size: 0.85rem;">${message}</p>
+                `;
+            }
+
+            function addSessionScan(ticket, status) {
+                sessionScans.unshift({
+                    ticketId: ticket.ticketId,
+                    attendeeName: ticket.attendeeName || 'Attendee',
+                    eventName: ticket.eventName || 'Event',
+                    status: status,
+                    time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'})
+                });
+
+                document.getElementById('sessionScanCount').textContent = `${sessionScans.length} verified this session`;
+
+                const list = document.getElementById('recentScansList');
+                list.innerHTML = sessionScans.slice(0, 8).map(scan => `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(0,0,0,0.25); border-radius: 8px; border-left: 3px solid #10b981; font-size: 0.85rem;">
+                        <div>
+                            <strong style="color: var(--text);">${scan.attendeeName}</strong>
+                            <div style="font-size: 0.75rem; color: var(--muted); font-family: monospace;">${scan.ticketId.substring(0, 10)}...</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <span style="font-size: 0.75rem; color: #34d399; font-weight: 600;">Approved</span>
+                            <div style="font-size: 0.75rem; color: var(--muted);">${scan.time}</div>
+                        </div>
+                    </div>
+                `).join('');
+            }
         });
     </script>
 </body>

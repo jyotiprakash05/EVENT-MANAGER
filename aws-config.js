@@ -9,5 +9,6 @@ window.EVENTPRO_AWS_CONFIG = {
     paymentsTableName: "EventProPayments",
     checkinsTableName: "EventProCheckins",
     reviewsTableName: "EventProReviews",
+    alertsTableName: "EventProAlerts",
     s3BucketName: "eventpro-images" // Replace with your actual S3 bucket name
 };

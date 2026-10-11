@@ -56,10 +56,13 @@
         <main class="main-panel">
             <header class="topbar">
                 <div>
-                    <p class="eyebrow">Organizer Overview</p>
-                    <h1>Reports & Analytics</h1>
+                    <p class="eyebrow">Real-Time Operations</p>
+                    <h1>Live Event Command Center</h1>
                 </div>
-                <div class="topbar-actions">
+                <div class="topbar-actions" style="display: flex; gap: 12px; align-items: center;">
+                    <button id="openBroadcastModalBtn" class="primary-btn" style="background: linear-gradient(135deg, #3b82f6, #2563eb); padding: 8px 16px; font-size: 0.85rem; display: flex; align-items: center; gap: 6px;">
+                        <span>📢</span> Broadcast Alert
+                    </button>
                     <div class="user-pill" onclick="window.location.href='Account_settings_organizer.html'" style="cursor:pointer">
                         <span class="user-avatar">?</span>
                         <span>Loading...</span>
@@ -67,75 +70,176 @@
                 </div>
             </header>
 
-            <!-- Analytics Summary Grid -->
-            <section class="analytics-grid">
-                <div class="stat-card revenue">
-                    <span>Available Balance</span>
-                    <strong id="availableBalance">₹0</strong>
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
-                        <span style="font-size: 0.85rem; color: var(--muted);" id="totalRevenueText">Total Earned: ₹0</span>
-                        <button id="withdrawBtn" class="primary-btn" style="padding: 4px 12px; font-size: 0.85rem;">Withdraw</button>
+            <!-- Control Bar: Event Filter & Live Pulse -->
+            <section style="background: var(--bg-panel); border: 1px solid var(--border); border-radius: 16px; padding: 16px 20px; margin-bottom: 24px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px;">
+                <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                    <span style="font-size: 0.85rem; font-weight: 700; color: var(--muted); text-transform: uppercase;">Select Scope:</span>
+                    <select id="dashboardEventFilter" class="form-control" style="background: var(--bg-dark); color: var(--text); border: 1px solid var(--border); padding: 8px 14px; border-radius: 8px; font-size: 0.9rem; min-width: 240px;">
+                        <option value="ALL">All Events (Consolidated Overview)</option>
+                    </select>
+                </div>
+                <div style="display: flex; align-items: center; gap: 14px;">
+                    <div id="livePulseBadge" style="display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; background: rgba(16, 185, 129, 0.15); color: var(--primary); border: 1px solid rgba(16, 185, 129, 0.3);">
+                        <span id="pulseDot" style="width: 8px; height: 8px; border-radius: 50%; background: var(--primary); display: inline-block; box-shadow: 0 0 8px var(--primary); animation: livePulseAnim 1.5s infinite;"></span>
+                        <span id="pulseText">Live Sync Active</span>
                     </div>
-                </div>
-                <div class="stat-card tickets">
-                    <span>Tickets Sold</span>
-                    <strong id="totalTickets">0</strong>
-                    <div class="stat-trend trend-up">↑ Based on active events</div>
-                </div>
-                <div class="stat-card views">
-                    <span>Event Page Views</span>
-                    <strong id="totalViews">0</strong>
-                    <div class="stat-trend trend-flat">→ Based on active events</div>
+                    <button id="toggleSyncBtn" style="background: transparent; border: 1px solid var(--border); color: var(--muted); padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; cursor: pointer;">Pause</button>
                 </div>
             </section>
 
-            <!-- Charts Section -->
-            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
-                <!-- Main Chart -->
-                <div class="chart-card">
-                    <h3>Revenue Over Time</h3>
-                    <div class="chart-placeholder">
-                        <div class="bar" style="height: 30%;" title="Jan: $2,000"></div>
-                        <div class="bar" style="height: 45%;" title="Feb: $3,500"></div>
-                        <div class="bar" style="height: 40%;" title="Mar: $3,100"></div>
-                        <div class="bar" style="height: 60%;" title="Apr: $5,200"></div>
-                        <div class="bar" style="height: 55%;" title="May: $4,800"></div>
-                        <div class="bar" style="height: 80%;" title="Jun: $7,100"></div>
-                        <div class="bar" style="height: 75%;" title="Jul: $6,500"></div>
-                        <div class="bar" style="height: 90%;" title="Aug: $8,000"></div>
-                        <div class="bar" style="height: 100%;" title="Sep: $9,500"></div>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; margin-top: 12px; color: var(--muted); font-size: 0.8rem;">
-                        <span>Jan</span>
-                        <span>Mar</span>
-                        <span>May</span>
-                        <span>Jul</span>
-                        <span>Sep</span>
+            <!-- Live Operations Metrics Grid -->
+            <section class="analytics-grid" style="grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 18px; margin-bottom: 24px;">
+                <!-- Live Attendance Rate Gauge -->
+                <div class="stat-card" style="border-left: 4px solid var(--primary); position: relative; overflow: hidden;">
+                    <div style="display: flex; justify-content: space-between; align-items: start;">
+                        <div>
+                            <span style="color: var(--muted); font-size: 0.85rem; font-weight: 600;">Live Attendance Rate</span>
+                            <strong id="liveAttendancePercent" style="font-size: 2.2rem; display: block; margin: 4px 0; color: #34d399;">0%</strong>
+                            <small id="checkinRatioText" style="color: var(--muted); font-size: 0.8rem;">0 of 0 checked in</small>
+                        </div>
+                        <div style="width: 54px; height: 54px; position: relative;">
+                            <svg viewBox="0 0 36 36" style="width: 100%; height: 100%; transform: rotate(-90deg);">
+                                <path stroke="rgba(255,255,255,0.08)" stroke-width="3.8" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                <path id="attendanceCircle" stroke="var(--primary)" stroke-dasharray="0, 100" stroke-width="3.8" stroke-linecap="round" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            </svg>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Secondary Stats -->
+                <!-- Remaining Capacity & Hall Density -->
+                <div class="stat-card" style="border-left: 4px solid #3b82f6;">
+                    <span style="color: var(--muted); font-size: 0.85rem; font-weight: 600;">Remaining Capacity</span>
+                    <strong id="remainingCapacityText" style="font-size: 2.2rem; display: block; margin: 4px 0; color: #60a5fa;">0</strong>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
+                        <span id="capacityStatusBadge" style="font-size: 0.75rem; padding: 2px 8px; border-radius: 12px; background: rgba(59, 130, 246, 0.15); color: #93c5fd; font-weight: 600;">Available</span>
+                        <small id="totalCapacitySubtext" style="color: var(--muted); font-size: 0.8rem;">Capacity: 0</small>
+                    </div>
+                </div>
+
+                <!-- Registrations vs No-Shows -->
+                <div class="stat-card" style="border-left: 4px solid #f59e0b;">
+                    <span style="color: var(--muted); font-size: 0.85rem; font-weight: 600;">Registered Attendees</span>
+                    <strong id="totalRegisteredText" style="font-size: 2.2rem; display: block; margin: 4px 0; color: #fbbf24;">0</strong>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
+                        <span style="color: var(--muted); font-size: 0.8rem;" id="noShowText">⏳ 0 Expected / Arriving</span>
+                    </div>
+                </div>
+
+                <!-- Financial Balance -->
+                <div class="stat-card revenue" style="border-left: 4px solid #10b981;">
+                    <span style="color: var(--muted); font-size: 0.85rem; font-weight: 600;">Available Balance</span>
+                    <strong id="availableBalance" style="font-size: 2.2rem; display: block; margin: 4px 0;">₹0</strong>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
+                        <span style="font-size: 0.8rem; color: var(--muted);" id="totalRevenueText">Earned: ₹0</span>
+                        <button id="withdrawBtn" class="primary-btn" style="padding: 2px 10px; font-size: 0.8rem;">Withdraw</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Dual Columns: Live Check-in Stream & Performance Breakdown -->
+            <div style="display: grid; grid-template-columns: 1.3fr 0.9fr; gap: 24px; align-items: start;">
+                <!-- Real-Time Activity Feed -->
+                <div style="background: var(--bg-panel); border: 1px solid var(--border); border-radius: 16px; padding: 24px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+                        <div>
+                            <h3 style="margin: 0 0 4px; font-size: 1.15rem; display: flex; align-items: center; gap: 8px;">
+                                <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #10b981; box-shadow: 0 0 10px #10b981;"></span>
+                                Real-Time Check-In Feed
+                            </h3>
+                            <p style="margin: 0; color: var(--muted); font-size: 0.85rem;">Live stream of verified entries as they arrive at the venue</p>
+                        </div>
+                        <span id="lastSyncedTime" style="font-size: 0.75rem; color: var(--muted);">Just synced</span>
+                    </div>
+
+                    <div id="liveFeedContainer" style="display: flex; flex-direction: column; gap: 12px; max-height: 420px; overflow-y: auto;">
+                        <p style="color: var(--muted); text-align: center; padding: 30px;">Loading live activity stream...</p>
+                    </div>
+                </div>
+
+                <!-- Secondary Breakdown & Top Event -->
                 <div style="display: flex; flex-direction: column; gap: 24px;">
-                    <div class="form-section" style="flex: 1;">
+                    <div class="form-section" style="margin: 0;">
                         <h3 style="margin: 0 0 16px; font-size: 1.1rem; color: var(--muted);">Top Selling Event</h3>
-                        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 12px;">
-                            <div class="event-thumb" id="topEventInitial" style="width: 48px; height: 48px;">--</div>
+                        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 14px;">
+                            <div class="event-thumb" id="topEventInitial" style="width: 52px; height: 52px; border-radius: 12px; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.2rem;">--</div>
                             <div>
-                                <h4 id="topEventName" style="margin: 0; font-size: 1rem;">No sales yet</h4>
-                                <p id="topEventRevenue" style="margin: 0; color: var(--primary); font-weight: 600;">₹0</p>
+                                <h4 id="topEventName" style="margin: 0; font-size: 1.05rem;">No sales yet</h4>
+                                <p id="topEventRevenue" style="margin: 2px 0 0; color: var(--primary); font-weight: 700; font-size: 1rem;">₹0</p>
                             </div>
                         </div>
                         <p id="topEventTickets" style="margin: 0; color: var(--muted); font-size: 0.85rem;">0 Tickets Sold</p>
                     </div>
 
-                    <div class="form-section" style="flex: 1;">
-                        <h3 style="margin: 0 0 16px; font-size: 1.1rem; color: var(--muted);">Conversion Rate</h3>
-                        <strong style="font-size: 2.5rem; display: block; color: var(--text);">14.7%</strong>
-                        <div class="stat-trend trend-up">↑ 2.1% from last month</div>
+                    <div class="form-section" style="margin: 0;">
+                        <h3 style="margin: 0 0 12px; font-size: 1.1rem; color: var(--muted);">Attendance Flow & Capacity</h3>
+                        <div style="margin-bottom: 12px;">
+                            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 4px;">
+                                <span>Checked-in Attendees</span>
+                                <strong id="progressCheckedInPercent">0%</strong>
+                            </div>
+                            <div style="width: 100%; height: 8px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden;">
+                                <div id="progressBarCheckedIn" style="width: 0%; height: 100%; background: var(--primary); transition: width 0.5s ease;"></div>
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; text-align: center; margin-top: 16px;">
+                            <div style="background: var(--bg-dark); padding: 12px; border-radius: 10px; border: 1px solid var(--border);">
+                                <span style="font-size: 0.75rem; color: var(--muted); display: block;">ENTRIES LOGGED</span>
+                                <strong id="entriesLoggedStat" style="font-size: 1.3rem; color: #10b981;">0</strong>
+                            </div>
+                            <div style="background: var(--bg-dark); padding: 12px; border-radius: 10px; border: 1px solid var(--border);">
+                                <span style="font-size: 0.75rem; color: var(--muted); display: block;">REMAINING PASSES</span>
+                                <strong id="remainingPassesStat" style="font-size: 1.3rem; color: #60a5fa;">0</strong>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </main>
+    </div>
+
+    <!-- Broadcast Announcement Modal -->
+    <div id="broadcastModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; justify-content:center; align-items:center;">
+        <div style="background:var(--bg-panel); padding:32px; border-radius:18px; width:90%; max-width:480px; box-shadow:0 10px 40px rgba(0,0,0,0.6); position:relative; border: 1px solid var(--border);">
+            <button onclick="document.getElementById('broadcastModal').style.display='none'" style="position:absolute; top:16px; right:16px; background:transparent; border:none; color:var(--text); cursor:pointer; font-size:1.3rem;">✖</button>
+            <h2 style="margin: 0 0 6px; font-size: 1.35rem; display: flex; align-items: center; gap: 8px;">
+                <span>📢</span> Send Event Alert
+            </h2>
+            <p style="color:var(--muted); margin-bottom:20px; font-size:0.85rem;">Broadcast an instant push notice & email to all registered ticket holders.</p>
+
+            <div class="form-group" style="margin-bottom: 14px;">
+                <label style="font-size: 0.85rem; color: var(--muted); display: block; margin-bottom: 4px;">TARGET EVENT</label>
+                <select id="broadcastEventSelect" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--bg-body); color:var(--text);"></select>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 14px;">
+                <label style="font-size: 0.85rem; color: var(--muted); display: block; margin-bottom: 4px;">ALERT TITLE</label>
+                <input type="text" id="broadcastTitle" placeholder="E.g., Keynote Session moved to Hall B" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--bg-body); color:var(--text);" required>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 14px;">
+                <label style="font-size: 0.85rem; color: var(--muted); display: block; margin-bottom: 4px;">ALERT MESSAGE</label>
+                <textarea id="broadcastMessage" rows="3" placeholder="Provide details about schedule change, parking update, or room allocation..." style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--bg-body); color:var(--text); resize: vertical;" required></textarea>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label style="font-size: 0.85rem; color: var(--muted); display: block; margin-bottom: 4px;">PRIORITY LEVEL</label>
+                <select id="broadcastPriority" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--bg-body); color:var(--text);">
+                    <option value="high">🚨 Urgent / Schedule Change</option>
+                    <option value="important">⚠️ Important Notice</option>
+                    <option value="info">ℹ️ General Reminder</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text); cursor: pointer;">
+                    <input type="checkbox" id="broadcastSendEmail" checked style="accent-color: var(--primary);">
+                    <span>Also send email dispatch to ticket holders</span>
+                </label>
+            </div>
+
+            <button id="submitBroadcastBtn" class="primary-btn" style="width:100%; padding:12px; font-weight:700;">Broadcast Alert Now</button>
+            <p id="broadcastStatus" style="text-align: center; margin-top: 10px; font-size: 0.85rem;"></p>
+        </div>
     </div>
 
     <!-- Withdrawal Modal -->
@@ -179,76 +283,282 @@
         </div>
     </div>
 
+    <style>
+        @keyframes livePulseAnim {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1.1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+    </style>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             let maxAvailable = 0;
-            
-            function loadAnalytics() {
-                if (window.OrganizerBackend) {
-                    window.OrganizerBackend.getUserProfile((err, profile) => {
-                        const withdrawnAmount = profile?.withdrawnAmount || 0;
-                        
-                        window.OrganizerBackend.getEvents(function(err, events) {
-                            if (err) {
-                                console.error("Failed to load events for analytics", err);
-                                return;
-                            }
+            let syncInterval = null;
+            let isSyncActive = true;
+            let cachedEvents = [];
 
-                            let totalRevenue = 0;
-                            let totalTickets = 0;
-                            let totalViews = 0;
-                            let topEvent = null;
-                            let maxRevenue = -1;
+            // Helper: Time-ago formatting
+            function formatTimeAgo(isoString) {
+                if (!isoString) return 'recently';
+                const date = new Date(isoString);
+                if (isNaN(date.getTime())) return 'recently';
+                const seconds = Math.floor((new Date() - date) / 1000);
+                if (seconds < 10) return 'just now';
+                if (seconds < 60) return `${seconds}s ago`;
+                const minutes = Math.floor(seconds / 60);
+                if (minutes < 60) return `${minutes}m ago`;
+                const hours = Math.floor(minutes / 60);
+                if (hours < 24) return `${hours}h ago`;
+                return date.toLocaleDateString();
+            }
 
-                            events.forEach(event => {
-                                const tickets = event.ticketsSold || 0;
-                                const price = event.price || 0;
-                                const rev = event.revenue || (tickets * price) || 0;
-                                
-                                totalTickets += tickets;
-                                totalRevenue += rev;
-                                totalViews += (event.views || (tickets * 3) || 0);
-                                
-                                if (rev > maxRevenue) {
-                                    maxRevenue = rev;
-                                    topEvent = { ...event, revenue: rev };
-                                }
-                            });
-                            
-                            // Platform Fee Logic (0.5%)
-                            const PLATFORM_FEE_PERCENT = 0.005;
-                            const platformFee = totalRevenue * PLATFORM_FEE_PERCENT;
-                            const netEarnings = totalRevenue - platformFee;
-                            
-                            maxAvailable = netEarnings - withdrawnAmount;
-                            if (maxAvailable < 0) maxAvailable = 0;
+            function loadLiveDashboard() {
+                if (!window.OrganizerBackend) {
+                    setTimeout(loadLiveDashboard, 400);
+                    return;
+                }
 
-                            document.getElementById('availableBalance').textContent = '₹' + maxAvailable.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                            document.getElementById('totalRevenueText').textContent = `Gross: ₹${totalRevenue.toLocaleString()} | Fee (0.5%): -₹${platformFee.toLocaleString()}`;
-                            document.getElementById('totalTickets').textContent = totalTickets.toLocaleString();
-                            document.getElementById('totalViews').textContent = totalViews.toLocaleString();
-                            
-                            document.getElementById('withdrawAvailable').textContent = '₹' + maxAvailable.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                            document.getElementById('withdrawAmount').max = maxAvailable;
-                            document.getElementById('withdrawAmount').value = maxAvailable > 0 ? maxAvailable : '';
-                            
-                            if (topEvent && topEvent.revenue > 0) {
-                                document.getElementById('topEventName').textContent = topEvent.eventName;
-                                document.getElementById('topEventRevenue').textContent = '₹' + topEvent.revenue.toLocaleString();
-                                document.getElementById('topEventTickets').textContent = (topEvent.ticketsSold || 0) + ' Tickets Sold';
-                                document.getElementById('topEventInitial').textContent = topEvent.eventName.substring(0,2).toUpperCase();
-                            } else {
-                                document.getElementById('topEventName').textContent = "No sales yet";
-                                document.getElementById('topEventRevenue').textContent = "₹0";
-                                document.getElementById('topEventTickets').textContent = "0 Tickets Sold";
+                const selectedEventId = document.getElementById('dashboardEventFilter').value || 'ALL';
+
+                // 1. Fetch live metrics & checkins
+                window.OrganizerBackend.getLiveEventStats(selectedEventId, function(err, data) {
+                    if (err) {
+                        console.error("Live stats fetch notice:", err);
+                        return;
+                    }
+
+                    cachedEvents = data.events || [];
+                    populateEventDropdowns(cachedEvents);
+
+                    const stats = data.stats || {};
+                    const rate = stats.attendanceRate || 0;
+
+                    // Update Attendance Circular SVG Gauge
+                    document.getElementById('liveAttendancePercent').textContent = `${rate}%`;
+                    document.getElementById('checkinRatioText').textContent = `${stats.totalCheckedIn} of ${stats.totalRegistered} checked in`;
+                    const circle = document.getElementById('attendanceCircle');
+                    if (circle) circle.setAttribute('stroke-dasharray', `${rate}, 100`);
+
+                    // Update Capacity Card
+                    const remCap = stats.remainingCapacity || 0;
+                    document.getElementById('remainingCapacityText').textContent = remCap.toLocaleString();
+                    document.getElementById('totalCapacitySubtext').textContent = `Capacity: ${stats.totalCapacity.toLocaleString()}`;
+                    
+                    const badge = document.getElementById('capacityStatusBadge');
+                    if (stats.totalCapacity > 0 && remCap === 0) {
+                        badge.textContent = "Sold Out";
+                        badge.style.background = "rgba(239, 68, 68, 0.2)";
+                        badge.style.color = "#f87171";
+                    } else if (stats.totalCapacity > 0 && (stats.totalRegistered / stats.totalCapacity) >= 0.85) {
+                        badge.textContent = "Near Capacity (85%+)";
+                        badge.style.background = "rgba(245, 158, 11, 0.2)";
+                        badge.style.color = "#fbbf24";
+                    } else {
+                        badge.textContent = "Healthy";
+                        badge.style.background = "rgba(16, 185, 129, 0.2)";
+                        badge.style.color = "#34d399";
+                    }
+
+                    // Update Registered & No-Show
+                    document.getElementById('totalRegisteredText').textContent = (stats.totalRegistered || 0).toLocaleString();
+                    document.getElementById('noShowText').textContent = `⏳ ${stats.noShowCount || 0} Expected / Pending`;
+
+                    // Update Gate Flow Health Card
+                    document.getElementById('progressCheckedInPercent').textContent = `${rate}%`;
+                    document.getElementById('progressBarCheckedIn').style.width = `${rate}%`;
+                    document.getElementById('entriesLoggedStat').textContent = (stats.totalCheckedIn || 0).toLocaleString();
+                    document.getElementById('remainingPassesStat').textContent = remCap.toLocaleString();
+
+                    // Update Live Activity Stream
+                    renderLiveFeed(data.recentCheckins || []);
+
+                    document.getElementById('lastSyncedTime').textContent = `Synced ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'})}`;
+                });
+
+                // 2. Refresh Financials
+                window.OrganizerBackend.getUserProfile((err, profile) => {
+                    const withdrawnAmount = profile?.withdrawnAmount || 0;
+                    window.OrganizerBackend.getEvents((err, events) => {
+                        if (err || !events) return;
+
+                        let totalRevenue = 0;
+                        let topEvent = null;
+                        let maxRevenue = -1;
+
+                        events.forEach(evt => {
+                            const rev = evt.revenue || ((evt.ticketsSold || 0) * (evt.price || 0)) || 0;
+                            totalRevenue += rev;
+                            if (rev > maxRevenue) {
+                                maxRevenue = rev;
+                                topEvent = { ...evt, revenue: rev };
                             }
                         });
+
+                        const platformFee = totalRevenue * 0.005;
+                        const netEarnings = totalRevenue - platformFee;
+                        maxAvailable = Math.max(0, netEarnings - withdrawnAmount);
+
+                        document.getElementById('availableBalance').textContent = '₹' + maxAvailable.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                        document.getElementById('totalRevenueText').textContent = `Earned: ₹${totalRevenue.toLocaleString()}`;
+                        document.getElementById('withdrawAvailable').textContent = '₹' + maxAvailable.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+                        if (topEvent && topEvent.revenue > 0) {
+                            document.getElementById('topEventName').textContent = topEvent.eventName;
+                            document.getElementById('topEventRevenue').textContent = '₹' + topEvent.revenue.toLocaleString();
+                            document.getElementById('topEventTickets').textContent = `${topEvent.ticketsSold || 0} Tickets Sold`;
+                            document.getElementById('topEventInitial').textContent = topEvent.eventName.substring(0, 2).toUpperCase();
+                        }
                     });
-                } else {
-                    setTimeout(loadAnalytics, 500);
+                });
+            }
+
+            function populateEventDropdowns(events) {
+                const dashSelect = document.getElementById('dashboardEventFilter');
+                const broadcastSelect = document.getElementById('broadcastEventSelect');
+
+                if (dashSelect.options.length <= 1 && events && events.length > 0) {
+                    events.forEach(evt => {
+                        const opt = document.createElement('option');
+                        opt.value = evt.eventId;
+                        opt.textContent = `${evt.eventName} (${evt.date || 'TBD'})`;
+                        dashSelect.appendChild(opt);
+
+                        const opt2 = document.createElement('option');
+                        opt2.value = evt.eventId;
+                        opt2.textContent = evt.eventName;
+                        broadcastSelect.appendChild(opt2);
+                    });
                 }
             }
-            
+
+            function renderLiveFeed(checkins) {
+                const container = document.getElementById('liveFeedContainer');
+                if (!checkins || checkins.length === 0) {
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 24px; color: var(--muted); font-size: 0.9rem;">
+                            <span style="font-size: 1.8rem; display: block; margin-bottom: 8px;">⏳</span>
+                            No check-ins logged yet for this selection.
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = checkins.map(c => `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: rgba(0,0,0,0.22); border-radius: 10px; border-left: 3px solid #10b981;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(16, 185, 129, 0.15); color: #34d399; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem;">
+                                ${(c.attendeeName || 'A').substring(0, 1).toUpperCase()}
+                            </div>
+                            <div>
+                                <strong style="color: var(--text); font-size: 0.95rem;">${c.attendeeName || 'Attendee'}</strong>
+                                <div style="color: var(--muted); font-size: 0.8rem;">
+                                    ${c.eventName || 'Event'}
+                                </div>
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <span style="font-size: 0.75rem; color: #10b981; font-weight: 700; background: rgba(16, 185, 129, 0.1); padding: 2px 8px; border-radius: 10px;">Admitted</span>
+                            <div style="font-size: 0.75rem; color: var(--muted); margin-top: 4px;">${formatTimeAgo(c.timestamp)}</div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Sync Toggle Button
+            document.getElementById('toggleSyncBtn').addEventListener('click', function() {
+                isSyncActive = !isSyncActive;
+                const dot = document.getElementById('pulseDot');
+                const text = document.getElementById('pulseText');
+                const btn = document.getElementById('toggleSyncBtn');
+
+                if (isSyncActive) {
+                    dot.style.background = 'var(--primary)';
+                    dot.style.animation = 'livePulseAnim 1.5s infinite';
+                    text.textContent = 'Live Sync Active';
+                    btn.textContent = 'Pause';
+                    if (!syncInterval) syncInterval = setInterval(loadLiveDashboard, 5000);
+                } else {
+                    dot.style.background = '#64748b';
+                    dot.style.animation = 'none';
+                    text.textContent = 'Sync Paused';
+                    btn.textContent = 'Resume';
+                    if (syncInterval) {
+                        clearInterval(syncInterval);
+                        syncInterval = null;
+                    }
+                }
+            });
+
+            // Event Filter Change
+            document.getElementById('dashboardEventFilter').addEventListener('change', function() {
+                loadLiveDashboard();
+            });
+
+            // Broadcast Modal Logic
+            document.getElementById('openBroadcastModalBtn').addEventListener('click', function() {
+                const currentFilter = document.getElementById('dashboardEventFilter').value;
+                if (currentFilter && currentFilter !== 'ALL') {
+                    document.getElementById('broadcastEventSelect').value = currentFilter;
+                }
+                document.getElementById('broadcastStatus').textContent = '';
+                document.getElementById('broadcastModal').style.display = 'flex';
+            });
+
+            document.getElementById('submitBroadcastBtn').addEventListener('click', function() {
+                const eventId = document.getElementById('broadcastEventSelect').value;
+                const title = document.getElementById('broadcastTitle').value.trim();
+                const message = document.getElementById('broadcastMessage').value.trim();
+                const priority = document.getElementById('broadcastPriority').value;
+                const sendEmail = document.getElementById('broadcastSendEmail').checked;
+                const statusP = document.getElementById('broadcastStatus');
+                const btn = document.getElementById('submitBroadcastBtn');
+
+                if (!eventId) {
+                    statusP.textContent = 'Please select a target event.';
+                    statusP.style.color = '#ef4444';
+                    return;
+                }
+                if (!title || !message) {
+                    statusP.textContent = 'Please enter an alert title and message.';
+                    statusP.style.color = '#ef4444';
+                    return;
+                }
+
+                btn.disabled = true;
+                btn.textContent = 'Broadcasting...';
+                statusP.textContent = '';
+
+                const selectedEvent = cachedEvents.find(e => e.eventId === eventId);
+                const eventName = selectedEvent ? selectedEvent.eventName : "Event";
+
+                window.OrganizerBackend.broadcastEventAlert({
+                    eventId,
+                    eventName,
+                    title,
+                    message,
+                    priority,
+                    sendEmail
+                }, function(err, result) {
+                    btn.disabled = false;
+                    btn.textContent = 'Broadcast Alert Now';
+
+                    if (err) {
+                        statusP.textContent = 'Broadcast error: ' + err.message;
+                        statusP.style.color = '#ef4444';
+                    } else {
+                        statusP.textContent = `✅ ${result.message}`;
+                        statusP.style.color = '#10b981';
+                        setTimeout(() => {
+                            document.getElementById('broadcastModal').style.display = 'none';
+                            document.getElementById('broadcastTitle').value = '';
+                            document.getElementById('broadcastMessage').value = '';
+                        }, 1800);
+                    }
+                });
+            });
+
+            // Withdrawal Actions
             document.getElementById('withdrawBtn').addEventListener('click', () => {
                 if (maxAvailable <= 0) {
                     alert("No available balance to withdraw.");
@@ -256,19 +566,18 @@
                 }
                 document.getElementById('withdrawModal').style.display = 'flex';
             });
-            
+
             document.getElementById('submitWithdrawBtn').addEventListener('click', () => {
                 const amount = parseFloat(document.getElementById('withdrawAmount').value);
                 const method = document.getElementById('withdrawMethod').value;
                 const upi = document.getElementById('upiId').value;
                 const bankAcc = document.getElementById('bankAcc').value;
                 const bankIfsc = document.getElementById('bankIfsc').value;
-                
+
                 if (isNaN(amount) || amount <= 0 || amount > maxAvailable) {
                     alert("Please enter a valid amount up to your available balance.");
                     return;
                 }
-                
                 if (method === 'upi' && !upi.trim()) {
                     alert("Please enter your UPI ID.");
                     return;
@@ -277,13 +586,13 @@
                     alert("Please enter your Bank Account and IFSC code.");
                     return;
                 }
-                
+
                 const btn = document.getElementById('submitWithdrawBtn');
                 btn.disabled = true;
                 btn.textContent = "Processing...";
-                
+
                 const details = method === 'upi' ? { type: 'UPI', id: upi } : { type: 'Bank', acc: bankAcc, ifsc: bankIfsc };
-                
+
                 window.OrganizerBackend.requestWithdrawal(amount, details, (err) => {
                     btn.disabled = false;
                     btn.textContent = "Confirm Withdrawal";
@@ -292,12 +601,14 @@
                     } else {
                         alert(`Withdrawal of ₹${amount} initiated successfully!`);
                         document.getElementById('withdrawModal').style.display = 'none';
-                        loadAnalytics(); // Reload to update available balance
+                        loadLiveDashboard();
                     }
                 });
             });
 
-            setTimeout(loadAnalytics, 1000);
+            // Initial load and start live sync polling every 5s
+            loadLiveDashboard();
+            syncInterval = setInterval(loadLiveDashboard, 5000);
         });
     </script>
 </body>
