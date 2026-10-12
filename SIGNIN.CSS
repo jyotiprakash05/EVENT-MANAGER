@@ -13,8 +13,7 @@ body {
 	place-items: center;
 	min-block-size: 100vh;
 	padding: 24px;
-	background-color: #212529;
-	background-position: center;
+	background-color: #212529 background-position: center;
 	background-size: 125%;
 }
 
