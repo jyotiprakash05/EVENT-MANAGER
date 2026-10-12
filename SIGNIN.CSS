@@ -6,16 +6,17 @@ html,
 body {
 	min-block-size: 100%;
 	margin: 0;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
+body.sign-in-page,
 .sign-in-page {
 	display: grid;
 	place-items: center;
 	min-block-size: 100vh;
 	padding: 24px;
-	background-color: #212529;
-	background-position: center;
-	background-size: cover;
+	background-color: #212529 !important;
+	background-image: none !important;
 }
 
 .sign-in-card {
