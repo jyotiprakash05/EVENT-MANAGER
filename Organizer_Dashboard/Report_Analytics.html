@@ -354,10 +354,14 @@
                         badge.textContent = "Near Capacity (85%+)";
                         badge.style.background = "rgba(245, 158, 11, 0.2)";
                         badge.style.color = "#fbbf24";
-                    } else {
+                    } else if (stats.totalCapacity > 0) {
                         badge.textContent = "Healthy";
                         badge.style.background = "rgba(16, 185, 129, 0.2)";
                         badge.style.color = "#34d399";
+                    } else {
+                        badge.textContent = "No Events";
+                        badge.style.background = "rgba(100, 116, 139, 0.2)";
+                        badge.style.color = "#94a3b8";
                     }
 
                     // Update Registered & No-Show
@@ -409,6 +413,11 @@
                             document.getElementById('topEventRevenue').textContent = '₹' + topEvent.revenue.toLocaleString();
                             document.getElementById('topEventTickets').textContent = `${topEvent.ticketsSold || 0} Tickets Sold`;
                             document.getElementById('topEventInitial').textContent = topEvent.eventName.substring(0, 2).toUpperCase();
+                        } else {
+                            document.getElementById('topEventName').textContent = 'No sales yet';
+                            document.getElementById('topEventRevenue').textContent = '₹0';
+                            document.getElementById('topEventTickets').textContent = '0 Tickets Sold';
+                            document.getElementById('topEventInitial').textContent = '--';
                         }
                     });
                 });
@@ -418,18 +427,35 @@
                 const dashSelect = document.getElementById('dashboardEventFilter');
                 const broadcastSelect = document.getElementById('broadcastEventSelect');
 
-                if (dashSelect.options.length <= 1 && events && events.length > 0) {
-                    events.forEach(evt => {
-                        const opt = document.createElement('option');
-                        opt.value = evt.eventId;
-                        opt.textContent = `${evt.eventName} (${evt.date || 'TBD'})`;
-                        dashSelect.appendChild(opt);
+                const currentVal = dashSelect.value;
+                const existingOptions = Array.from(dashSelect.options).map(o => o.value);
+                const eventIds = (events || []).map(e => e.eventId);
 
-                        const opt2 = document.createElement('option');
-                        opt2.value = evt.eventId;
-                        opt2.textContent = evt.eventName;
-                        broadcastSelect.appendChild(opt2);
-                    });
+                const isSynced = eventIds.length > 0 &&
+                                 eventIds.length === (dashSelect.options.length - 1) &&
+                                 eventIds.every(id => existingOptions.includes(id));
+
+                if (!isSynced) {
+                    dashSelect.innerHTML = '<option value="ALL">All Events (Consolidated Overview)</option>';
+                    broadcastSelect.innerHTML = '';
+
+                    if (events && events.length > 0) {
+                        events.forEach(evt => {
+                            const opt = document.createElement('option');
+                            opt.value = evt.eventId;
+                            opt.textContent = `${evt.eventName} (${evt.date || 'TBD'})`;
+                            dashSelect.appendChild(opt);
+
+                            const opt2 = document.createElement('option');
+                            opt2.value = evt.eventId;
+                            opt2.textContent = evt.eventName;
+                            broadcastSelect.appendChild(opt2);
+                        });
+                    }
+
+                    if (currentVal && (currentVal === 'ALL' || eventIds.includes(currentVal))) {
+                        dashSelect.value = currentVal;
+                    }
                 }
             }
 

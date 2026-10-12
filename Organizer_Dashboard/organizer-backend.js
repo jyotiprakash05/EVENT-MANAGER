@@ -195,104 +195,123 @@
             initAWS((err) => {
                 if (err) return callback(err);
 
-                // 1. Fetch ticket to inspect current state
-                this.verifyTicket(ticketId, (err, ticket) => {
-                    if (err) return callback(err);
+                // Fetch organizer's events to verify authorization
+                this.getEvents((eventsErr, myEvents) => {
+                    if (eventsErr) return callback(eventsErr);
 
-                    // Check for expected event match if scanner is filtering by event
-                    if (options.expectedEventId && ticket.eventId && ticket.eventId !== options.expectedEventId) {
-                        return callback(null, {
-                            success: false,
-                            differentEvent: true,
-                            message: `Ticket is for a different event: "${ticket.eventName || ticket.eventId}"`,
-                            ticket: ticket
-                        });
-                    }
+                    const myEventsList = myEvents || [];
+                    const myEventIds = new Set(myEventsList.map(e => e.eventId));
 
-                    // Check for cancelled ticket
-                    if (ticket.status === 'Cancelled') {
-                        return callback(null, {
-                            success: false,
-                            cancelled: true,
-                            message: 'Ticket is marked as Cancelled/Refunded',
-                            ticket: ticket
-                        });
-                    }
+                    // 1. Fetch ticket to inspect current state
+                    this.verifyTicket(ticketId, (err, ticket) => {
+                        if (err) return callback(err);
 
-                    // Check if already used
-                    if (ticket.status === 'Used') {
-                        const checkedInTime = ticket.checkedInAt ? new Date(ticket.checkedInAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'earlier';
-                        return callback(null, {
-                            success: false,
-                            duplicate: true,
-                            message: `Ticket already used at ${checkedInTime}! Entry rejected.`,
-                            ticket: ticket
-                        });
-                    }
-
-                    const now = new Date().toISOString();
-
-                    // 2. Perform ATOMIC conditional update:
-                    // Condition: attribute_exists(ticketId) AND status = 'Valid'
-                    // This eliminates race conditions if two devices scan the ticket simultaneously!
-                    const updateParams = {
-                        TableName: config.ticketsTableName,
-                        Key: { ticketId: ticketId },
-                        UpdateExpression: "SET #s = :used, checkedInAt = :now, scannedBy = :scanner",
-                        ConditionExpression: "attribute_exists(ticketId) AND #s = :valid",
-                        ExpressionAttributeNames: { "#s": "status" },
-                        ExpressionAttributeValues: {
-                            ":used": "Used",
-                            ":valid": "Valid",
-                            ":now": now,
-                            ":scanner": currentUserSub
-                        },
-                        ReturnValues: "ALL_NEW"
-                    };
-
-                    docClient.update(updateParams, (updateErr, updateData) => {
-                        if (updateErr) {
-                            if (updateErr.code === 'ConditionalCheckFailedException') {
-                                return callback(null, {
-                                    success: false,
-                                    duplicate: true,
-                                    raceConditionBlocked: true,
-                                    message: 'Duplicate check-in blocked by atomic lock! Ticket was just verified on another device.',
-                                    ticket: ticket
-                                });
-                            }
-                            console.error("Atomic check-in update error:", updateErr);
-                            return callback(updateErr);
+                        // Prevent scanning tickets for another organizer's events
+                        if (!ticket.eventId || !myEventIds.has(ticket.eventId)) {
+                            return callback(null, {
+                                success: false,
+                                differentEvent: true,
+                                message: `Ticket is for an event not hosted by your organizer account: "${ticket.eventName || ticket.eventId || 'Unknown'}"`,
+                                ticket: ticket
+                            });
                         }
 
-                        const updatedTicket = (updateData && updateData.Attributes) ? updateData.Attributes : { ...ticket, status: 'Used', checkedInAt: now };
+                        // Check for expected event match if scanner is filtering by a specific event
+                        if (options.expectedEventId && ticket.eventId !== options.expectedEventId) {
+                            return callback(null, {
+                                success: false,
+                                differentEvent: true,
+                                message: `Ticket is for a different event: "${ticket.eventName || ticket.eventId}"`,
+                                ticket: ticket
+                            });
+                        }
 
-                        // 3. Log into EventProCheckins table
-                        const checkinItem = {
-                            checkinId: "CHK-" + Date.now() + "-" + Math.floor(Math.random() * 1000),
-                            ticketId: ticketId,
-                            eventId: ticket.eventId || "UNKNOWN",
-                            eventName: ticket.eventName || "Unnamed Event",
-                            attendeeId: ticket.attendeeId || "UNKNOWN",
-                            attendeeName: ticket.attendeeName || "Verified Attendee",
-                            scannedBy: currentUserSub,
-                            timestamp: now
+                        // Check for cancelled ticket
+                        if (ticket.status === 'Cancelled') {
+                            return callback(null, {
+                                success: false,
+                                cancelled: true,
+                                message: 'Ticket is marked as Cancelled/Refunded',
+                                ticket: ticket
+                            });
+                        }
+
+                        // Check if already used
+                        if (ticket.status === 'Used') {
+                            const checkedInTime = ticket.checkedInAt ? new Date(ticket.checkedInAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'earlier';
+                            return callback(null, {
+                                success: false,
+                                duplicate: true,
+                                message: `Ticket already used at ${checkedInTime}! Entry rejected.`,
+                                ticket: ticket
+                            });
+                        }
+
+                        const now = new Date().toISOString();
+
+                        // 2. Perform ATOMIC conditional update:
+                        // Condition: attribute_exists(ticketId) AND status = 'Valid'
+                        // This eliminates race conditions if two devices scan the ticket simultaneously!
+                        const updateParams = {
+                            TableName: config.ticketsTableName,
+                            Key: { ticketId: ticketId },
+                            UpdateExpression: "SET #s = :used, checkedInAt = :now, scannedBy = :scanner",
+                            ConditionExpression: "attribute_exists(ticketId) AND #s = :valid",
+                            ExpressionAttributeNames: { "#s": "status" },
+                            ExpressionAttributeValues: {
+                                ":used": "Used",
+                                ":valid": "Valid",
+                                ":now": now,
+                                ":scanner": currentUserSub
+                            },
+                            ReturnValues: "ALL_NEW"
                         };
 
-                        const checkinParams = {
-                            TableName: config.checkinsTableName,
-                            Item: checkinItem
-                        };
-
-                        docClient.put(checkinParams, (checkinErr) => {
-                            if (checkinErr) {
-                                console.warn("Notice: checkin log put warning (non-fatal):", checkinErr);
+                        docClient.update(updateParams, (updateErr, updateData) => {
+                            if (updateErr) {
+                                if (updateErr.code === 'ConditionalCheckFailedException') {
+                                    return callback(null, {
+                                        success: false,
+                                        duplicate: true,
+                                        raceConditionBlocked: true,
+                                        message: 'Duplicate check-in blocked by atomic lock! Ticket was just verified on another device.',
+                                        ticket: ticket
+                                    });
+                                }
+                                console.error("Atomic check-in update error:", updateErr);
+                                return callback(updateErr);
                             }
-                            callback(null, {
-                                success: true,
-                                message: `Ticket verified! Welcome, ${ticket.attendeeName || 'Attendee'}.`,
-                                ticket: updatedTicket,
-                                checkin: checkinItem
+
+                            const updatedTicket = (updateData && updateData.Attributes) ? updateData.Attributes : { ...ticket, status: 'Used', checkedInAt: now };
+
+                            // 3. Log into EventProCheckins table
+                            const checkinItem = {
+                                checkinId: "CHK-" + Date.now() + "-" + Math.floor(Math.random() * 1000),
+                                ticketId: ticketId,
+                                eventId: ticket.eventId || "UNKNOWN",
+                                eventName: ticket.eventName || "Unnamed Event",
+                                attendeeId: ticket.attendeeId || "UNKNOWN",
+                                attendeeName: ticket.attendeeName || "Verified Attendee",
+                                scannedBy: currentUserSub,
+                                organizerId: currentUserSub,
+                                timestamp: now
+                            };
+
+                            const checkinParams = {
+                                TableName: config.checkinsTableName,
+                                Item: checkinItem
+                            };
+
+                            docClient.put(checkinParams, (checkinErr) => {
+                                if (checkinErr) {
+                                    console.warn("Notice: checkin log put warning (non-fatal):", checkinErr);
+                                }
+                                callback(null, {
+                                    success: true,
+                                    message: `Ticket verified! Welcome, ${ticket.attendeeName || 'Attendee'}.`,
+                                    ticket: updatedTicket,
+                                    checkin: checkinItem
+                                });
                             });
                         });
                     });
@@ -304,35 +323,53 @@
             initAWS((err) => {
                 if (err) return callback(err);
 
-                const params = {
-                    TableName: config.checkinsTableName
-                };
+                this.getEvents((eventsErr, myEvents) => {
+                    if (eventsErr) return callback(eventsErr);
 
-                docClient.scan(params, function(err, data) {
-                    if (err) {
-                        console.warn("Checkins scan note:", err);
-                        // Fallback: query tickets table for tickets with status === 'Used'
-                        return window.OrganizerBackend.getTicketsForEvent(eventId, (tErr, tickets) => {
-                            if (tErr) return callback(null, []);
-                            const usedTickets = (tickets || []).filter(t => t.status === 'Used').map(t => ({
-                                checkinId: "CHK-" + t.ticketId,
-                                ticketId: t.ticketId,
-                                eventId: t.eventId,
-                                eventName: t.eventName,
-                                attendeeName: t.attendeeName || "Attendee",
-                                timestamp: t.checkedInAt || t.purchasedAt || new Date().toISOString()
-                            }));
-                            usedTickets.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
-                            callback(null, usedTickets);
-                        });
+                    const myEventsList = myEvents || [];
+                    const myEventIds = new Set(myEventsList.map(e => e.eventId));
+
+                    if (myEventsList.length === 0) {
+                        return callback(null, []);
                     }
 
-                    let checkins = (data && data.Items) ? data.Items : [];
-                    if (eventId && eventId !== 'ALL') {
-                        checkins = checkins.filter(c => c.eventId === eventId);
+                    if (eventId && eventId !== 'ALL' && !myEventIds.has(eventId)) {
+                        return callback(null, []);
                     }
-                    checkins.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-                    callback(null, checkins);
+
+                    const params = {
+                        TableName: config.checkinsTableName
+                    };
+
+                    docClient.scan(params, function(err, data) {
+                        if (err) {
+                            console.warn("Checkins scan note:", err);
+                            // Fallback: query tickets table for tickets with status === 'Used'
+                            return window.OrganizerBackend.getTicketsForEvent(eventId, (tErr, tickets) => {
+                                if (tErr) return callback(null, []);
+                                const usedTickets = (tickets || []).filter(t => t.status === 'Used').map(t => ({
+                                    checkinId: "CHK-" + t.ticketId,
+                                    ticketId: t.ticketId,
+                                    eventId: t.eventId,
+                                    eventName: t.eventName,
+                                    attendeeName: t.attendeeName || "Attendee",
+                                    timestamp: t.checkedInAt || t.purchasedAt || new Date().toISOString()
+                                }));
+                                usedTickets.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+                                callback(null, usedTickets);
+                            });
+                        }
+
+                        let checkins = (data && data.Items) ? data.Items : [];
+                        // Strictly filter to checkins that belong to this organizer's events
+                        if (eventId && eventId !== 'ALL') {
+                            checkins = checkins.filter(c => c.eventId === eventId && myEventIds.has(c.eventId));
+                        } else {
+                            checkins = checkins.filter(c => myEventIds.has(c.eventId));
+                        }
+                        checkins.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                        callback(null, checkins);
+                    });
                 });
             });
         },
@@ -341,17 +378,36 @@
             initAWS((err) => {
                 if (err) return callback(err);
 
-                const params = {
-                    TableName: config.ticketsTableName
-                };
+                this.getEvents((eventsErr, myEvents) => {
+                    if (eventsErr) return callback(eventsErr);
 
-                docClient.scan(params, function(err, data) {
-                    if (err) return callback(err);
-                    let tickets = (data && data.Items) ? data.Items : [];
-                    if (eventId && eventId !== 'ALL') {
-                        tickets = tickets.filter(t => t.eventId === eventId);
+                    const myEventsList = myEvents || [];
+                    const myEventIds = new Set(myEventsList.map(e => e.eventId));
+
+                    if (myEventsList.length === 0) {
+                        return callback(null, []);
                     }
-                    callback(null, tickets);
+
+                    if (eventId && eventId !== 'ALL' && !myEventIds.has(eventId)) {
+                        return callback(null, []);
+                    }
+
+                    const params = {
+                        TableName: config.ticketsTableName
+                    };
+
+                    docClient.scan(params, function(err, data) {
+                        if (err) return callback(err);
+                        let tickets = (data && data.Items) ? data.Items : [];
+
+                        // Strictly filter tickets to current organizer's events
+                        if (eventId && eventId !== 'ALL') {
+                            tickets = tickets.filter(t => t.eventId === eventId && myEventIds.has(t.eventId));
+                        } else {
+                            tickets = tickets.filter(t => myEventIds.has(t.eventId));
+                        }
+                        callback(null, tickets);
+                    });
                 });
             });
         },
