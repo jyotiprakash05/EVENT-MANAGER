@@ -13,7 +13,7 @@ body {
 	place-items: center;
 	min-block-size: 100vh;
 	padding: 24px;
-	background-image: linear-gradient(rgba(24, 31, 42, 0.62), rgba(24, 31, 42, 0.62)), url("https://res.cloudinary.com/dw8s2k0a6/image/upload/v1789391304/Gemini_Generated_Image_er5o9der5o9der5o_zaqudm.png");
+	background-color: #212529;
 	background-position: center;
 	background-size: 125%;
 }
