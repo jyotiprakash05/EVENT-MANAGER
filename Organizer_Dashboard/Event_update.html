@@ -69,9 +69,25 @@
 
             <section class="form-section">
                 <form id="eventForm">
-                    <div class="form-group">
-                        <label>Event Name</label>
-                        <input type="text" id="eventName" class="form-control" placeholder="E.g., Tech Innovators Summit 2026" required>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Event Name</label>
+                            <input type="text" id="eventName" class="form-control" placeholder="E.g., Winters Camp 2026" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Event Category</label>
+                            <select id="eventCategory" class="form-control" required>
+                                <option value="" disabled selected>Select Category</option>
+                                <option value="movies">Movies</option>
+                                <option value="stream">Stream</option>
+                                <option value="concert">Live Events</option>
+                                <option value="plays">Plays & Theatre</option>
+                                <option value="sports">Sports</option>
+                                <option value="comedy">Standup Comedy</option>
+                                <option value="camping">Camping</option>
+                                <option value="workshop">Workshops</option>
+                            </select>
+                        </div>
                     </div>
                     
                     <div class="form-row">
@@ -102,9 +118,21 @@
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label>Ticket Sales Deadline</label>
-                        <input type="datetime-local" id="salesDeadline" class="form-control" required>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Ticket Sales Deadline Date</label>
+                            <input type="date" id="salesDeadlineDate" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Ticket Sales Deadline Time</label>
+                            <div style="display: flex; gap: 8px;">
+                                <input type="text" id="salesDeadlineTime" class="form-control" placeholder="11:59" pattern="^(0?[1-9]|1[0-2]):[0-5][0-9]$" title="Format: HH:MM (12-hour)" required>
+                                <select id="salesDeadlineAmPm" class="form-control" style="width: auto; flex-shrink: 0;">
+                                    <option value="AM">AM</option>
+                                    <option value="PM" selected>PM</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="form-row">
@@ -176,6 +204,9 @@
                     existingEventData = event;
                     
                     document.getElementById('eventName').value = event.eventName || "";
+                    if (event.category) {
+                        document.getElementById('eventCategory').value = event.category;
+                    }
                     document.getElementById('eventDate').value = event.date || "";
                     if (event.time) {
                         const parts = event.time.split(' ');
@@ -186,9 +217,39 @@
                     }
                     document.getElementById('eventLocation').value = event.location || "";
                     document.getElementById('googleMapLink').value = event.googleMapLink || "";
-                    if (event.salesDeadline) {
-                        document.getElementById('salesDeadline').value = event.salesDeadline;
+                    
+                    // Sales Deadline parsing (separate date & time)
+                    if (event.salesDeadlineDate) {
+                        document.getElementById('salesDeadlineDate').value = event.salesDeadlineDate;
+                    } else if (event.salesDeadline && event.salesDeadline.includes('T')) {
+                        document.getElementById('salesDeadlineDate').value = event.salesDeadline.split('T')[0];
+                    } else if (event.salesDeadline && event.salesDeadline.includes(' ')) {
+                        document.getElementById('salesDeadlineDate').value = event.salesDeadline.split(' ')[0];
+                    } else if (event.salesDeadline) {
+                        document.getElementById('salesDeadlineDate').value = event.salesDeadline;
                     }
+
+                    if (event.salesDeadlineTime) {
+                        const dlParts = event.salesDeadlineTime.split(' ');
+                        document.getElementById('salesDeadlineTime').value = dlParts[0] || "";
+                        if (dlParts.length > 1) {
+                            document.getElementById('salesDeadlineAmPm').value = dlParts[1];
+                        }
+                    } else if (event.salesDeadline && event.salesDeadline.includes('T')) {
+                        const tPart = event.salesDeadline.split('T')[1];
+                        if (tPart) {
+                            document.getElementById('salesDeadlineTime').value = tPart.substring(0, 5);
+                        }
+                    } else if (event.salesDeadline && event.salesDeadline.includes(' ')) {
+                        const sParts = event.salesDeadline.split(' ');
+                        if (sParts.length > 1) {
+                            document.getElementById('salesDeadlineTime').value = sParts[1];
+                        }
+                        if (sParts.length > 2) {
+                            document.getElementById('salesDeadlineAmPm').value = sParts[2];
+                        }
+                    }
+
                     document.getElementById('eventCapacity').value = event.capacity || "";
                     document.getElementById('eventPrice').value = event.price || 0;
                     document.getElementById('eventDescription').value = event.description || "";
@@ -245,6 +306,11 @@
             const newTime = document.getElementById('eventTime').value + ' ' + document.getElementById('eventAmPm').value;
             const newLocation = document.getElementById('eventLocation').value;
             const newEventName = document.getElementById('eventName').value;
+            const newCategory = document.getElementById('eventCategory').value;
+
+            const dlDate = document.getElementById('salesDeadlineDate').value;
+            const dlTime = document.getElementById('salesDeadlineTime').value + ' ' + document.getElementById('salesDeadlineAmPm').value;
+            const combinedSalesDeadline = dlDate ? `${dlDate} ${dlTime}` : '';
 
             // Check if schedule or venue changed
             const isScheduleChanged = existingEventData && (
@@ -256,11 +322,14 @@
             const eventData = {
                 eventId: eventId,
                 eventName: newEventName,
+                category: newCategory,
                 date: newDate,
                 time: newTime,
                 location: newLocation,
                 googleMapLink: document.getElementById('googleMapLink').value,
-                salesDeadline: document.getElementById('salesDeadline').value,
+                salesDeadline: combinedSalesDeadline,
+                salesDeadlineDate: dlDate,
+                salesDeadlineTime: dlTime,
                 capacity: parseInt(document.getElementById('eventCapacity').value),
                 price: parseFloat(document.getElementById('eventPrice').value),
                 description: document.getElementById('eventDescription').value,
