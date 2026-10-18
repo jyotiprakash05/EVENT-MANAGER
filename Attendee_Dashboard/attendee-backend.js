@@ -53,7 +53,56 @@
         });
     }
 
+    function parseDeadline(dlString) {
+        if (!dlString || typeof dlString !== 'string') return null;
+        dlString = dlString.trim();
+        if (!dlString) return null;
+
+        // Try native Date parse
+        let d = new Date(dlString);
+        if (!isNaN(d.getTime())) return d;
+
+        // Parse format "YYYY-MM-DD [HH:MM] [AM|PM]"
+        const match = dlString.match(/^(\d{4})-(\d{2})-(\d{2})(?:\s+(\d{1,2}):(\d{2})(?:\s*(AM|PM))?)?/i);
+        if (match) {
+            const year = parseInt(match[1], 10);
+            const month = parseInt(match[2], 10) - 1;
+            const day = parseInt(match[3], 10);
+            let hour = match[4] !== undefined ? parseInt(match[4], 10) : 23;
+            let min = match[5] !== undefined ? parseInt(match[5], 10) : 59;
+            const ampm = match[6] ? match[6].toUpperCase() : null;
+
+            if (ampm === 'PM' && hour < 12) hour += 12;
+            if (ampm === 'AM' && hour === 12) hour = 0;
+
+            return new Date(year, month, day, hour, min, 59);
+        }
+        return null;
+    }
+
+    function isEventSalesClosed(event) {
+        if (!event) return false;
+        const status = (event.status || '').toLowerCase();
+        if (['closed', 'ended', 'inactive', 'draft', 'cancelled'].includes(status)) {
+            return true;
+        }
+
+        let dl = event.salesDeadline || '';
+        if (!dl && event.salesDeadlineDate) {
+            dl = event.salesDeadlineDate + (event.salesDeadlineTime ? ' ' + event.salesDeadlineTime : '');
+        }
+
+        if (dl) {
+            const deadline = parseDeadline(dl);
+            if (deadline && new Date() > deadline) {
+                return true; // Sales deadline has passed
+            }
+        }
+        return false;
+    }
+
     window.AttendeeBackend = {
+        isEventSalesClosed: isEventSalesClosed,
         getAllEvents: function(callback) {
             initAWS((err) => {
                 if (err) return callback(err);
@@ -65,7 +114,8 @@
                 docClient.scan(params, function(err, data) {
                     if (err) callback(err);
                     else {
-                        const activeEvents = data.Items.filter(e => e.status !== 'Draft');
+                        // Keep events in DynamoDB intact, but hide events from attendees once sales are closed
+                        const activeEvents = (data.Items || []).filter(e => !isEventSalesClosed(e));
                         callback(null, activeEvents);
                     }
                 });

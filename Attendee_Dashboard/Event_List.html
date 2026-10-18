@@ -749,6 +749,47 @@
         </div>
     </div>
 
+    <!-- Booking Success & Email Receipt Modal -->
+    <div class="bms-modal-backdrop" id="bookingSuccessModal">
+        <div class="bms-checkout-modal-box" style="text-align: center; max-width: 440px;">
+            <div style="width: 58px; height: 58px; border-radius: 50%; background: rgba(16, 185, 129, 0.15); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; color: #10b981;">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            </div>
+            
+            <h3 style="font-size: 1.4rem; font-weight: 800; color: #fff; margin-bottom: 6px;">Booking Confirmed!</h3>
+            <p id="successEventTitle" style="color: #94a3b8; font-size: 0.95rem; margin-bottom: 18px; font-weight: 600;">Event Name</p>
+
+            <div style="background: #0c0e14; border: 1px solid #282f3f; border-radius: 14px; padding: 16px; text-align: left; margin-bottom: 18px;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #94a3b8; margin-bottom: 8px;">
+                    <span>Tickets Booked:</span>
+                    <strong id="successQty" style="color: #fff;">1</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #94a3b8; margin-bottom: 8px;">
+                    <span>Total Amount Paid:</span>
+                    <strong id="successAmount" style="color: #10b981;">₹0</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #94a3b8;">
+                    <span>Event Date & Time:</span>
+                    <strong id="successDateTime" style="color: #fff;">TBD</strong>
+                </div>
+            </div>
+
+            <!-- Email Receipt Notice -->
+            <div style="background: rgba(59, 130, 246, 0.12); border: 1px solid rgba(59, 130, 246, 0.35); border-radius: 12px; padding: 14px 16px; margin-bottom: 22px; text-align: left; display: flex; align-items: flex-start; gap: 12px;">
+                <span style="font-size: 1.3rem; line-height: 1;">📩</span>
+                <div>
+                    <div style="font-size: 0.85rem; font-weight: 700; color: #93c5fd; margin-bottom: 3px;">Ticket Receipt & QR Pass Sent!</div>
+                    <div style="font-size: 0.78rem; color: #cbd5e1; line-height: 1.4;">A copy of your M-Ticket receipt has been emailed to <strong id="successEmailDisplay" style="color: #fff;">your email</strong>.</div>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <button type="button" id="closeSuccessBtn" class="bms-btn-book" style="flex: 1; padding: 12px; font-size: 0.9rem; background: #222938; border: 1px solid #334155; color: #fff;">Explore More</button>
+                <button type="button" id="viewBookingsBtn" class="bms-btn-book" style="flex: 1.2; padding: 12px; font-size: 0.9rem;">View My Bookings</button>
+            </div>
+        </div>
+    </div>
+
     <!-- SCRIPT (BookMyShow Heading & Event Listing Logic) -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -1426,6 +1467,49 @@
                 }
             }
 
+            function showBookingSuccess(ev, quantity, amountPaid, offer) {
+                const successModal = document.getElementById('bookingSuccessModal');
+                const titleEl = document.getElementById('successEventTitle');
+                const qtyEl = document.getElementById('successQty');
+                const amountEl = document.getElementById('successAmount');
+                const dtEl = document.getElementById('successDateTime');
+                const emailEl = document.getElementById('successEmailDisplay');
+
+                if (titleEl) titleEl.textContent = ev.eventName || 'Event';
+                if (qtyEl) qtyEl.textContent = quantity + (quantity > 1 ? ' tickets' : ' ticket');
+                if (amountEl) amountEl.textContent = amountPaid > 0 ? ('₹' + amountPaid.toFixed(2)) : 'Free Entry';
+                if (dtEl) dtEl.textContent = `${ev.date || 'TBD'} • ${ev.time || 'TBD'}`;
+
+                // Resolve user email
+                const email = (userProfile && userProfile.email) || (window.EVENTPRO_DASHBOARD_AUTH && window.EVENTPRO_DASHBOARD_AUTH.userEmail) || 'your registered email';
+                if (emailEl) emailEl.textContent = email;
+
+                if (successModal) successModal.classList.add('active');
+
+                const closeBtn = document.getElementById('closeSuccessBtn');
+                const viewBtn = document.getElementById('viewBookingsBtn');
+
+                if (closeBtn) {
+                    closeBtn.onclick = function() {
+                        successModal.classList.remove('active');
+                    };
+                }
+
+                if (viewBtn) {
+                    viewBtn.onclick = function() {
+                        window.location.href = 'Your_Booking.html';
+                    };
+                }
+
+                if (successModal) {
+                    successModal.onclick = function(e) {
+                        if (e.target === successModal) {
+                            successModal.classList.remove('active');
+                        }
+                    };
+                }
+            }
+
             function completeBooking(ev, quantity, amountPaid, offer) {
                 const modal = document.getElementById('bmsCheckoutModal');
                 const payBtn = document.getElementById('checkoutPayBtn');
@@ -1451,15 +1535,12 @@
                         const countEl = document.getElementById('bookingCount');
                         if (countEl) countEl.textContent = (parseInt(countEl.textContent || '0', 10) + quantity);
 
-                        const promoMsg = offer ? `\nOffer Applied: ${offer.code}` : '';
-                        alert(`🎉 BOOKING CONFIRMED!\n\nEvent: ${ev.eventName}\nTickets: ${quantity}\nDate: ${ev.date} at ${ev.time}\nLocation: ${ev.location}${promoMsg}\nTotal Paid: ${amountPaid > 0 ? '₹' + amountPaid : 'Free'}\n\nYour M-Ticket has been confirmed and saved to My Bookings!`);
-                        window.location.href = 'Your_Booking.html';
+                        showBookingSuccess(ev, quantity, amountPaid, offer);
                     });
                 } else {
                     modal.classList.remove('active');
                     payBtn.disabled = false;
-                    const promoMsg = offer ? `\nOffer Applied: ${offer.code}` : '';
-                    alert(`🎉 BOOKING CONFIRMED!\n\nEvent: ${ev.eventName}\nTickets: ${quantity}${promoMsg}\nTotal: ${amountPaid > 0 ? '₹' + amountPaid : 'Free'}\n\nYour ticket has been booked!`);
+                    showBookingSuccess(ev, quantity, amountPaid, offer);
                 }
             }
 

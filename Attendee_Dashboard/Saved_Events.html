@@ -12,7 +12,7 @@
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script type="text/javascript">
         (function() {
-            emailjs.init("YOUR_PUBLIC_KEY");
+            emailjs.init("ZhY8nu-13U5N_I5Zf");
         })();
     </script>
     <!-- AWS SDK & Auth Scripts -->
@@ -21,6 +21,40 @@
     <script src="../aws-config.js"></script>
     <script src="../dashboard-auth.js"></script>
     <script src="attendee-backend.js"></script>
+    <style>
+        .custom-modal-backdrop {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+        .custom-modal-backdrop.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .custom-modal-box {
+            background: #181d28;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 16px;
+            padding: 28px;
+            max-width: 440px;
+            width: 90%;
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.6);
+            transform: scale(0.95);
+            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .custom-modal-backdrop.active .custom-modal-box {
+            transform: scale(1);
+        }
+    </style>
 </head>
 <body class="attendee-dashboard" data-required-role="attendee">
     <div class="page-shell">
@@ -93,6 +127,47 @@
         </main>
     </div>
 
+    <!-- Booking Success & Email Receipt Modal -->
+    <div class="custom-modal-backdrop" id="bookingSuccessModal">
+        <div class="custom-modal-box" style="text-align: center;">
+            <div style="width: 58px; height: 58px; border-radius: 50%; background: rgba(16, 185, 129, 0.15); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; color: #10b981;">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            </div>
+            
+            <h3 style="font-size: 1.4rem; font-weight: 800; color: #fff; margin-bottom: 6px;">Booking Confirmed!</h3>
+            <p id="successEventTitle" style="color: #94a3b8; font-size: 0.95rem; margin-bottom: 18px; font-weight: 600;">Event Name</p>
+
+            <div style="background: #0c0e14; border: 1px solid #282f3f; border-radius: 14px; padding: 16px; text-align: left; margin-bottom: 18px;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #94a3b8; margin-bottom: 8px;">
+                    <span>Tickets Booked:</span>
+                    <strong style="color: #fff;">1 ticket</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #94a3b8; margin-bottom: 8px;">
+                    <span>Total Amount Paid:</span>
+                    <strong id="successAmount" style="color: #10b981;">₹0</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #94a3b8;">
+                    <span>Event Date & Time:</span>
+                    <strong id="successDateTime" style="color: #fff;">TBD</strong>
+                </div>
+            </div>
+
+            <!-- Email Receipt Notice -->
+            <div style="background: rgba(59, 130, 246, 0.12); border: 1px solid rgba(59, 130, 246, 0.35); border-radius: 12px; padding: 14px 16px; margin-bottom: 22px; text-align: left; display: flex; align-items: flex-start; gap: 12px;">
+                <span style="font-size: 1.3rem; line-height: 1;">📩</span>
+                <div>
+                    <div style="font-size: 0.85rem; font-weight: 700; color: #93c5fd; margin-bottom: 3px;">Ticket Receipt & QR Pass Sent!</div>
+                    <div style="font-size: 0.78rem; color: #cbd5e1; line-height: 1.4;">A copy of your M-Ticket receipt has been emailed to <strong id="successEmailDisplay" style="color: #fff;">your email</strong>.</div>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <button type="button" id="closeSuccessBtn" class="primary-btn" style="flex: 1; padding: 12px; font-size: 0.9rem; background: #222938; border: 1px solid #334155; color: #fff;">Done</button>
+                <button type="button" id="viewBookingsBtn" class="primary-btn" style="flex: 1.2; padding: 12px; font-size: 0.9rem; background: #f84464;">View My Bookings</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             let activeEvents = [];
@@ -136,10 +211,14 @@
                 grid.innerHTML = '';
 
                 events.forEach(function(event, index) {
+                    if (window.AttendeeBackend && window.AttendeeBackend.isEventSalesClosed && window.AttendeeBackend.isEventSalesClosed(event)) {
+                        return; // Disappear when sales are closed
+                    }
+
                     const initial = event.eventName ? event.eventName.substring(0, 2).toUpperCase() : 'EV';
                     const dateObj = new Date(event.date);
                     const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                    const priceDisplay = event.price > 0 ? '$' + parseFloat(event.price).toFixed(2) : 'Free';
+                    const priceDisplay = event.price > 0 ? '₹' + parseFloat(event.price).toFixed(2) : 'Free';
                     
                     let locationDisplay = event.location || 'TBA';
                     if (event.googleMapLink) {
@@ -148,13 +227,7 @@
                         ${locationDisplay}</a>`;
                     }
 
-                    let bookBtnHTML = `<button class="primary-btn book-btn" data-id="${event.eventId}">Book now</button>`;
-                    if (event.salesDeadline) {
-                        const deadlineDate = new Date(event.salesDeadline);
-                        if (new Date() > deadlineDate) {
-                            bookBtnHTML = `<button class="primary-btn" disabled style="background:var(--border); color:var(--muted); cursor:not-allowed;">Sales Closed</button>`;
-                        }
-                    }
+                    const bookBtnHTML = `<button class="primary-btn book-btn" data-id="${event.eventId}">Book now</button>`;
                     
                     const gradients = ['gradient-one', 'gradient-two', 'gradient-three', 'gradient-four'];
                     const gradientClass = gradients[index % gradients.length];
@@ -189,6 +262,34 @@
                 attachListeners();
             }
 
+            function showSuccessModal(event) {
+                const modal = document.getElementById('bookingSuccessModal');
+                const titleEl = document.getElementById('successEventTitle');
+                const amountEl = document.getElementById('successAmount');
+                const dtEl = document.getElementById('successDateTime');
+                const emailEl = document.getElementById('successEmailDisplay');
+
+                if (titleEl) titleEl.textContent = event.eventName || 'Live Event';
+                if (amountEl) amountEl.textContent = event.price > 0 ? ('₹' + parseFloat(event.price).toFixed(2)) : 'Free Entry';
+                if (dtEl) dtEl.textContent = `${event.date || 'TBD'} • ${event.time || 'TBD'}`;
+                
+                const email = (userProfile && userProfile.email) || (window.EVENTPRO_DASHBOARD_AUTH && window.EVENTPRO_DASHBOARD_AUTH.userEmail) || 'your registered email';
+                if (emailEl) emailEl.textContent = email;
+
+                if (modal) modal.classList.add('active');
+
+                const closeBtn = document.getElementById('closeSuccessBtn');
+                const viewBtn = document.getElementById('viewBookingsBtn');
+
+                if (closeBtn) closeBtn.onclick = () => modal.classList.remove('active');
+                if (viewBtn) viewBtn.onclick = () => window.location.href = 'Your_Booking.html';
+                if (modal) {
+                    modal.onclick = (e) => {
+                        if (e.target === modal) modal.classList.remove('active');
+                    };
+                }
+            }
+
             function attachListeners() {
                 // Remove (Unsave) buttons
                 document.querySelectorAll('.save-btn').forEach(btn => {
@@ -215,13 +316,13 @@
                         self.textContent = 'Booking...';
 
                         window.AttendeeBackend.bookTicket(event, (err, ticket) => {
+                            self.disabled = false;
                             if (err) {
                                 alert("Failed to book ticket: " + err.message);
-                                self.disabled = false;
                                 self.textContent = 'Book now';
                             } else {
-                                alert("Success! QR code has been emailed via EmailJS. Ticket is in My Bookings.");
                                 self.textContent = 'Booked';
+                                showSuccessModal(event);
                             }
                         });
                     });
