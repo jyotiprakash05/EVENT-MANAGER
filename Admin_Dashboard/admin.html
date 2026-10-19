@@ -3,112 +3,386 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard | EventPro</title>
+    <title>EventPro Admin | Master Control Hub</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <!-- AWS SDKs -->
     <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1000.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/amazon-cognito-identity-js@5.2.3/dist/amazon-cognito-identity.min.js"></script>
     
-    <!-- Config and Auth -->
+    <!-- Config and Backend -->
     <script src="../aws-config.js"></script>
     <script src="admin-backend.js"></script>
     
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="admin.css">
 </head>
 <body>
-    <!-- Login State -->
+    <!-- 1. Admin Login View -->
     <div id="admin-login-container" class="admin-login-container" style="display: none;">
         <div class="admin-login-box">
-            <h2>Admin Login</h2>
+            <div class="login-header">
+                <div class="login-logo">👑</div>
+                <h2>EventPro Admin</h2>
+                <p>Master platform & infrastructure controls</p>
+            </div>
+            
             <div id="adminLoginError" class="admin-login-error"></div>
+            
             <form id="adminLoginForm">
                 <div class="form-group">
-                    <label>Email Address</label>
-                    <input type="email" id="adminEmail" required>
+                    <label>Admin Email</label>
+                    <input type="email" id="adminEmail" placeholder="admin@eventpro.com" required>
                 </div>
                 <div class="form-group">
                     <label>Password</label>
-                    <input type="password" id="adminPassword" required>
+                    <input type="password" id="adminPassword" placeholder="••••••••" required>
                 </div>
-                <button type="submit" id="adminLoginBtn">Login</button>
+                <button type="submit" id="adminLoginBtn" class="btn-submit">Sign In to Admin Panel</button>
             </form>
+
+            <div class="quick-dev-credentials">
+                <button type="button" onclick="quickFillAdmin()">⚡ Auto-fill Default Admin</button>
+            </div>
         </div>
     </div>
 
-    <!-- Dashboard State -->
+    <!-- 2. Master Dashboard View -->
     <div id="dashboard-layout" class="dashboard-layout" style="display: none;">
-        <!-- Sidebar -->
+        <!-- Left Sidebar Navigation -->
         <aside class="sidebar">
-            <h2>
-                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-                Admin Panel
-            </h2>
+            <div class="brand-header">
+                <div class="brand-logo-icon">👑</div>
+                <div>
+                    <div class="brand-title">EventPro</div>
+                    <div class="brand-subtitle">SUPER ADMIN</div>
+                </div>
+            </div>
+
             <ul class="nav-links">
-                <li><a href="#" class="active">Overview</a></li>
-                <li style="margin-top: auto;"><a href="#" id="logoutBtn" style="color: #ef4444;">Logout</a></li>
+                <li>
+                    <a href="#overview" class="nav-tab active" data-tab="overview">
+                        <span>📊</span>
+                        <span>Overview</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#users" class="nav-tab" data-tab="users">
+                        <span>👥</span>
+                        <span>Users Directory</span>
+                        <span class="nav-badge" id="nav-badge-users">0</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#events" class="nav-tab" data-tab="events">
+                        <span>🎪</span>
+                        <span>Events Moderation</span>
+                        <span class="nav-badge" id="nav-badge-events">0</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#escrow" class="nav-tab" data-tab="escrow">
+                        <span>🛡️</span>
+                        <span>Escrow & Refunds</span>
+                    </a>
+                </li>
             </ul>
+
+            <div class="sidebar-footer">
+                <div class="admin-profile-pill">
+                    <div class="admin-avatar">AD</div>
+                    <div style="overflow: hidden;">
+                        <div id="adminNameDisplay" style="font-size: 0.85rem; font-weight: 700; color: #fff; white-space: nowrap; text-overflow: ellipsis;">Master Admin</div>
+                        <div id="adminEmailDisplay" style="font-size: 0.72rem; color: var(--text-dim); white-space: nowrap; text-overflow: ellipsis;">admin@eventpro.com</div>
+                    </div>
+                </div>
+                <a href="#" id="logoutBtn" class="logout-btn">
+                    <span>🚪</span>
+                    <span>Sign Out</span>
+                </a>
+            </div>
         </aside>
 
-        <!-- Main Content -->
+        <!-- Main Content Area -->
         <main class="main-content">
-            <div class="header">
-                <div>
-                    <h1 style="font-size: 1.8rem; margin-bottom: 4px;">Platform Overview</h1>
-                    <p style="color: var(--text-light);">Monitor users and revenue across EventPro.</p>
+            <!-- Global Top Bar -->
+            <div class="top-bar">
+                <div class="view-heading">
+                    <h1 id="viewTitle">Platform Overview</h1>
+                    <p id="viewSubtitle">Real-time health, users, events, and smart escrow activity.</p>
+                </div>
+                <div class="quick-meta-pill">
+                    <div class="pulse-dot"></div>
+                    <span id="liveStatusText">Live Cloud Sync</span>
                 </div>
             </div>
 
-            <!-- Stats -->
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <h3>Total Users</h3>
-                    <div class="value" id="stat-total-users">0</div>
-                </div>
-                <div class="stat-card">
-                    <h3>Organizers</h3>
-                    <div class="value" id="stat-organizers">0</div>
-                </div>
-                <div class="stat-card">
-                    <h3>Attendees</h3>
-                    <div class="value" id="stat-attendees">0</div>
-                </div>
-                <div class="stat-card" style="border-left: 4px solid var(--gold);">
-                    <h3>Platform Revenue</h3>
-                    <div class="value" id="stat-revenue">₹0</div>
-                    <small style="color: var(--text-light); font-size: 0.75rem;">(3% ticket fee | ₹0 org fees)</small>
-                </div>
-            </div>
+            <!-- TAB 1: OVERVIEW -->
+            <section id="tab-overview" class="view-section active">
+                <div class="stats-grid">
+                    <div class="stat-card card-primary">
+                        <div class="stat-card-header">
+                            <h3>Total Accounts</h3>
+                            <span class="stat-icon">👥</span>
+                        </div>
+                        <div class="stat-value" id="stat-total-users">0</div>
+                        <div class="stat-sub" id="stat-user-ratio">0 Organizers • 0 Attendees</div>
+                    </div>
 
-            <!-- Users Table -->
-            <div class="data-table-wrapper">
-                <div class="table-header">
-                    <h2 style="font-size: 1.2rem;">Registered Users</h2>
+                    <div class="stat-card card-organizer">
+                        <div class="stat-card-header">
+                            <h3>Organizers</h3>
+                            <span class="stat-icon">🎪</span>
+                        </div>
+                        <div class="stat-value" id="stat-organizers">0</div>
+                        <div class="stat-sub">Creators with live event production</div>
+                    </div>
+
+                    <div class="stat-card card-attendee">
+                        <div class="stat-card-header">
+                            <h3>Attendees</h3>
+                            <span class="stat-icon">🎟️</span>
+                        </div>
+                        <div class="stat-value" id="stat-attendees">0</div>
+                        <div class="stat-sub" id="stat-tickets-sold">0 Total tickets booked</div>
+                    </div>
+
+                    <div class="stat-card card-revenue">
+                        <div class="stat-card-header">
+                            <h3>Platform Revenue (3%)</h3>
+                            <span class="stat-icon">💸</span>
+                        </div>
+                        <div class="stat-value" id="stat-revenue">₹0.00</div>
+                        <div class="stat-sub" id="stat-gross-volume">Gross Sales: ₹0.00</div>
+                    </div>
                 </div>
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>User</th>
-                            <th>Email</th>
-                            <th>Role</th>
-                            <th>Registered</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="usersListBody">
-                        <tr><td colspan="5" style="text-align: center; padding: 24px; color: var(--text-light);">Loading users...</td></tr>
-                    </tbody>
-                </table>
-            </div>
+
+                <!-- Escrow Quick Summary Banner -->
+                <div class="panel-card" style="background: linear-gradient(180deg, rgba(16, 185, 129, 0.08) 0%, var(--bg-card) 100%); border-color: rgba(16, 185, 129, 0.25);">
+                    <div class="panel-header">
+                        <div class="panel-title">
+                            <span>🛡️</span>
+                            <span>Proof-of-Presence Smart Refund Engine Status</span>
+                        </div>
+                        <button type="button" class="btn-action btn-secondary" onclick="switchTab('escrow')">View Detailed Audit →</button>
+                    </div>
+                    <div style="padding: 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                        <div>
+                            <div style="color: var(--text-dim); font-size: 0.78rem; font-weight: 700; text-transform: uppercase;">PLEDGE DEPOSITS COLLECTED</div>
+                            <div style="font-size: 1.5rem; font-weight: 800; color: #fff; margin-top: 4px;" id="ov-escrow-collected">₹0</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">From free & pledge tickets</div>
+                        </div>
+                        <div>
+                            <div style="color: var(--text-dim); font-size: 0.78rem; font-weight: 700; text-transform: uppercase;">AUTO-REFUNDED AT GATE</div>
+                            <div style="font-size: 1.5rem; font-weight: 800; color: #34d399; margin-top: 4px;" id="ov-escrow-refunded">₹0</div>
+                            <div style="font-size: 0.75rem; color: #6ee7b7;">Credited upon QR scan verification</div>
+                        </div>
+                        <div>
+                            <div style="color: var(--text-dim); font-size: 0.78rem; font-weight: 700; text-transform: uppercase;">CURRENTLY HELD IN ESCROW</div>
+                            <div style="font-size: 1.5rem; font-weight: 800; color: #fbbf24; margin-top: 4px;" id="ov-escrow-held">₹0</div>
+                            <div style="font-size: 0.75rem; color: #fde68a;">Locked until event gate check-in</div>
+                        </div>
+                        <div>
+                            <div style="color: var(--text-dim); font-size: 0.78rem; font-weight: 700; text-transform: uppercase;">GROUP SPLIT BOOKINGS</div>
+                            <div style="font-size: 1.5rem; font-weight: 800; color: #818cf8; margin-top: 4px;" id="ov-split-count">0</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);" id="ov-split-settled">0 Fully Settled</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Events Table Preview -->
+                <div class="panel-card">
+                    <div class="panel-header">
+                        <div class="panel-title">
+                            <span>🎪</span>
+                            <span>Live Events Snapshot</span>
+                        </div>
+                        <button type="button" class="btn-action btn-secondary" onclick="switchTab('events')">Manage All Events →</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Event</th>
+                                    <th>Organizer</th>
+                                    <th>Date</th>
+                                    <th>Price</th>
+                                    <th>Tickets Sold</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="overviewEventsBody">
+                                <tr><td colspan="6" style="text-align: center; padding: 24px; color: var(--text-muted);">Loading events...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: USERS DIRECTORY -->
+            <section id="tab-users" class="view-section">
+                <div class="toolbar-container">
+                    <div class="filter-pills">
+                        <button class="filter-btn active" data-filter="all" onclick="filterUsers('all', this)">All Users (<span id="count-pill-all">0</span>)</button>
+                        <button class="filter-btn" data-filter="organizer" onclick="filterUsers('organizer', this)">Organizers (<span id="count-pill-org">0</span>)</button>
+                        <button class="filter-btn" data-filter="attendee" onclick="filterUsers('attendee', this)">Attendees (<span id="count-pill-att">0</span>)</button>
+                        <button class="filter-btn" data-filter="admin" onclick="filterUsers('admin', this)">Admins (<span id="count-pill-adm">0</span>)</button>
+                    </div>
+                    <div class="search-input-box">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <input type="text" id="userSearchInput" placeholder="Search user by name or email..." onkeyup="renderUsersTable()">
+                    </div>
+                </div>
+
+                <div class="panel-card">
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>User Name</th>
+                                    <th>Email Address</th>
+                                    <th>Detected Role</th>
+                                    <th>Activity & Volume</th>
+                                    <th>Joined Date</th>
+                                    <th style="text-align: right;">Admin Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersListBody">
+                                <tr><td colspan="6" style="text-align: center; padding: 24px; color: var(--text-muted);">Loading users...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 3: EVENTS MODERATION -->
+            <section id="tab-events" class="view-section">
+                <div class="toolbar-container">
+                    <div class="filter-pills">
+                        <button class="filter-btn active" data-filter="all" onclick="filterEvents('all', this)">All Events (<span id="count-events-all">0</span>)</button>
+                        <button class="filter-btn" data-filter="live" onclick="filterEvents('live', this)">Live Public (<span id="count-events-live">0</span>)</button>
+                        <button class="filter-btn" data-filter="unlisted" onclick="filterEvents('unlisted', this)">Unlisted / Hidden (<span id="count-events-unlisted">0</span>)</button>
+                        <button class="filter-btn" data-filter="featured" onclick="filterEvents('featured', this)">⭐ Featured (<span id="count-events-featured">0</span>)</button>
+                    </div>
+                    <div class="search-input-box">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <input type="text" id="eventSearchInput" placeholder="Search event by title, venue, organizer..." onkeyup="renderEventsTable()">
+                    </div>
+                </div>
+
+                <div class="panel-card">
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Event Details</th>
+                                    <th>Organizer</th>
+                                    <th>Date & Venue</th>
+                                    <th>Pricing / Escrow</th>
+                                    <th>Sales & Revenue</th>
+                                    <th>Visibility</th>
+                                    <th style="text-align: right;">Moderation Controls</th>
+                                </tr>
+                            </thead>
+                            <tbody id="eventsListBody">
+                                <tr><td colspan="7" style="text-align: center; padding: 24px; color: var(--text-muted);">Loading events...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 4: SMART ESCROW & FINANCIALS -->
+            <section id="tab-escrow" class="view-section">
+                <div class="escrow-cards-grid">
+                    <div class="escrow-card">
+                        <div class="escrow-card-top">
+                            <div>
+                                <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Pledge Escrow Collected</div>
+                                <div style="font-size: 2rem; font-weight: 800; color: #fff; margin-top: 4px;" id="escrow-total-collected">₹0</div>
+                            </div>
+                            <div class="escrow-icon-box green">💰</div>
+                        </div>
+                        <p style="font-size: 0.82rem; color: var(--text-dim);">Total pledge deposits paid by attendees to secure free seats.</p>
+                    </div>
+
+                    <div class="escrow-card">
+                        <div class="escrow-card-top">
+                            <div>
+                                <div style="font-size: 0.8rem; font-weight: 700; color: #34d399; text-transform: uppercase;">Refunded at Venue Gate</div>
+                                <div style="font-size: 2rem; font-weight: 800; color: #34d399; margin-top: 4px;" id="escrow-total-refunded">₹0</div>
+                            </div>
+                            <div class="escrow-icon-box green">✅</div>
+                        </div>
+                        <p style="font-size: 0.82rem; color: var(--text-dim);">Proof-of-Presence verified upon physical QR ticket scan.</p>
+                    </div>
+
+                    <div class="escrow-card">
+                        <div class="escrow-card-top">
+                            <div>
+                                <div style="font-size: 0.8rem; font-weight: 700; color: #fbbf24; text-transform: uppercase;">Held in Active Escrow</div>
+                                <div style="font-size: 2rem; font-weight: 800; color: #fbbf24; margin-top: 4px;" id="escrow-total-held">₹0</div>
+                            </div>
+                            <div class="escrow-icon-box amber">🔒</div>
+                        </div>
+                        <p style="font-size: 0.82rem; color: var(--text-dim);">Funds in hold. Will auto-refund on entry or forfeit on no-show.</p>
+                    </div>
+                </div>
+
+                <!-- Group Split Analytics & Details -->
+                <div class="panel-card">
+                    <div class="panel-header">
+                        <div class="panel-title">
+                            <span>👥</span>
+                            <span>Group Split Booking Health</span>
+                        </div>
+                    </div>
+                    <div style="padding: 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px;">
+                        <div style="background: rgba(255, 255, 255, 0.02); padding: 18px; border-radius: 12px; border: 1px solid var(--border);">
+                            <div style="font-size: 0.8rem; color: var(--text-dim); font-weight: 700;">TOTAL GROUP SPLIT ORDERS</div>
+                            <div style="font-size: 1.8rem; font-weight: 800; color: #fff; margin: 4px 0;" id="split-total-count">0</div>
+                            <div style="font-size: 0.78rem; color: var(--text-muted);">Orders split among friends</div>
+                        </div>
+
+                        <div style="background: rgba(16, 185, 129, 0.05); padding: 18px; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.2);">
+                            <div style="font-size: 0.8rem; color: #34d399; font-weight: 700;">FULLY SETTLED</div>
+                            <div style="font-size: 1.8rem; font-weight: 800; color: #34d399; margin: 4px 0;" id="split-settled-count">0</div>
+                            <div style="font-size: 0.78rem; color: #6ee7b7;">All friends paid their share within 15 min</div>
+                        </div>
+
+                        <div style="background: rgba(245, 158, 11, 0.05); padding: 18px; border-radius: 12px; border: 1px solid rgba(245, 158, 11, 0.2);">
+                            <div style="font-size: 0.8rem; color: #fbbf24; font-weight: 700;">PENDING FRIENDS</div>
+                            <div style="font-size: 1.8rem; font-weight: 800; color: #fbbf24; margin: 4px 0;" id="split-pending-count">0</div>
+                            <div style="font-size: 0.78rem; color: #fde68a;">Active 15-minute reservation timer running</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
         </main>
     </div>
 
+    <!-- Application Script Logic -->
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(function() {
-                verifyAdmin();
-            }, 500);
+        let currentStats = null;
+        let activeUserFilter = 'all';
+        let activeEventFilter = 'all';
 
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(verifyAdmin, 400);
+
+            // Tab Navigation Handling
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const target = this.getAttribute('data-tab');
+                    switchTab(target);
+                });
+            });
+
+            // Logout Handler
             document.getElementById('logoutBtn').addEventListener('click', function(e) {
                 e.preventDefault();
                 const poolData = {
@@ -117,17 +391,44 @@
                 };
                 const userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
                 const cognitoUser = userPool.getCurrentUser();
-                if (cognitoUser != null) {
-                    cognitoUser.signOut();
-                }
+                if (cognitoUser) cognitoUser.signOut();
                 showLogin();
             });
 
+            // Login Form Handler
             document.getElementById('adminLoginForm').addEventListener('submit', function(e) {
                 e.preventDefault();
                 handleLogin();
             });
         });
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.nav-tab').forEach(t => {
+                if (t.getAttribute('data-tab') === tabId) t.classList.add('active');
+                else t.classList.remove('active');
+            });
+
+            document.querySelectorAll('.view-section').forEach(s => {
+                if (s.id === 'tab-' + tabId) s.classList.add('active');
+                else s.classList.remove('active');
+            });
+
+            const titles = {
+                'overview': { title: 'Platform Overview', subtitle: 'Real-time health, users, events, and smart escrow activity.' },
+                'users': { title: 'Users & Roles Directory', subtitle: 'Identify organizers, attendees, and administrator accounts.' },
+                'events': { title: 'Events Moderation Hub', subtitle: 'Control public visibility, feature top experiences, or remove spam.' },
+                'escrow': { title: 'Smart Escrow & Refunds', subtitle: 'Proof-of-Presence gate verification and group split analytics.' }
+            };
+
+            const meta = titles[tabId] || titles['overview'];
+            document.getElementById('viewTitle').textContent = meta.title;
+            document.getElementById('viewSubtitle').textContent = meta.subtitle;
+        }
+
+        function quickFillAdmin() {
+            document.getElementById('adminEmail').value = 'admin@eventpro.com';
+            document.getElementById('adminPassword').value = 'Admin@1234';
+        }
 
         function showLogin(errorMsg) {
             document.getElementById('dashboard-layout').style.display = 'none';
@@ -142,10 +443,10 @@
         }
 
         function handleLogin() {
-            const email = document.getElementById('adminEmail').value;
+            const email = document.getElementById('adminEmail').value.trim();
             const password = document.getElementById('adminPassword').value;
             const btn = document.getElementById('adminLoginBtn');
-            btn.textContent = 'Logging in...';
+            btn.textContent = 'Verifying admin credentials...';
             btn.disabled = true;
 
             const poolData = {
@@ -157,26 +458,27 @@
                 Username: email,
                 Password: password
             });
-            const userData = {
+            const cognitoUser = new AmazonCognitoIdentity.CognitoUser({
                 Username: email,
                 Pool: userPool
-            };
-            const cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
+            });
 
             cognitoUser.authenticateUser(authenticationDetails, {
                 onSuccess: function (result) {
-                    verifyAdmin(); // Now verify if they actually have the admin role
+                    verifyAdmin();
                 },
                 onFailure: function(err) {
-                    btn.textContent = 'Login';
+                    btn.textContent = 'Sign In to Admin Panel';
                     btn.disabled = false;
-                    showLogin(err.message || 'Login failed.');
+                    showLogin(err.message || 'Authentication failed.');
                 }
             });
         }
 
         function verifyAdmin() {
-            if (!window.AWS || !window.AmazonCognitoIdentity || !window.EVENTPRO_AWS_CONFIG) return setTimeout(verifyAdmin, 500);
+            if (!window.AWS || !window.AmazonCognitoIdentity || !window.EVENTPRO_AWS_CONFIG) {
+                return setTimeout(verifyAdmin, 400);
+            }
 
             const poolData = {
                 UserPoolId: window.EVENTPRO_AWS_CONFIG.userPoolId,
@@ -206,48 +508,49 @@
                     Logins: logins
                 });
 
-                AWS.config.credentials.get(function(err) {
-                    if (err) {
-                        showLogin("Could not load AWS credentials.");
+                AWS.config.credentials.get(function(credErr) {
+                    if (credErr) {
+                        showLogin("AWS Identity credentials could not be obtained: " + credErr.message);
                         return;
                     }
 
                     const payload = session.getIdToken().payload;
+                    const tokenEmail = (payload.email || '').toLowerCase().trim();
+                    const adminNameEl = document.getElementById('adminNameDisplay');
+                    const adminEmailEl = document.getElementById('adminEmailDisplay');
+                    
+                    if (adminEmailEl) adminEmailEl.textContent = tokenEmail;
+                    if (adminNameEl) adminNameEl.textContent = payload.given_name ? `${payload.given_name} (Admin)` : 'Super Admin';
+
+                    // Master admin bypass
+                    if (tokenEmail === 'admin@eventpro.com') {
+                        document.getElementById('admin-login-container').style.display = 'none';
+                        document.getElementById('dashboard-layout').style.display = 'flex';
+                        loadDashboard();
+                        return;
+                    }
+
+                    // Check role in DynamoDB EventProUsers table
                     const docClient = new AWS.DynamoDB.DocumentClient();
                     const params = {
                         TableName: window.EVENTPRO_AWS_CONFIG.dynamoDBTableName,
                         Key: { userId: payload.sub }
                     };
                     
-                    docClient.get(params, function(err, data) {
+                    docClient.get(params, function(dbErr, data) {
                         const btn = document.getElementById('adminLoginBtn');
-                        btn.textContent = 'Login';
-                        btn.disabled = false;
-
-                        // Always allow access for the master admin email directly from the verified Cognito token
-                        const tokenEmail = payload.email || '';
-                        if (tokenEmail === 'admin@eventpro.com') {
-                            document.getElementById('admin-login-container').style.display = 'none';
-                            document.getElementById('dashboard-layout').style.display = 'flex';
-                            loadDashboard();
-                            return;
+                        if (btn) {
+                            btn.textContent = 'Sign In to Admin Panel';
+                            btn.disabled = false;
                         }
 
-                        if (err || !data || !data.Item) {
-                            cognitoUser.signOut();
-                            showLogin("Could not verify your account in the database. Please sign in via the main page first.");
-                            return;
-                        }
-                        
-                        const isAdmin = data.Item.role === 'admin';
-                        
+                        const isAdmin = data && data.Item && (data.Item.role === 'admin' || data.Item.userType === 'admin');
                         if (!isAdmin) {
                             cognitoUser.signOut();
-                            showLogin("Access Denied: You do not have administrator privileges.");
+                            showLogin("Access Denied: Your account does not have administrative permissions.");
                             return;
                         }
-                        
-                        // User is an admin, proceed to load data
+
                         document.getElementById('admin-login-container').style.display = 'none';
                         document.getElementById('dashboard-layout').style.display = 'flex';
                         loadDashboard();
@@ -257,61 +560,327 @@
         }
 
         function loadDashboard() {
-            if (!window.AdminBackend) return setTimeout(loadDashboard, 500);
+            if (!window.AdminBackend) return setTimeout(loadDashboard, 400);
 
             window.AdminBackend.getDashboardStats(function(err, stats) {
                 if (err) {
-                    document.getElementById('usersListBody').innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--danger);">Error loading data: ${err.message}</td></tr>`;
+                    console.error("Dashboard data error:", err);
+                    document.getElementById('usersListBody').innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--danger); padding: 24px;">Failed to load data: ${err.message}</td></tr>`;
                     return;
                 }
 
+                currentStats = stats;
+
+                // 1. Overview KPIs
                 document.getElementById('stat-total-users').textContent = stats.totalUsers;
                 document.getElementById('stat-organizers').textContent = stats.organizers;
                 document.getElementById('stat-attendees').textContent = stats.attendees;
-                document.getElementById('stat-revenue').textContent = '₹' + stats.platformRevenue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                document.getElementById('stat-user-ratio').textContent = `${stats.organizers} Organizers • ${stats.attendees} Attendees`;
+                document.getElementById('stat-tickets-sold').textContent = `${stats.totalTicketsSold} Total tickets booked`;
+                
+                document.getElementById('stat-revenue').textContent = '₹' + stats.platformRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                document.getElementById('stat-gross-volume').textContent = 'Gross Sales: ₹' + stats.totalGrossSales.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-                const tbody = document.getElementById('usersListBody');
-                if (stats.usersList.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No users found.</td></tr>';
-                    return;
-                }
+                // Escrow & Split metrics
+                const esc = stats.escrowStats;
+                document.getElementById('ov-escrow-collected').textContent = '₹' + esc.totalCollected.toLocaleString();
+                document.getElementById('ov-escrow-refunded').textContent = '₹' + esc.totalRefunded.toLocaleString();
+                document.getElementById('ov-escrow-held').textContent = '₹' + esc.totalHeld.toLocaleString();
+                document.getElementById('ov-split-count').textContent = esc.totalSplitBookings;
+                document.getElementById('ov-split-settled').textContent = `${esc.settledSplits} Fully Settled • ${esc.pendingSplits} Pending`;
 
-                tbody.innerHTML = '';
-                stats.usersList.sort((a,b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+                // Detailed Tab Escrow Values
+                document.getElementById('escrow-total-collected').textContent = '₹' + esc.totalCollected.toLocaleString();
+                document.getElementById('escrow-total-refunded').textContent = '₹' + esc.totalRefunded.toLocaleString();
+                document.getElementById('escrow-total-held').textContent = '₹' + esc.totalHeld.toLocaleString();
+                document.getElementById('split-total-count').textContent = esc.totalSplitBookings;
+                document.getElementById('split-settled-count').textContent = esc.settledSplits;
+                document.getElementById('split-pending-count').textContent = esc.pendingSplits;
 
-                stats.usersList.forEach(user => {
-                    const name = user.firstName ? `${user.firstName} ${user.lastName || ''}` : 'Unknown';
-                    const role = user.userType === 'organizer' ? 'Organizer' : 'Attendee';
-                    const roleClass = user.userType === 'organizer' ? 'organizer' : 'attendee';
-                    
-                    const dateStr = user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A';
-                    
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td><strong>${name}</strong></td>
-                        <td>${user.email}</td>
-                        <td><span class="badge ${roleClass}">${role}</span></td>
-                        <td>${dateStr}</td>
-                        <td>
-                            <button class="btn btn-danger" onclick="deleteUser('${user.userId}')">Ban / Delete</button>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
+                // Nav Badges
+                document.getElementById('nav-badge-users').textContent = stats.totalUsers;
+                document.getElementById('nav-badge-events').textContent = stats.totalEvents;
+
+                // Filter Counts for Users
+                document.getElementById('count-pill-all').textContent = stats.totalUsers;
+                document.getElementById('count-pill-org').textContent = stats.organizers;
+                document.getElementById('count-pill-att').textContent = stats.attendees;
+                document.getElementById('count-pill-adm').textContent = stats.admins;
+
+                // Filter Counts for Events
+                document.getElementById('count-events-all').textContent = stats.totalEvents;
+                document.getElementById('count-events-live').textContent = stats.activeEvents;
+                document.getElementById('count-events-unlisted').textContent = stats.unlistedEvents;
+                document.getElementById('count-events-featured').textContent = stats.featuredEvents;
+
+                // Render Sub-Views
+                renderOverviewEvents();
+                renderUsersTable();
+                renderEventsTable();
             });
         }
 
-        window.deleteUser = function(userId) {
-            if (confirm(`Are you sure you want to delete this user?`)) {
-                window.AdminBackend.deleteUser(userId, function(err) {
-                    if (err) {
-                        alert("Failed to delete user: " + err.message);
-                    } else {
-                        loadDashboard(); // reload table
-                    }
+        // ==========================================
+        // USERS DIRECTORY (ORGANIZER VS ATTENDEE)
+        // ==========================================
+        function filterUsers(role, btn) {
+            activeUserFilter = role;
+            document.querySelectorAll('#tab-users .filter-btn').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            renderUsersTable();
+        }
+
+        function renderUsersTable() {
+            if (!currentStats || !currentStats.usersList) return;
+            const query = (document.getElementById('userSearchInput').value || '').toLowerCase().trim();
+            const tbody = document.getElementById('usersListBody');
+
+            let users = currentStats.usersList.slice();
+
+            // Filter by role
+            if (activeUserFilter !== 'all') {
+                users = users.filter(u => u.detectedRole === activeUserFilter);
+            }
+
+            // Filter by search query
+            if (query) {
+                users = users.filter(u => {
+                    const name = `${u.firstName || ''} ${u.lastName || ''}`.toLowerCase();
+                    const email = (u.email || '').toLowerCase();
+                    return name.includes(query) || email.includes(query);
+                });
+            }
+
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 32px; color: var(--text-dim);">No users found matching current filter.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = '';
+            users.sort((a,b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+
+            users.forEach(u => {
+                const tr = document.createElement('tr');
+                const fullName = (u.firstName || u.lastName) ? `${u.firstName || ''} ${u.lastName || ''}`.trim() : 'EventPro User';
+                const role = u.detectedRole;
+                
+                let roleBadgeHtml = '';
+                let activityHtml = '';
+
+                if (role === 'organizer') {
+                    roleBadgeHtml = `<span class="role-badge organizer"><span>🎪</span>ORGANIZER</span>`;
+                    activityHtml = `<span style="color:#67e8f9; font-weight:700;">${u.eventsCount || 0} Event${u.eventsCount !== 1 ? 's' : ''} Created</span>`;
+                } else if (role === 'admin') {
+                    roleBadgeHtml = `<span class="role-badge admin"><span>👑</span>ADMIN</span>`;
+                    activityHtml = `<span style="color:#d8b4fe; font-weight:700;">Full System Access</span>`;
+                } else {
+                    roleBadgeHtml = `<span class="role-badge attendee"><span>🎟️</span>ATTENDEE</span>`;
+                    activityHtml = `<span style="color:#6ee7b7; font-weight:600;">${u.ticketsCount || 0} Ticket${u.ticketsCount !== 1 ? 's' : ''} Booked</span>`;
+                }
+
+                const joined = u.createdAt ? new Date(u.createdAt).toLocaleDateString([], { dateStyle: 'medium' }) : 'Verified Member';
+
+                tr.innerHTML = `
+                    <td>
+                        <div style="font-weight: 700; color: #fff;">${fullName}</div>
+                        <small style="font-family: monospace; color: var(--text-dim); font-size: 0.72rem;">ID: ${u.userId.substring(0, 12)}...</small>
+                    </td>
+                    <td>
+                        <span style="color: var(--text-muted); font-size: 0.88rem;">${u.email || 'No email attached'}</span>
+                    </td>
+                    <td>${roleBadgeHtml}</td>
+                    <td>${activityHtml}</td>
+                    <td style="color: var(--text-muted); font-size: 0.84rem;">${joined}</td>
+                    <td style="text-align: right;">
+                        <button type="button" class="btn-action btn-secondary" onclick="toggleRole('${u.userId}', '${role}')" title="Change Role">
+                            Switch Role
+                        </button>
+                        <button type="button" class="btn-action btn-danger" onclick="deleteUserPrompt('${u.userId}', '${fullName}')" title="Ban user">
+                            Delete
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.toggleRole = function(userId, currentRole) {
+            const nextRole = (currentRole === 'organizer') ? 'attendee' : 'organizer';
+            if (confirm(`Change this user's role from ${currentRole.toUpperCase()} to ${nextRole.toUpperCase()}?`)) {
+                window.AdminBackend.updateUserRole(userId, nextRole, function(err) {
+                    if (err) alert("Could not update role: " + err.message);
+                    else loadDashboard();
                 });
             }
         };
+
+        window.deleteUserPrompt = function(userId, name) {
+            if (confirm(`Permanently remove account for "${name}"?\nThis cannot be undone.`)) {
+                window.AdminBackend.deleteUser(userId, function(err) {
+                    if (err) alert("Failed to delete user: " + err.message);
+                    else loadDashboard();
+                });
+            }
+        };
+
+        // ==========================================
+        // EVENTS MODERATION HUB
+        // ==========================================
+        function filterEvents(category, btn) {
+            activeEventFilter = category;
+            document.querySelectorAll('#tab-events .filter-btn').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            renderEventsTable();
+        }
+
+        function renderEventsTable() {
+            if (!currentStats || !currentStats.eventsList) return;
+            const query = (document.getElementById('eventSearchInput').value || '').toLowerCase().trim();
+            const tbody = document.getElementById('eventsListBody');
+
+            let events = currentStats.eventsList.slice();
+
+            // Filter logic
+            if (activeEventFilter === 'live') {
+                events = events.filter(e => !(e.unlisted === true || e.unlisted === 'true'));
+            } else if (activeEventFilter === 'unlisted') {
+                events = events.filter(e => e.unlisted === true || e.unlisted === 'true');
+            } else if (activeEventFilter === 'featured') {
+                events = events.filter(e => e.featured === true || e.featured === 'true');
+            }
+
+            // Search filter
+            if (query) {
+                events = events.filter(e => {
+                    const title = (e.eventName || '').toLowerCase();
+                    const venue = (e.location || '').toLowerCase();
+                    const org = (e.organizerEmail || e.organizerName || '').toLowerCase();
+                    return title.includes(query) || venue.includes(query) || org.includes(query);
+                });
+            }
+
+            if (events.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 32px; color: var(--text-dim);">No events match the selected criteria.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = '';
+            events.sort((a,b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+
+            events.forEach(e => {
+                const tr = document.createElement('tr');
+                const isUnlisted = e.unlisted === true || e.unlisted === 'true';
+                const isFeatured = e.featured === true || e.featured === 'true';
+                const tPrice = parseFloat(e.price) || 0;
+                const isFree = tPrice === 0;
+                const hasDeposit = e.hasDeposit === true || (parseFloat(e.refundableDeposit) > 0);
+                const depAmt = parseFloat(e.refundableDeposit) || 50;
+
+                const sold = parseInt(e.ticketsSold, 10) || 0;
+                const cap = parseInt(e.totalTickets || e.capacity, 10) || 100;
+                const rev = parseFloat(e.revenue) || (sold * tPrice) || 0;
+
+                let priceMarkup = isFree ? 
+                    (hasDeposit ? `<span style="color:#6ee7b7; font-weight:700;">Free (₹${depAmt} Escrow)</span>` : `<span style="color:#10b981; font-weight:700;">Free Entry</span>`) :
+                    `<span style="color:#fff; font-weight:700;">₹${tPrice}</span>`;
+
+                let visibilityBadges = isUnlisted ? 
+                    `<span class="status-badge unlisted">🚫 Unlisted</span>` : 
+                    `<span class="status-badge live">🟢 Live</span>`;
+                
+                if (isFeatured) {
+                    visibilityBadges += ` <span class="status-badge featured">⭐ Featured</span>`;
+                }
+
+                tr.innerHTML = `
+                    <td>
+                        <strong style="color: #fff; font-size: 0.92rem; display: block;">${e.eventName || 'Unnamed Event'}</strong>
+                        <small style="color: var(--text-dim); font-size: 0.72rem; font-family: monospace;">ID: ${e.eventId}</small>
+                    </td>
+                    <td>
+                        <div style="color: var(--text); font-weight: 600;">${e.organizerName || 'Organizer'}</div>
+                        <div style="color: var(--text-dim); font-size: 0.75rem;">${e.organizerEmail || 'Direct Creator'}</div>
+                    </td>
+                    <td>
+                        <div style="color: var(--text); font-size: 0.85rem;">${e.date || 'TBD'} • ${e.time || ''}</div>
+                        <div style="color: var(--text-dim); font-size: 0.75rem;">📍 ${e.location || 'Online'}</div>
+                    </td>
+                    <td>${priceMarkup}</td>
+                    <td>
+                        <div style="font-weight: 700; color: #fff;">${sold} / ${cap} sold</div>
+                        <div style="font-size: 0.75rem; color: #818cf8;">₹${rev.toLocaleString()} Volume</div>
+                    </td>
+                    <td>${visibilityBadges}</td>
+                    <td style="text-align: right;">
+                        <button type="button" class="btn-action ${isUnlisted ? 'btn-success' : 'btn-warning'}" onclick="toggleUnlist('${e.eventId}', ${isUnlisted})" title="Toggle Visibility">
+                            ${isUnlisted ? '👁️ Make Public' : '🚫 Unlist'}
+                        </button>
+                        <button type="button" class="btn-action btn-secondary" onclick="toggleFeature('${e.eventId}', ${isFeatured})" title="Toggle Featured Tag">
+                            ${isFeatured ? '⭐ Remove Feature' : '⭐ Feature'}
+                        </button>
+                        <button type="button" class="btn-action btn-danger" onclick="deleteEventPrompt('${e.eventId}', '${(e.eventName || '').replace(/'/g, "\\'")}')" title="Delete Event">
+                            🗑️
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.toggleUnlist = function(eventId, currentUnlisted) {
+            const actionText = currentUnlisted ? "re-list this event publicly on Attendee Event list" : "hide/unlist this event from public discovery";
+            if (confirm(`Are you sure you want to ${actionText}?`)) {
+                window.AdminBackend.toggleEventUnlisted(eventId, currentUnlisted, function(err) {
+                    if (err) alert("Could not update event visibility: " + err.message);
+                    else loadDashboard();
+                });
+            }
+        };
+
+        window.toggleFeature = function(eventId, currentFeatured) {
+            window.AdminBackend.toggleEventFeatured(eventId, currentFeatured, function(err) {
+                if (err) alert("Could not update featured status: " + err.message);
+                else loadDashboard();
+            });
+        };
+
+        window.deleteEventPrompt = function(eventId, eventName) {
+            if (confirm(`Permanently delete the event "${eventName}"?\nAll associated data will be removed from DynamoDB.`)) {
+                window.AdminBackend.deleteEvent(eventId, function(err) {
+                    if (err) alert("Failed to delete event: " + err.message);
+                    else loadDashboard();
+                });
+            }
+        };
+
+        // Render preview in Overview Tab
+        function renderOverviewEvents() {
+            const tbody = document.getElementById('overviewEventsBody');
+            if (!currentStats || !currentStats.eventsList) return;
+
+            const events = currentStats.eventsList.slice(0, 5);
+            if (events.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: var(--text-dim);">No events registered on platform yet.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = '';
+            events.forEach(e => {
+                const tr = document.createElement('tr');
+                const isUnlisted = e.unlisted === true || e.unlisted === 'true';
+                const isFree = (parseFloat(e.price) || 0) === 0;
+
+                tr.innerHTML = `
+                    <td><strong style="color: #fff;">${e.eventName || 'Unnamed'}</strong></td>
+                    <td style="color: var(--text-muted); font-size: 0.85rem;">${e.organizerEmail || e.organizerName || 'Organizer'}</td>
+                    <td style="color: var(--text-dim); font-size: 0.82rem;">${e.date || 'TBD'}</td>
+                    <td>${isFree ? '<span style="color:#10b981; font-weight:700;">Free</span>' : '₹' + e.price}</td>
+                    <td><span style="font-weight:700; color:#fff;">${e.ticketsSold || 0}</span> sold</td>
+                    <td>${isUnlisted ? '<span class="status-badge unlisted">Unlisted</span>' : '<span class="status-badge live">Live</span>'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
     </script>
 </body>
 </html>
