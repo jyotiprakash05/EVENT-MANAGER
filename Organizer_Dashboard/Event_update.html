@@ -146,6 +146,26 @@
                         </div>
                     </div>
 
+                    <!-- Proof-of-Presence Smart Deposit (Zero No-Show Guarantee) -->
+                    <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 12px; padding: 16px; margin: 16px 0;">
+                        <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; color: var(--text);">
+                            <input type="checkbox" id="hasDepositBond" style="accent-color: #10b981; width: 18px; height: 18px; margin-top: 2px;">
+                            <div style="flex: 1;">
+                                <strong style="color: #6ee7b7; display: flex; align-items: center; gap: 8px; font-size: 0.95rem;">
+                                    <span>🛡️ Proof-of-Presence Smart Refund Engine</span>
+                                    <span style="background: rgba(16, 185, 129, 0.2); color: #10b981; font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; font-weight: 700;">Zero No-Show Guarantee</span>
+                                </strong>
+                                <span style="font-size: 0.82rem; color: var(--muted); display: block; margin-top: 4px; line-height: 1.4;">
+                                    Eliminate empty seats for free or subsidized events. Attendees pay a refundable deposit that is <strong>automatically refunded to their account the instant their ticket is scanned at the venue gate</strong>. No-show deposits are forfeited to the organizer.
+                                </span>
+                            </div>
+                        </label>
+                        <div id="depositAmountRow" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed rgba(16, 185, 129, 0.25);">
+                            <label style="font-size: 0.82rem; color: #a7f3d0; font-weight: 600; display: block; margin-bottom: 6px;">Refundable Pledge Deposit Amount (₹ per ticket)</label>
+                            <input type="number" id="depositAmount" class="form-control" placeholder="50.00" min="5" step="5" style="max-width: 220px; background: var(--bg-dark); border: 1px solid rgba(16, 185, 129, 0.4); color: #fff;">
+                        </div>
+                    </div>
+
                     <div class="form-group">
                         <label>Event Description</label>
                         <textarea id="eventDescription" class="form-control" placeholder="Describe your event..." required></textarea>
@@ -250,8 +270,12 @@
                         }
                     }
 
-                    document.getElementById('eventCapacity').value = event.capacity || "";
-                    document.getElementById('eventPrice').value = event.price || 0;
+                    const hasBond = event.hasDepositBond === true || event.hasDepositBond === 'true' || (parseFloat(event.refundableDeposit) > 0);
+                    if (hasBond) {
+                        document.getElementById('hasDepositBond').checked = true;
+                        document.getElementById('depositAmountRow').style.display = 'block';
+                        document.getElementById('depositAmount').value = event.refundableDeposit || 50;
+                    }
                     document.getElementById('eventDescription').value = event.description || "";
                     if (event.imageUrl) {
                         document.getElementById('imageNameDisplay').textContent = "Image already uploaded (Click to change)";
@@ -260,6 +284,20 @@
             } else {
                 setTimeout(loadExistingEvent, 500);
             }
+        }
+
+        // Toggle deposit amount input row
+        const hasDepositBondEl = document.getElementById('hasDepositBond');
+        if (hasDepositBondEl) {
+            hasDepositBondEl.addEventListener('change', function() {
+                const row = document.getElementById('depositAmountRow');
+                if (row) {
+                    row.style.display = this.checked ? 'block' : 'none';
+                    if (this.checked && !document.getElementById('depositAmount').value) {
+                        document.getElementById('depositAmount').value = "50";
+                    }
+                }
+            });
         }
 
         document.getElementById('eventImage').addEventListener('change', function(e) {
@@ -319,6 +357,9 @@
                 existingEventData.location !== newLocation
             );
 
+            const hasDepositChecked = document.getElementById('hasDepositBond').checked;
+            const depositVal = hasDepositChecked ? (parseFloat(document.getElementById('depositAmount').value) || 50) : 0;
+
             const eventData = {
                 eventId: eventId,
                 eventName: newEventName,
@@ -332,6 +373,8 @@
                 salesDeadlineTime: dlTime,
                 capacity: parseInt(document.getElementById('eventCapacity').value),
                 price: parseFloat(document.getElementById('eventPrice').value),
+                hasDepositBond: hasDepositChecked,
+                refundableDeposit: depositVal,
                 description: document.getElementById('eventDescription').value,
                 imageUrl: uploadedImageUrl,
                 status: existingEventData ? existingEventData.status : "Active",

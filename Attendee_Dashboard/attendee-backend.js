@@ -126,7 +126,31 @@
             initAWS((err) => {
                 if (err) return callback(err);
                 
-                const ticketId = "TKT-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
+                const ticketId = 'TKT-' + Date.now() + '-' + Math.floor(1000 + Math.random() * 9000);
+                const hasDeposit = !!(event.hasDeposit || event.hasDepositBond || (parseFloat(event.refundableDeposit) > 0) || (parseFloat(event.depositAmount) > 0));
+                const qty = event.quantity || 1;
+                const depositPerTicket = parseFloat(event.refundableDeposit || 0);
+                const totalDeposit = event.depositAmount !== undefined ? parseFloat(event.depositAmount) : (hasDeposit ? (depositPerTicket * qty) : 0);
+
+                const isGroupSplit = !!event.isGroupSplit;
+                const totalSplit = isGroupSplit ? (event.totalSplitMembers || qty || 2) : 1;
+                const perPersonAmt = isGroupSplit ? (event.perPersonAmount || Math.round((event.price || 0) / totalSplit)) : (event.price || 0);
+
+                let initialSplitMembers = null;
+                if (isGroupSplit) {
+                    initialSplitMembers = event.splitMembers && event.splitMembers.length > 0 ? event.splitMembers : [
+                        { name: "You (Organizer)", amount: perPersonAmt, status: "Paid", paidAt: new Date().toISOString() }
+                    ];
+                    while (initialSplitMembers.length < totalSplit) {
+                        const idx = initialSplitMembers.length + 1;
+                        initialSplitMembers.push({
+                            name: `Friend #${idx}`,
+                            amount: perPersonAmt,
+                            status: "Pending",
+                            inviteLink: `https://eventpro.live/split?ref=${ticketId}&m=${idx}`
+                        });
+                    }
+                }
                 
                 const ticketParams = {
                     TableName: config.ticketsTableName,
@@ -135,11 +159,25 @@
                         eventId: event.eventId,
                         eventName: event.eventName || "Unnamed Event",
                         attendeeId: currentUserSub,
-                        status: "Valid",
+                        status: isGroupSplit ? "Pending Split" : "Valid",
                         date: event.date || "TBD",
                         time: event.time || "TBD",
                         location: event.location || "TBA",
-                        purchasedAt: new Date().toISOString()
+                        quantity: qty,
+                        price: event.price || 0,
+                        purchasedAt: new Date().toISOString(),
+                        // Proof-of-Presence Escrow Fields
+                        hasDeposit: hasDeposit,
+                        depositAmount: totalDeposit,
+                        depositStatus: hasDeposit ? "Held in Escrow" : "None",
+                        // Group Split Booking Fields
+                        isGroupSplit: isGroupSplit,
+                        totalSplitMembers: totalSplit,
+                        paidMembers: 1,
+                        perPersonAmount: perPersonAmt,
+                        splitStatus: isGroupSplit ? "Pending Friends" : "None",
+                        splitMembers: initialSplitMembers,
+                        splitExpiresAt: isGroupSplit ? new Date(Date.now() + 15 * 60000).toISOString() : null
                     }
                 };
                 
@@ -156,7 +194,7 @@
                         UpdateExpression: "set ticketsSold = if_not_exists(ticketsSold, :start) + :inc, revenue = if_not_exists(revenue, :startRev) + :price",
                         ConditionExpression: "attribute_exists(eventId)",
                         ExpressionAttributeValues: {
-                            ":inc": 1,
+                            ":inc": qty,
                             ":start": 0,
                             ":price": event.price || 0,
                             ":startRev": 0
@@ -241,6 +279,51 @@
                 docClient.update(params, function(err, data) {
                     if (err) callback(err);
                     else callback(null, data);
+                });
+            });
+        },
+
+        updateSplitPayment: function(ticketId, memberIndex, callback) {
+            initAWS((err) => {
+                if (err) return callback(err);
+                const params = {
+                    TableName: config.ticketsTableName,
+                    Key: { ticketId: ticketId }
+                };
+                docClient.get(params, (getErr, data) => {
+                    if (getErr || !data.Item) return callback(getErr || new Error("Ticket record not found"));
+                    const t = data.Item;
+                    if (!t.splitMembers || !t.splitMembers[memberIndex]) {
+                        return callback(new Error("Split member not found"));
+                    }
+
+                    t.splitMembers[memberIndex].status = "Paid";
+                    t.splitMembers[memberIndex].paidAt = new Date().toISOString();
+                    const paidCount = t.splitMembers.filter(m => m.status === "Paid").length;
+                    t.paidMembers = paidCount;
+                    if (paidCount >= (t.totalSplitMembers || 2)) {
+                        t.status = "Valid";
+                        t.splitStatus = "Fully Settled";
+                    }
+
+                    const updateParams = {
+                        TableName: config.ticketsTableName,
+                        Key: { ticketId: ticketId },
+                        UpdateExpression: "SET splitMembers = :sm, paidMembers = :pm, #s = :st, splitStatus = :ss",
+                        ExpressionAttributeNames: { "#s": "status" },
+                        ExpressionAttributeValues: {
+                            ":sm": t.splitMembers,
+                            ":pm": paidCount,
+                            ":st": t.status,
+                            ":ss": t.splitStatus || "Pending Friends"
+                        },
+                        ReturnValues: "ALL_NEW"
+                    };
+
+                    docClient.update(updateParams, (upErr, upData) => {
+                        if (upErr) return callback(upErr);
+                        callback(null, upData.Attributes);
+                    });
                 });
             });
         },

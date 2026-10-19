@@ -12,6 +12,7 @@
     <script src="../aws-config.js"></script>
     <script src="../dashboard-auth.js"></script>
     <script src="organizer-backend.js"></script>
+    <script src="../rolling-ticket-engine.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 </head>
 <body class="organizer-dashboard" data-required-role="organizer">
@@ -83,6 +84,10 @@
                         <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--primary); display: inline-block;"></span>
                         Duplicate-Proof Active
                     </span>
+                    <span id="antiScalpBadge" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);">
+                        <span style="width: 8px; height: 8px; border-radius: 50%; background: #38bdf8; display: inline-block;"></span>
+                        🛡️ Anti-Screenshot Guard Armed
+                    </span>
                 </div>
             </section>
 
@@ -101,7 +106,7 @@
                     <div style="width: 100%;">
                         <h4 style="margin: 0 0 10px; color: var(--muted); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em;">Manual Ticket Verification</h4>
                         <div class="manual-entry" style="display: flex; gap: 10px;">
-                            <input type="text" id="ticketCode" class="form-control" placeholder="Enter Ticket ID (e.g. TKT-1728...)" style="flex: 1; padding: 12px 16px; border-radius: 10px; background: var(--bg-dark); border: 1px solid var(--border); color: var(--text);">
+                            <input type="text" id="ticketCode" class="form-control" placeholder="Scan QR or paste payload / Ticket ID..." style="flex: 1; padding: 12px 16px; border-radius: 10px; background: var(--bg-dark); border: 1px solid var(--border); color: var(--text);">
                             <button type="button" id="verifyTicketBtn" class="btn-primary" style="padding: 12px 24px; border-radius: 10px; font-weight: 700; background: var(--primary); color: #fff; border: none; cursor: pointer;">Verify</button>
                         </div>
                     </div>
@@ -237,27 +242,19 @@
 
             // 2. Setup QR Scanner Viewfinder
             function onScanSuccess(decodedText, decodedResult) {
-                let ticketId = decodedText;
-                if (decodedText.includes('Ticket ID:')) {
-                    const match = decodedText.match(/Ticket ID:\s*([^\n]+)/);
-                    if (match && match[1]) {
-                        ticketId = match[1].trim();
-                    }
-                } else {
-                    ticketId = decodedText.trim();
-                }
+                let codeToVerify = decodedText ? decodedText.trim() : '';
 
-                if (ticketId === lastScannedCode) {
+                if (codeToVerify === lastScannedCode) {
                     return;
                 }
 
-                lastScannedCode = ticketId;
+                lastScannedCode = codeToVerify;
                 if (scanTimeout) clearTimeout(scanTimeout);
                 scanTimeout = setTimeout(() => {
                     lastScannedCode = null;
                 }, 4000);
 
-                document.getElementById('ticketCode').value = ticketId;
+                document.getElementById('ticketCode').value = codeToVerify;
                 document.getElementById('verifyTicketBtn').click();
             }
 
@@ -276,8 +273,8 @@
                 console.warn("Html5QrcodeScanner init notice:", e);
             }
 
-            // 3. Process Ticket Verification with Atomic Concurrency
-            document.getElementById('verifyTicketBtn').addEventListener('click', function() {
+            // 3. Process Ticket Verification with Dynamic Anti-Screenshot Validation & Atomic Concurrency
+            document.getElementById('verifyTicketBtn').addEventListener('click', async function() {
                 const code = document.getElementById('ticketCode').value.trim();
                 const card = document.getElementById('verificationResultCard');
                 const placeholder = document.getElementById('resultPlaceholder');
@@ -298,11 +295,37 @@
                 btn.textContent = 'Verifying...';
                 btn.disabled = true;
 
+                // Step A: Cryptographic & Screenshot Age Analysis
+                let cryptoResult = null;
+                if (window.RollingTicketEngine) {
+                    cryptoResult = await window.RollingTicketEngine.verifyScannedPayload(
+                        code, 
+                        selectedEventId !== 'ALL' ? selectedEventId : null
+                    );
+
+                    // If token is invalid or an expired screenshot, halt immediately!
+                    if (!cryptoResult.valid) {
+                        btn.textContent = 'Verify';
+                        btn.disabled = false;
+                        GateAudio.playError();
+
+                        if (cryptoResult.isScreenshot) {
+                            showScreenshotAlertCard(cryptoResult.ticketId, cryptoResult.ageSeconds, cryptoResult.scannedTime);
+                        } else {
+                            showErrorCard("Security Violation", cryptoResult.reason || "Cryptographic verification failed.");
+                        }
+                        return;
+                    }
+                }
+
+                // Step B: Resolve target ticket ID for backend check-in
+                const targetTicketId = cryptoResult ? cryptoResult.ticketId : code;
+
                 const options = {
                     expectedEventId: selectedEventId !== 'ALL' ? selectedEventId : null
                 };
 
-                window.OrganizerBackend.checkInTicket(code, options, function(err, result) {
+                window.OrganizerBackend.checkInTicket(targetTicketId, options, function(err, result) {
                     btn.textContent = 'Verify';
                     btn.disabled = false;
 
@@ -323,14 +346,56 @@
                         }
                     } else {
                         GateAudio.playSuccess();
-                        showSuccessCard(result.ticket, result.checkin);
-                        addSessionScan(result.ticket, "Valid");
+                        showSuccessCard(result.ticket, result.checkin, cryptoResult, result);
+                        addSessionScan(result.ticket, cryptoResult && cryptoResult.isDynamic ? "Valid (Dynamic)" : "Valid (Standard)");
                     }
                 });
             });
 
             // Card Rendering Helpers
-            function showSuccessCard(ticket, checkin) {
+            function showScreenshotAlertCard(ticketId, ageSeconds, scannedTime) {
+                const card = document.getElementById('verificationResultCard');
+                const placeholder = document.getElementById('resultPlaceholder');
+                const content = document.getElementById('resultContent');
+
+                placeholder.style.display = 'none';
+                content.style.display = 'block';
+
+                card.style.borderColor = '#ef4444';
+                card.style.background = 'linear-gradient(180deg, rgba(239, 68, 68, 0.22) 0%, var(--bg-panel) 100%)';
+                card.style.boxShadow = '0 0 35px rgba(239, 68, 68, 0.35)';
+
+                content.innerHTML = `
+                    <div style="font-size: 3.2rem; margin-bottom: 6px;">🛑</div>
+                    <span style="background: #ef4444; color: #fff; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; padding: 4px 14px; border-radius: 20px; display: inline-block; margin-bottom: 12px; box-shadow: 0 0 12px rgba(239,68,68,0.5);">
+                        STATIC SCREENSHOT DETECTED
+                    </span>
+                    <h3 style="margin: 0 0 6px; color: #fca5a5; font-size: 1.25rem;">Admission Denied: Expired Pass</h3>
+                    <p style="margin: 0 0 16px; color: #fecaca; font-size: 0.85rem;">
+                        The attendee presented a static screenshot or forwarded picture instead of the live application.
+                    </p>
+                    
+                    <div style="background: rgba(0,0,0,0.4); border: 1px solid rgba(239,68,68,0.4); border-radius: 12px; padding: 14px 18px; text-align: left; font-size: 0.85rem; color: #fecaca;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                            <span><strong>Target Ticket ID:</strong></span>
+                            <span style="font-family: monospace; color:#fff;">${ticketId || 'Unknown'}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                            <span><strong>Pass Age:</strong></span>
+                            <span style="color: #f87171; font-weight: 700;">${ageSeconds}s ago (Allowed limit: 30s)</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                            <span><strong>Token Time:</strong></span>
+                            <span>${scannedTime || 'Earlier'}</span>
+                        </div>
+                        <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(239,68,68,0.25); font-size: 0.78rem; color: #fca5a5;">
+                            🔒 <strong>Zero-Scalp Defense Rule:</strong> Pass was rejected because cryptographic time window expired. Require the attendee to display the live EventPro app on their phone.
+                        </div>
+                    </div>
+                `;
+            }
+
+            function showSuccessCard(ticket, checkin, cryptoResult, fullResult) {
                 const card = document.getElementById('verificationResultCard');
                 const placeholder = document.getElementById('resultPlaceholder');
                 const content = document.getElementById('resultContent');
@@ -339,19 +404,47 @@
                 content.style.display = 'block';
 
                 card.style.borderColor = '#10b981';
-                card.style.background = 'linear-gradient(180deg, rgba(16, 185, 129, 0.12) 0%, var(--bg-panel) 100%)';
+                card.style.background = 'linear-gradient(180deg, rgba(16, 185, 129, 0.14) 0%, var(--bg-panel) 100%)';
+                card.style.boxShadow = '0 0 30px rgba(16, 185, 129, 0.25)';
+
+                const isLiveDynamic = cryptoResult && cryptoResult.isDynamic && cryptoResult.verifiedLive;
+                const isDepositRefunded = (fullResult && fullResult.depositRefunded) || ticket.hasDeposit || ticket.depositAmount > 0;
+                const refundAmt = (fullResult && fullResult.depositAmount) || ticket.depositAmount || 50;
+
+                const livenessBadge = isLiveDynamic ? `
+                    <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #6ee7b7; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; margin-bottom: 8px;">
+                        <span>🛡️ ZERO-SCALP PASS VERIFIED</span>
+                        <span style="opacity: 0.85;">(Age: +${cryptoResult.ageSeconds}s • Live)</span>
+                    </div>
+                ` : `
+                    <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; color: #fde68a; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; margin-bottom: 8px;">
+                        <span>⚠️ LEGACY PASS (Static)</span>
+                    </div>
+                `;
+
+                const smartRefundBanner = isDepositRefunded ? `
+                    <div style="background: rgba(16, 185, 129, 0.18); border: 1px solid #10b981; border-radius: 12px; padding: 10px 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; text-align: left;">
+                        <span style="font-size: 1.6rem; line-height: 1;">💸</span>
+                        <div>
+                            <div style="color: #6ee7b7; font-weight: 800; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.05em;">SMART REFUND ESCROW RELEASED</div>
+                            <div style="color: #e2e8f0; font-size: 0.78rem;">Proof-of-Presence verified. <strong>₹${refundAmt}</strong> deposit automatically credited to attendee!</div>
+                        </div>
+                    </div>
+                ` : '';
 
                 content.innerHTML = `
-                    <div style="font-size: 3rem; margin-bottom: 8px;">✅</div>
-                    <span style="background: #10b981; color: #fff; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; padding: 4px 14px; border-radius: 20px; display: inline-block; margin-bottom: 12px;">ENTRY APPROVED</span>
+                    <div style="font-size: 3rem; margin-bottom: 4px;">✅</div>
+                    <span style="background: #10b981; color: #fff; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; padding: 4px 14px; border-radius: 20px; display: inline-block; margin-bottom: 8px;">ENTRY APPROVED</span>
+                    <div>${livenessBadge}</div>
+                    ${smartRefundBanner}
                     <h3 style="margin: 0 0 4px; color: var(--text); font-size: 1.3rem;">${ticket.attendeeName || 'Attendee'}</h3>
                     <p style="margin: 0 0 16px; color: var(--muted); font-size: 0.9rem;">${ticket.eventName || 'Event'}</p>
                     
                     <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(16,185,129,0.3); border-radius: 12px; padding: 12px 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; text-align: left; font-size: 0.85rem;">
                         <div><strong style="color:var(--muted); display:block; font-size:0.75rem;">TICKET ID</strong><span style="font-family:monospace; color:#34d399;">${ticket.ticketId.substring(0, 14)}...</span></div>
                         <div><strong style="color:var(--muted); display:block; font-size:0.75rem;">STATUS</strong><span style="color:#10b981; font-weight:700;">Verified Admitted</span></div>
-                        <div><strong style="color:var(--muted); display:block; font-size:0.75rem;">ATTENDEE</strong><span style="color:#f8fafc;">${ticket.attendeeName || 'Attendee'}</span></div>
-                        <div><strong style="color:var(--muted); display:block; font-size:0.75rem;">TIME</strong><span style="color:#f8fafc;">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'})}</span></div>
+                        <div><strong style="color:var(--muted); display:block; font-size:0.75rem;">SECURITY TYPE</strong><span style="color:${isLiveDynamic ? '#34d399' : '#f59e0b'}; font-weight:600;">${isLiveDynamic ? 'Dynamic Anti-Screenshot' : 'Static Legacy'}</span></div>
+                        <div><strong style="color:var(--muted); display:block; font-size:0.75rem;">ESCROW STATUS</strong><span style="color:${isDepositRefunded ? '#10b981' : '#94a3b8'}; font-weight:600;">${isDepositRefunded ? `₹${refundAmt} Refunded` : 'No Deposit'}</span></div>
                     </div>
                 `;
             }

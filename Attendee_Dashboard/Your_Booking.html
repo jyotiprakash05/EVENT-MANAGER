@@ -14,6 +14,9 @@
     <script src="../aws-config.js"></script>
     <script src="../dashboard-auth.js"></script>
     <script src="attendee-backend.js"></script>
+    <!-- Dynamic Rolling Pass Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="../rolling-ticket-engine.js"></script>
     <style>
         .custom-modal-backdrop {
             position: fixed;
@@ -46,6 +49,78 @@
         }
         .custom-modal-backdrop.active .custom-modal-box {
             transform: scale(1);
+        }
+
+        /* Dynamic Anti-Screenshot Pass Styles */
+        @keyframes scanline {
+            0% { top: 0%; opacity: 0.7; }
+            50% { opacity: 1; }
+            100% { top: 96%; opacity: 0.7; }
+        }
+        @keyframes livepulse {
+            0% { transform: scale(0.9); opacity: 0.7; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(0.9); opacity: 0.7; }
+        }
+        .pulse-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #10b981;
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 4px 12px;
+            border-radius: 20px;
+            letter-spacing: 0.05em;
+        }
+        .pulse-indicator .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+            box-shadow: 0 0 8px #10b981;
+            animation: livepulse 1.3s infinite ease-in-out;
+        }
+        .qr-wrapper {
+            position: relative;
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 14px;
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            overflow: hidden;
+            border: 2px solid rgba(16, 185, 129, 0.35);
+            margin: 8px auto;
+        }
+        .qr-laser-beam {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #10b981, #06b6d4, transparent);
+            box-shadow: 0 0 10px #10b981;
+            animation: scanline 2.2s ease-in-out infinite alternate;
+            pointer-events: none;
+            z-index: 5;
+        }
+        .countdown-track {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0 6px 0;
+        }
+        .countdown-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #06b6d4);
+            border-radius: 4px;
+            transition: width 1s linear;
         }
     </style>
 </head>
@@ -163,18 +238,59 @@
     <!-- html2pdf SDK -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-    <!-- Ticket QR Modal -->
-    <div id="ticketModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;">
-        <div style="background:var(--bg-panel); padding:32px; border-radius:16px; text-align:center; box-shadow:var(--shadow); position:relative; max-width:400px; width:90%;">
-            <button onclick="document.getElementById('ticketModal').style.display='none'" style="position:absolute; top:12px; right:12px; background:transparent; border:none; color:var(--text); cursor:pointer; font-size:1.2rem;">✖</button>
-            <div id="pdfContent" style="padding: 20px; background: white; color: black; border-radius: 8px;">
-                <h3 style="margin-top:0; color: #111;">Your Event Ticket</h3>
-                <p id="pdfEventName" style="font-weight: 600; font-size: 1.1rem; margin-bottom: 8px; color: #333;"></p>
-                <img id="qrImage" src="" alt="QR Code" style="padding:16px; width:200px; height:200px;">
-                <p style="margin:0; font-family:monospace; font-size:1.1rem; color: #10b981;" id="ticketCodeDisplay"></p>
-                <p id="pdfEventDetails" style="font-size: 0.9rem; color: #666; margin-top: 16px;"></p>
+    <!-- Dynamic Anti-Screenshot Ticket Modal -->
+    <div id="ticketModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; justify-content:center; align-items:center; backdrop-filter: blur(8px);">
+        <div style="background:var(--bg-panel); padding:28px 24px; border-radius:20px; text-align:center; box-shadow:0 24px 60px rgba(0,0,0,0.7); position:relative; max-width:440px; width:92%; border: 1px solid rgba(255,255,255,0.12);">
+            <button id="closeTicketModalBtn" style="position:absolute; top:14px; right:14px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:var(--text); cursor:pointer; font-size:1.1rem; width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; transition: all 0.2s;">✖</button>
+            
+            <!-- Anti-Scalp Header Badge -->
+            <div style="margin-bottom: 14px; display: flex; flex-direction: column; align-items: center; gap: 6px;">
+                <span class="pulse-indicator">
+                    <span class="dot"></span>
+                    <span>LIVE CRYPTOGRAPHIC PASS</span>
+                </span>
+                <h3 style="margin: 0; font-size: 1.2rem; color: #fff;">Dynamic Admission Ticket</h3>
+                <p style="margin: 0; font-size: 0.76rem; color: #94a3b8; max-width: 320px;">
+                    🛡️ Protected by <strong>Zero-Scalp Rolling Protocol</strong>. Static screenshots expire in 20s and are rejected at the gate.
+                </p>
             </div>
-            <button id="downloadPdfBtn" class="primary-btn" style="margin-top: 24px; width: 100%;">Download PDF Ticket</button>
+
+            <!-- Printable & Viewable Ticket Box -->
+            <div id="pdfContent" style="padding: 16px; background: #ffffff; color: #111; border-radius: 14px; box-shadow: inset 0 2px 8px rgba(0,0,0,0.05); text-align: center;">
+                <h4 id="pdfEventName" style="font-weight: 800; font-size: 1.1rem; margin: 0 0 4px; color: #0f172a;">Event Ticket</h4>
+                <p id="pdfEventDetails" style="font-size: 0.82rem; color: #475569; margin: 0 0 10px;"></p>
+                
+                <!-- Dynamic QR Viewfinder Container -->
+                <div class="qr-wrapper">
+                    <div class="qr-laser-beam"></div>
+                    <div id="dynamicQrCanvas" style="width: 200px; height: 200px; display: flex; align-items: center; justify-content: center;">
+                        <img id="qrImage" src="" alt="Dynamic Ticket QR" style="width: 200px; height: 200px; display: block;">
+                    </div>
+                </div>
+
+                <div style="margin-top: 8px;">
+                    <span style="font-family: monospace; font-weight: 700; font-size: 0.95rem; color: #059669; letter-spacing: 0.05em;" id="ticketCodeDisplay">TKT-LOADING</span>
+                    <div style="font-size: 0.72rem; color: #64748b; font-family: monospace; margin-top: 2px;" id="rollingHashDisplay">Rolling Token: #Computing...</div>
+                </div>
+            </div>
+
+            <!-- Live Countdown Timer & Progress Bar -->
+            <div style="margin-top: 14px; text-align: left;">
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem;">
+                    <span style="color: var(--muted); font-size: 0.75rem;" id="liveClockDisplay">Live Clock: --:--:--</span>
+                    <span style="color: #38bdf8; font-weight: 700; font-size: 0.8rem;" id="countdownText">Refreshing in 20s</span>
+                </div>
+                <div class="countdown-track">
+                    <div id="countdownBar" class="countdown-fill" style="width: 100%;"></div>
+                </div>
+                <div style="font-size: 0.7rem; color: #94a3b8; text-align: center; margin-top: 4px;">
+                    ⚡ Auto-rolls token every 20s to invalidate unauthorized screenshots.
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 16px;">
+                <button id="downloadPdfBtn" class="secondary-btn" style="flex: 1; padding: 10px; font-size: 0.82rem; border-radius: 10px;">Download PDF Ticket</button>
+            </div>
         </div>
     </div>
 
@@ -218,8 +334,49 @@
         </div>
     </div>
 
+    <!-- Group Split Management Modal -->
+    <div id="groupSplitModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; justify-content:center; align-items:center; backdrop-filter: blur(8px);">
+        <div style="background:var(--bg-panel); padding:26px 22px; border-radius:20px; box-shadow:0 24px 60px rgba(0,0,0,0.7); position:relative; max-width:460px; width:92%; border: 1px solid rgba(255,255,255,0.12); text-align:center;">
+            <button id="closeGroupSplitModalBtn" style="position:absolute; top:14px; right:14px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:var(--text); cursor:pointer; font-size:1.1rem; width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center;">✖</button>
+            
+            <div style="width: 52px; height: 52px; border-radius: 50%; background: rgba(59, 130, 246, 0.15); display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; color: #3b82f6; font-size: 1.6rem;">
+                👥
+            </div>
+            <h3 style="margin: 0 0 4px; font-size: 1.3rem; color: #fff;">Group Split Manager</h3>
+            <p id="splitModalEventTitle" style="color: var(--muted); font-size: 0.88rem; margin: 0 0 16px;">Event Name</p>
+
+            <!-- Status Banner -->
+            <div id="splitModalBanner" style="background: rgba(59, 130, 246, 0.12); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 12px; padding: 10px 14px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+                <span id="splitModalStatusText" style="font-size: 0.82rem; color: #93c5fd; font-weight: 600;">Settlement Progress</span>
+                <span id="splitModalProgressBadge" style="background: #2563eb; color: #fff; font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 6px;">1/2 Settled</span>
+            </div>
+
+            <!-- Member Settlement Tracker -->
+            <div style="background: #0c0e14; border: 1px solid #282f3f; border-radius: 14px; padding: 14px; text-align: left; margin-bottom: 16px;">
+                <div style="font-size: 0.78rem; margin-bottom: 10px; color: var(--muted); font-weight: 700; text-transform: uppercase;">Members & Payment Status</div>
+                <div id="splitModalMembersList" style="display: flex; flex-direction: column; gap: 8px;">
+                    <!-- Dynamically populated -->
+                </div>
+            </div>
+
+            <!-- Share Invite Link Box -->
+            <div style="background: rgba(255, 255, 255, 0.04); border: 1px dashed rgba(255, 255, 255, 0.18); border-radius: 12px; padding: 12px 14px; margin-bottom: 16px; text-align: left;">
+                <div style="font-size: 0.78rem; color: #94a3b8; margin-bottom: 6px; font-weight: 600;">Share link with friends to pay their share:</div>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="splitModalLinkInput" readonly style="flex: 1; background: #0c0e14; border: 1px solid #282f3f; border-radius: 8px; color: #38bdf8; font-size: 0.78rem; padding: 8px 10px; font-family: monospace;">
+                    <button type="button" id="splitModalCopyBtn" style="background: #2563eb; color: #fff; border: none; border-radius: 8px; padding: 8px 12px; font-size: 0.78rem; font-weight: 700; cursor: pointer;">Copy</button>
+                    <button type="button" id="splitModalWaBtn" style="background: #22c55e; color: #fff; border: none; border-radius: 8px; padding: 8px 12px; font-size: 0.78rem; font-weight: 700; cursor: pointer;">WhatsApp</button>
+                </div>
+            </div>
+
+            <button type="button" id="splitModalDoneBtn" class="primary-btn" style="width: 100%; padding: 12px; font-size: 0.9rem;">Done</button>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            let allLoadedTickets = [];
+
             function loadBookings() {
                 if (window.AttendeeBackend) {
                     window.AttendeeBackend.getMyBookings(function(err, tickets) {
@@ -233,6 +390,8 @@
                             list.innerHTML = '<p style="color: var(--muted); padding: 20px;">You haven\'t booked any events yet.</p>';
                             return;
                         }
+
+                        allLoadedTickets = tickets;
 
                         // Update stats
                         const valid = tickets.filter(t => t.status === 'Valid').length;
@@ -272,6 +431,43 @@
                             const isCancelled = ticket.status === 'Cancelled';
                             const isUsed = ticket.status === 'Used';
 
+                            // Proof-of-Presence Smart Escrow Deposit Badge
+                            let depositBadgeHTML = '';
+                            if (ticket.hasDeposit) {
+                                if (ticket.depositStatus === 'Refunded') {
+                                    depositBadgeHTML = `
+                                        <div style="margin-top:6px;">
+                                            <span style="background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.35); color:#10b981; font-size:0.75rem; font-weight:700; padding:3px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">
+                                                ✅ ₹${ticket.depositAmount || 0} Deposit Auto-Refunded at Gate
+                                            </span>
+                                        </div>
+                                    `;
+                                } else {
+                                    depositBadgeHTML = `
+                                        <div style="margin-top:6px;">
+                                            <span style="background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.35); color:#f59e0b; font-size:0.75rem; font-weight:700; padding:3px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">
+                                                🔒 ₹${ticket.depositAmount || 0} Escrow Deposit (Auto-refunds at Gate)
+                                            </span>
+                                        </div>
+                                    `;
+                                }
+                            }
+
+                            // Group Split Booking Badge & Button
+                            let splitBadgeHTML = '';
+                            let splitBtnHTML = '';
+                            if (ticket.isGroupSplit) {
+                                const isSettled = ticket.splitStatus === 'Fully Settled';
+                                splitBadgeHTML = `
+                                    <div style="margin-top:6px;">
+                                        <span style="background:${isSettled ? 'rgba(16,185,129,0.15)' : 'rgba(59,130,246,0.15)'}; border:1px solid ${isSettled ? 'rgba(16,185,129,0.35)' : 'rgba(59,130,246,0.35)'}; color:${isSettled ? '#10b981' : '#60a5fa'}; font-size:0.75rem; font-weight:700; padding:3px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">
+                                            👥 Group Split: ${ticket.paidMembers || 1}/${ticket.totalSplitMembers || 2} Paid • ${ticket.splitStatus || 'Pending Friends'}
+                                        </span>
+                                    </div>
+                                `;
+                                splitBtnHTML = `<button class="secondary-btn manage-split-btn" data-id="${ticket.ticketId || ''}" style="border-color:#3b82f6; color:#60a5fa; font-weight:700;">👥 Split Hub</button>`;
+                            }
+
                             const qrPayload = `Ticket ID: ${ticket.ticketId}\nEvent: ${ticket.eventName || "Unnamed Event"}\nDate: ${ticket.date || "TBD"} at ${ticket.time || "TBD"}\nVenue: ${ticket.location || "TBA"}`;
                             
                             let reviewBtnHTML = '';
@@ -286,6 +482,8 @@
                                         <div>
                                             <p class="event-tag">Ticket</p>
                                             <h4>${ticket.eventName || 'Unnamed Event'}</h4>
+                                            ${depositBadgeHTML}
+                                            ${splitBadgeHTML}
                                         </div>
                                         <span class="status ${ticket.status}">${ticket.status}</span>
                                     </div>
@@ -296,7 +494,18 @@
                                         <div><label>Ticket ID</label><span>${(ticket.ticketId || 'N/A').substring(0,8)}...</span></div>
                                     </div>
                                     <div class="booking-actions">
-                                        <button class="primary-btn view-ticket-btn" data-id="${ticket.ticketId || ''}" data-qr="${encodeURIComponent(qrPayload)}" ${isCancelled ? 'disabled' : ''}>View Ticket QR</button>
+                                        <button class="primary-btn view-ticket-btn" 
+                                            data-id="${ticket.ticketId || ''}" 
+                                            data-eventid="${ticket.eventId || ''}" 
+                                            data-eventname="${encodeURIComponent(ticket.eventName || 'Unnamed Event')}" 
+                                            data-date="${encodeURIComponent(formattedDate)}" 
+                                            data-time="${encodeURIComponent(ticket.time || 'TBD')}" 
+                                            data-venue="${encodeURIComponent(ticket.location || 'TBA')}" 
+                                            data-qr="${encodeURIComponent(qrPayload)}" 
+                                            ${(isCancelled || isUsed) ? 'disabled' : ''}>
+                                            View Ticket
+                                        </button>
+                                        ${splitBtnHTML}
                                         <button class="secondary-btn cancel-btn" data-id="${ticket.ticketId || ''}" ${(isCancelled || isUsed) ? 'disabled' : ''}>${isCancelled ? 'Cancelled' : 'Cancel Ticket'}</button>
                                         ${reviewBtnHTML}
                                     </div>
@@ -306,6 +515,13 @@
                         });
 
                         attachListeners();
+
+                        // Auto-open Split Hub if navigating with ?splitTicket=TKT-xxx
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const splitParam = urlParams.get('splitTicket');
+                        if (splitParam) {
+                            openGroupSplitHub(splitParam);
+                        }
                     });
                 } else {
                     setTimeout(loadBookings, 500);
@@ -356,6 +572,93 @@
                 });
             }
 
+            // Rolling Dynamic Ticket Controller
+            let currentRollingTicket = null;
+            let rollingTimerInterval = null;
+
+            function stopRollingTimer() {
+                if (rollingTimerInterval) {
+                    clearInterval(rollingTimerInterval);
+                    rollingTimerInterval = null;
+                }
+                currentRollingTicket = null;
+            }
+
+            async function refreshRollingPassUI() {
+                if (!currentRollingTicket || !window.RollingTicketEngine) return;
+                const ticketId = currentRollingTicket.ticketId;
+                const eventId = currentRollingTicket.eventId;
+
+                const tokenData = await window.RollingTicketEngine.generateToken(ticketId, eventId);
+                
+                const qrContainer = document.getElementById('dynamicQrCanvas');
+                if (window.QRCode && qrContainer) {
+                    qrContainer.innerHTML = '';
+                    new QRCode(qrContainer, {
+                        text: tokenData.qrPayload,
+                        width: 200,
+                        height: 200,
+                        colorDark: "#0f172a",
+                        colorLight: "#ffffff",
+                        correctLevel: QRCode.CorrectLevel.M
+                    });
+                } else {
+                    const img = document.getElementById('qrImage');
+                    if (img) img.src = `https://quickchart.io/qr?text=${encodeURIComponent(tokenData.qrPayload)}&size=200`;
+                }
+
+                const hashElem = document.getElementById('rollingHashDisplay');
+                if (hashElem) {
+                    hashElem.textContent = `Rolling Token: #${tokenData.hashSignature}`;
+                }
+            }
+
+            function startRollingTimer(ticketId, eventId) {
+                stopRollingTimer();
+                currentRollingTicket = { ticketId, eventId };
+
+                refreshRollingPassUI();
+
+                rollingTimerInterval = setInterval(() => {
+                    if (!currentRollingTicket) return;
+                    const now = new Date();
+                    const nowSec = Math.floor(now.getTime() / 1000);
+                    const rem = 20 - (nowSec % 20);
+                    const pct = (rem / 20) * 100;
+
+                    const liveClock = document.getElementById('liveClockDisplay');
+                    if (liveClock) liveClock.textContent = `Live Clock: ${now.toLocaleTimeString()}`;
+
+                    const countdownText = document.getElementById('countdownText');
+                    if (countdownText) countdownText.textContent = `Refreshing in ${rem}s`;
+
+                    const countdownBar = document.getElementById('countdownBar');
+                    if (countdownBar) countdownBar.style.width = `${pct}%`;
+
+                    if (rem === 20) {
+                        refreshRollingPassUI();
+                    }
+                }, 1000);
+            }
+
+            // Close modal bindings
+            const closeTicketModalBtn = document.getElementById('closeTicketModalBtn');
+            if (closeTicketModalBtn) {
+                closeTicketModalBtn.onclick = function() {
+                    document.getElementById('ticketModal').style.display = 'none';
+                    stopRollingTimer();
+                };
+            }
+            const ticketModal = document.getElementById('ticketModal');
+            if (ticketModal) {
+                ticketModal.onclick = function(e) {
+                    if (e.target === ticketModal) {
+                        ticketModal.style.display = 'none';
+                        stopRollingTimer();
+                    }
+                };
+            }
+
             function attachListeners() {
                 // Cancel buttons
                 document.querySelectorAll('.cancel-btn').forEach(btn => {
@@ -365,27 +668,22 @@
                     });
                 });
 
-                // View Ticket buttons
+                // View Ticket buttons (Dynamic Anti-Screenshot Pass)
                 document.querySelectorAll('.view-ticket-btn').forEach(btn => {
                     btn.addEventListener('click', function() {
+                        if (this.disabled || this.hasAttribute('disabled')) return;
                         const ticketId = this.getAttribute('data-id');
-                        const qrData = decodeURIComponent(this.getAttribute('data-qr') || ticketId);
-                        const modal = document.getElementById('ticketModal');
-                        const img = document.getElementById('qrImage');
-                        const txt = document.getElementById('ticketCodeDisplay');
-                        
-                        // Parse qrData for UI (Assuming format "Ticket ID: ...\nEvent: ...\nDate: ...")
-                        const lines = qrData.split('\n');
-                        const evName = lines.find(l => l.startsWith('Event:'))?.replace('Event:', '').trim() || 'Event Ticket';
-                        const evDate = lines.find(l => l.startsWith('Date:'))?.replace('Date:', '').trim() || 'TBD';
-                        const evVenue = lines.find(l => l.startsWith('Venue:'))?.replace('Venue:', '').trim() || 'TBA';
+                        const eventId = this.getAttribute('data-eventid') || '';
+                        const evName = decodeURIComponent(this.getAttribute('data-eventname') || 'Event Ticket');
+                        const evDate = decodeURIComponent(this.getAttribute('data-date') || 'TBD');
+                        const evVenue = decodeURIComponent(this.getAttribute('data-venue') || 'TBA');
 
                         document.getElementById('pdfEventName').textContent = evName;
                         document.getElementById('pdfEventDetails').innerHTML = `<strong>Date:</strong> ${evDate}<br><strong>Venue:</strong> ${evVenue}`;
+                        document.getElementById('ticketCodeDisplay').textContent = ticketId;
                         
-                        img.src = `https://quickchart.io/qr?text=${encodeURIComponent(qrData)}&size=200`;
-                        txt.textContent = ticketId;
-                        modal.style.display = 'flex';
+                        document.getElementById('ticketModal').style.display = 'flex';
+                        startRollingTimer(ticketId, eventId);
                     });
                 });
                 
@@ -446,6 +744,137 @@
                         }
                     });
                 };
+
+                // Group Split Manager Buttons
+                document.querySelectorAll('.manage-split-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const ticketId = this.getAttribute('data-id');
+                        openGroupSplitHub(ticketId);
+                    });
+                });
+            }
+
+            function openGroupSplitHub(ticketId) {
+                const ticket = allLoadedTickets.find(t => t.ticketId === ticketId);
+                if (!ticket) return;
+
+                const modal = document.getElementById('groupSplitModal');
+                const titleEl = document.getElementById('splitModalEventTitle');
+                const bannerEl = document.getElementById('splitModalBanner');
+                const statusTextEl = document.getElementById('splitModalStatusText');
+                const progressBadge = document.getElementById('splitModalProgressBadge');
+                const listEl = document.getElementById('splitModalMembersList');
+                const linkInput = document.getElementById('splitModalLinkInput');
+                const copyBtn = document.getElementById('splitModalCopyBtn');
+                const waBtn = document.getElementById('splitModalWaBtn');
+                const closeBtn = document.getElementById('closeGroupSplitModalBtn');
+                const doneBtn = document.getElementById('splitModalDoneBtn');
+
+                if (titleEl) titleEl.textContent = ticket.eventName || 'Event';
+
+                const shareUrl = `${window.location.origin}/Attendee_Dashboard/Your_Booking.html?splitTicket=${ticket.ticketId}`;
+                if (linkInput) linkInput.value = shareUrl;
+
+                const updateBanner = (paidCount, totalCount, isSettled) => {
+                    if (progressBadge) progressBadge.textContent = `${paidCount}/${totalCount} Settled`;
+                    if (isSettled) {
+                        bannerEl.style.background = 'rgba(16, 185, 129, 0.12)';
+                        bannerEl.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+                        statusTextEl.style.color = '#6ee7b7';
+                        statusTextEl.textContent = '🎉 All Friends Paid • All Seats Confirmed!';
+                        progressBadge.style.background = '#10b981';
+                    } else {
+                        bannerEl.style.background = 'rgba(59, 130, 246, 0.12)';
+                        bannerEl.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+                        statusTextEl.style.color = '#93c5fd';
+                        statusTextEl.textContent = '⏳ Seats on Hold (Awaiting Friend Shares)';
+                        progressBadge.style.background = '#2563eb';
+                    }
+                };
+
+                function renderMembers(members, paidCount) {
+                    const total = ticket.totalSplitMembers || members.length || 2;
+                    const isSettled = paidCount >= total;
+                    updateBanner(paidCount, total, isSettled);
+
+                    if (!listEl) return;
+                    listEl.innerHTML = '';
+
+                    (members || []).forEach((m, idx) => {
+                        const isPaid = m.status === 'Paid';
+                        const row = document.createElement('div');
+                        row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; background:#161922; border:1px solid #232a3b; padding:10px 12px; border-radius:10px; font-size:0.82rem;';
+                        row.innerHTML = `
+                            <div>
+                                <strong style="color:#fff; display:block;">${m.name}</strong>
+                                <span style="font-size:0.75rem; color:${isPaid ? '#10b981' : '#f59e0b'};">
+                                    ${isPaid ? '✓ Paid ₹' + (m.amount || ticket.perPersonAmount || 0) : '⏳ Pending ₹' + (m.amount || ticket.perPersonAmount || 0)}
+                                </span>
+                            </div>
+                            <div>
+                                ${isPaid ? 
+                                    '<span style="background:rgba(16,185,129,0.15); color:#10b981; font-weight:700; padding:4px 8px; border-radius:6px; font-size:0.75rem;">PAID</span>' : 
+                                    `<button type="button" class="simulate-split-pay-btn" data-index="${idx}" style="background:rgba(59,130,246,0.2); color:#60a5fa; border:1px solid rgba(59,130,246,0.4); padding:4px 10px; border-radius:6px; font-size:0.72rem; font-weight:700; cursor:pointer;">⚡ Simulate Friend Pay</button>`
+                                }
+                            </div>
+                        `;
+                        listEl.appendChild(row);
+                    });
+
+                    listEl.querySelectorAll('.simulate-split-pay-btn').forEach(b => {
+                        b.addEventListener('click', function() {
+                            const memberIndex = parseInt(this.getAttribute('data-index'), 10);
+                            this.disabled = true;
+                            this.textContent = 'Settling...';
+
+                            if (window.AttendeeBackend && typeof window.AttendeeBackend.updateSplitPayment === 'function') {
+                                window.AttendeeBackend.updateSplitPayment(ticket.ticketId, memberIndex, (err, updated) => {
+                                    if (!err && updated) {
+                                        ticket.splitMembers = updated.splitMembers;
+                                        ticket.paidMembers = updated.paidMembers;
+                                        ticket.status = updated.status;
+                                        ticket.splitStatus = updated.splitStatus;
+                                        renderMembers(updated.splitMembers, updated.paidMembers);
+                                        loadBookings(); // refresh background list
+                                    } else {
+                                        alert('Could not update payment status: ' + (err ? err.message : 'Unknown error'));
+                                        this.disabled = false;
+                                        this.textContent = '⚡ Simulate Friend Pay';
+                                    }
+                                });
+                            }
+                        });
+                    });
+                }
+
+                renderMembers(ticket.splitMembers || [], ticket.paidMembers || 1);
+
+                if (copyBtn) {
+                    copyBtn.onclick = () => {
+                        if (linkInput) {
+                            navigator.clipboard.writeText(linkInput.value).then(() => {
+                                copyBtn.textContent = 'Copied!';
+                                setTimeout(() => copyBtn.textContent = 'Copy', 2000);
+                            });
+                        }
+                    };
+                }
+
+                if (waBtn) {
+                    waBtn.onclick = () => {
+                        const text = `Hey! I locked our group tickets for "${ticket.eventName}". Pay your individual share here: ${linkInput ? linkInput.value : ''}`;
+                        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+                    };
+                }
+
+                const closeModal = () => modal.style.display = 'none';
+                if (closeBtn) closeBtn.onclick = closeModal;
+                if (doneBtn) doneBtn.onclick = closeModal;
+                modal.onclick = (e) => {
+                    if (e.target === modal) closeModal();
+                };
+
+                modal.style.display = 'flex';
             }
 
             const searchInput = document.getElementById('searchInput');

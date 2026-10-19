@@ -721,6 +721,22 @@
                 </div>
             </div>
 
+            <!-- Group Split Booking Option (shown when quantity >= 2) -->
+            <div id="groupSplitOptionContainer" style="display:none; background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 14px; padding: 14px 18px; margin-bottom: 16px;">
+                <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer;">
+                    <input type="checkbox" id="splitBillToggle" style="accent-color: #3b82f6; width:18px; height:18px; margin-top:2px;">
+                    <div style="flex:1;">
+                        <div style="display:flex; align-items:center; justify-content:space-between;">
+                            <strong style="color:#93c5fd; font-size:0.9rem;">👥 Group Split Booking (Pay Your Share)</strong>
+                            <span style="background:rgba(59,130,246,0.25); color:#60a5fa; font-size:0.7rem; font-weight:700; padding:2px 8px; border-radius:6px;">15-MIN SEAT LOCK</span>
+                        </div>
+                        <span style="font-size:0.78rem; color:#94a3b8; display:block; margin-top:3px; line-height:1.4;">
+                            Split equally among <span id="splitQtyCount" style="color:#fff; font-weight:700;">2</span> people. You pay <strong id="splitPerPersonDisplay" style="color:#60a5fa;">₹0</strong> now to hold all seats. Friends pay their individual share via invite links!
+                        </span>
+                    </div>
+                </label>
+            </div>
+
             <!-- Price Breakdown Summary -->
             <div style="background:#0c0e14; border:1px solid #282f3f; border-radius:14px; padding:16px 18px; margin-bottom:18px;">
                 <div style="display:flex; justify-content:space-between; font-size:0.82rem; color:#94a3b8; margin-bottom:8px;">
@@ -731,9 +747,18 @@
                     <span>Offer Discount (<span id="summaryDiscountCode"></span>)</span>
                     <span id="summaryDiscountAmount" style="font-weight:700;">-₹0</span>
                 </div>
+                <!-- Proof-of-Presence Smart Escrow Deposit Row -->
+                <div id="summaryDepositRow" style="display:none; justify-content:space-between; font-size:0.82rem; color:#10b981; margin-bottom:8px;">
+                    <span>🛡️ Refundable Pledge Deposit (Auto-refunded at venue gate)</span>
+                    <span id="summaryDepositAmount" style="font-weight:700;">+₹0</span>
+                </div>
                 <div style="display:flex; justify-content:space-between; font-size:0.82rem; color:#94a3b8; margin-bottom:12px;">
                     <span>Convenience Fee & GST (1.5%)</span>
                     <span id="summaryFee" style="color:#fff; font-weight:600;">₹0</span>
+                </div>
+                <div id="summarySplitRow" style="display:none; justify-content:space-between; font-size:0.85rem; color:#60a5fa; margin-bottom:8px; padding-top:6px; border-top:1px dashed #282f3f;">
+                    <span>Your Group Share Today (1 of <span id="summarySplitTotalCount">2</span>)</span>
+                    <span id="summarySplitYourShare" style="font-weight:700;">₹0</span>
                 </div>
                 <div style="border-top:1px dashed #282f3f; padding-top:10px; display:flex; justify-content:space-between; align-items:center;">
                     <div>
@@ -768,6 +793,10 @@
                     <span>Total Amount Paid:</span>
                     <strong id="successAmount" style="color: #10b981;">₹0</strong>
                 </div>
+                <div id="successDepositNotice" style="display:none; justify-content: space-between; font-size: 0.85rem; color: #10b981; margin-bottom: 8px;">
+                    <span>Refundable Gate Deposit:</span>
+                    <strong id="successDepositAmount">₹0 (Held in Escrow)</strong>
+                </div>
                 <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #94a3b8;">
                     <span>Event Date & Time:</span>
                     <strong id="successDateTime" style="color: #fff;">TBD</strong>
@@ -786,6 +815,50 @@
             <div style="display: flex; gap: 10px;">
                 <button type="button" id="closeSuccessBtn" class="bms-btn-book" style="flex: 1; padding: 12px; font-size: 0.9rem; background: #222938; border: 1px solid #334155; color: #fff;">Explore More</button>
                 <button type="button" id="viewBookingsBtn" class="bms-btn-book" style="flex: 1.2; padding: 12px; font-size: 0.9rem;">View My Bookings</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Group Split Booking Hub Modal -->
+    <div class="bms-modal-backdrop" id="groupSplitSuccessModal">
+        <div class="bms-checkout-modal-box" style="text-align: center; max-width: 480px;">
+            <div style="width: 58px; height: 58px; border-radius: 50%; background: rgba(59, 130, 246, 0.15); display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; color: #3b82f6; font-size: 1.8rem;">
+                👥
+            </div>
+            
+            <h3 style="font-size: 1.35rem; font-weight: 800; color: #fff; margin-bottom: 4px;">Group Seats Reserved!</h3>
+            <p id="splitSuccessEventTitle" style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 14px; font-weight: 600;">Event Name</p>
+
+            <!-- 15-Minute Countdown Timer Box -->
+            <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 12px; padding: 10px 14px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.8rem; color: #fca5a5; font-weight: 600;">⏳ Time left for friends to pay:</span>
+                <span id="splitCountdownClock" style="font-family: monospace; font-size: 1.05rem; font-weight: 800; color: #ef4444;">14:59</span>
+            </div>
+
+            <!-- Member Settlement Tracker -->
+            <div style="background: #0c0e14; border: 1px solid #282f3f; border-radius: 14px; padding: 14px; text-align: left; margin-bottom: 16px;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 10px; color: var(--muted); font-weight: 700; text-transform: uppercase;">
+                    <span>Group Members</span>
+                    <span id="splitProgressCount" style="color: #60a5fa;">1/2 Settled</span>
+                </div>
+                <div id="splitMembersList" style="display: flex; flex-direction: column; gap: 8px;">
+                    <!-- Dynamically populated member cards -->
+                </div>
+            </div>
+
+            <!-- Share Invite Link Box -->
+            <div style="background: rgba(255, 255, 255, 0.04); border: 1px dashed rgba(255, 255, 255, 0.18); border-radius: 12px; padding: 12px 14px; margin-bottom: 18px; text-align: left;">
+                <div style="font-size: 0.78rem; color: #94a3b8; margin-bottom: 6px; font-weight: 600;">Share payment link with your friends:</div>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="splitInviteLinkInput" readonly style="flex: 1; background: #0c0e14; border: 1px solid #282f3f; border-radius: 8px; color: #38bdf8; font-size: 0.78rem; padding: 8px 10px; font-family: monospace;" value="https://eventpro.live/split?ref=TKT-101">
+                    <button type="button" id="copySplitLinkBtn" style="background: #2563eb; color: #fff; border: none; border-radius: 8px; padding: 8px 12px; font-size: 0.78rem; font-weight: 700; cursor: pointer;">Copy</button>
+                    <button type="button" id="whatsappSplitBtn" style="background: #22c55e; color: #fff; border: none; border-radius: 8px; padding: 8px 12px; font-size: 0.78rem; font-weight: 700; cursor: pointer;">WhatsApp</button>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <button type="button" id="closeSplitModalBtn" class="bms-btn-book" style="flex: 1; padding: 12px; font-size: 0.9rem; background: #222938; border: 1px solid #334155; color: #fff;">Close Hub</button>
+                <button type="button" id="viewSplitBookingsBtn" class="bms-btn-book" style="flex: 1.2; padding: 12px; font-size: 0.9rem;">View My Bookings</button>
             </div>
         </div>
     </div>
@@ -904,6 +977,23 @@
                     tags: 'Outdoor Camping • Bonfire, Stargazing & BBQ',
                     imageUrl: 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80',
                     isLive: true
+                },
+                {
+                    eventId: 'bms-show-free-deposit',
+                    eventName: 'Google Cloud & AI Next Forum 2026',
+                    category: 'workshop',
+                    city: 'Delhi-NCR',
+                    rating: '9.9',
+                    votes: '38K',
+                    price: 0,
+                    hasDepositBond: true,
+                    refundableDeposit: 50,
+                    date: '2026-11-12',
+                    time: '10:00 AM',
+                    location: 'Bharat Mandapam, Pragati Maidan, Delhi',
+                    tags: 'Free Admission • 100% Refundable Gate Pledge (₹50)',
+                    imageUrl: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=600&q=80',
+                    isLive: true
                 }
             ];
 
@@ -935,18 +1025,23 @@
                                         const parts = e.location.split(',');
                                         derivedCity = parts[parts.length - 1].trim();
                                     }
+                                    const depAmt = parseFloat(e.refundableDeposit) || 0;
+                                    const hasBond = (e.hasDepositBond === true || e.hasDepositBond === 'true' || depAmt > 0) && depAmt > 0;
                                     return {
+                                        ...e,
                                         eventId: e.eventId,
                                         eventName: e.eventName || 'Live Event',
                                         category: e.category || 'concert',
                                         city: derivedCity || 'All Cities',
-                                        rating: '9.5',
-                                        votes: '14.2K',
+                                        rating: e.rating || '9.5',
+                                        votes: e.votes || '14.2K',
                                         price: parseFloat(e.price) || 0,
+                                        hasDepositBond: hasBond,
+                                        refundableDeposit: depAmt,
                                         date: e.date || 'TBD',
                                         time: e.time || '07:00 PM',
                                         location: e.location || 'City Auditorium',
-                                        tags: 'Live Experience • Instant M-Ticket',
+                                        tags: e.tags || (hasBond ? '100% Refundable Gate Deposit (₹' + depAmt + ')' : 'Live Experience • Instant M-Ticket'),
                                         imageUrl: e.imageUrl || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=600&q=80',
                                         isLive: true
                                     };
@@ -1129,7 +1224,19 @@
                 filtered.forEach(ev => {
                     const savedEventsList = userProfile.savedEvents || [];
                     const isSaved = savedEventsList.includes(ev.eventId);
-                    const priceFormatted = ev.price > 0 ? `₹${ev.price}` : 'Free';
+                    const depAmt = parseFloat(ev.refundableDeposit) || 0;
+                    const hasDeposit = (ev.hasDepositBond === true || ev.hasDepositBond === 'true' || depAmt > 0) && depAmt > 0;
+
+                    let priceHtml = '';
+                    if (ev.price > 0) {
+                        priceHtml = `<small>Starting from</small>₹${ev.price}`;
+                    } else if (hasDeposit) {
+                        priceHtml = `<small style="color:#10b981; font-weight:700;">Free Entry</small><span style="font-size:0.75rem; color:#6ee7b7; font-weight:700; display:block;">🛡️ ₹${depAmt} Gate Pledge</span>`;
+                    } else {
+                        priceHtml = `<small>Admission</small>Free`;
+                    }
+
+                    const depositBadgeMarkup = hasDeposit ? `<span class="bms-category-badge" style="background:rgba(16,185,129,0.9); color:#fff; top:36px; left:12px; font-size:0.65rem; padding:2px 7px;">🛡️ REFUNDABLE ESCROW</span>` : '';
 
                     const card = document.createElement('article');
                     card.className = 'bms-poster-card';
@@ -1137,6 +1244,7 @@
                         <div class="bms-poster-img-wrap">
                             <img src="${ev.imageUrl}" alt="${ev.eventName}" class="bms-poster-img" loading="lazy">
                             <span class="bms-category-badge ${ev.isLive ? 'live' : ''}">${ev.category ? ev.category.toUpperCase() : 'EVENT'}</span>
+                            ${depositBadgeMarkup}
                             <div class="bms-rating-bar">
                                 <span class="bms-rating-score"><span class="bms-star">★</span> ${ev.rating || '9.5'}/10</span>
                                 <span class="bms-votes-sub">${ev.votes || '25K'} Votes</span>
@@ -1150,8 +1258,7 @@
                             </div>
                             <div class="bms-card-footer">
                                 <div class="bms-card-price">
-                                    <small>Starting from</small>
-                                    ${priceFormatted}
+                                    ${priceHtml}
                                 </div>
                                 <div style="display:flex; gap:6px;">
                                     <button class="save-btn ${isSaved ? 'saved' : ''}" data-id="${ev.eventId}" style="background:transparent; border:1px solid #282f3f; color:#fff; border-radius:6px; padding:6px 10px; cursor:pointer;">${isSaved ? '♥' : '♡'}</button>
@@ -1313,6 +1420,14 @@
                     });
                 });
 
+                // Split Bill Toggle Listener
+                const splitToggle = document.getElementById('splitBillToggle');
+                if (splitToggle) {
+                    splitToggle.addEventListener('change', () => {
+                        recalculateCheckout();
+                    });
+                }
+
                 // Pay button action
                 if (payBtn) {
                     payBtn.addEventListener('click', () => {
@@ -1330,17 +1445,27 @@
                 const promoInput = document.getElementById('promoCodeInput');
                 const promoMsg = document.getElementById('promoMessage');
                 const badge = document.getElementById('appliedBadgeChip');
+                const splitToggle = document.getElementById('splitBillToggle');
 
                 if (promoInput) promoInput.value = '';
                 if (promoMsg) promoMsg.style.display = 'none';
                 if (badge) badge.style.display = 'none';
+                if (splitToggle) splitToggle.checked = false;
 
                 document.getElementById('checkoutCategoryBadge').textContent = (ev.category || 'EVENT').toUpperCase();
                 document.getElementById('checkoutEventTitle').textContent = ev.eventName;
                 document.getElementById('checkoutEventMeta').textContent = `📍 ${ev.location} • ${ev.date} at ${ev.time}`;
 
                 const unitPrice = ev.price || 0;
-                document.getElementById('checkoutPerTicketRate').textContent = unitPrice > 0 ? `₹${unitPrice} per ticket` : 'Free Admission';
+                const depVal = parseFloat(ev.refundableDeposit) || 0;
+                const hasDeposit = (ev.hasDepositBond === true || ev.hasDepositBond === 'true' || depVal > 0) && depVal > 0;
+                if (unitPrice > 0) {
+                    document.getElementById('checkoutPerTicketRate').textContent = `₹${unitPrice} per ticket`;
+                } else if (hasDeposit) {
+                    document.getElementById('checkoutPerTicketRate').textContent = `Free Admission (₹${depVal} Refundable Gate Pledge)`;
+                } else {
+                    document.getElementById('checkoutPerTicketRate').textContent = 'Free Admission';
+                }
 
                 recalculateCheckout();
                 modal.classList.add('active');
@@ -1364,7 +1489,23 @@
 
                 const discountedSubtotal = Math.max(0, subtotal - discount);
                 const fee = discountedSubtotal > 0 ? Math.round(discountedSubtotal * 0.015) : 0;
-                const grandTotal = discountedSubtotal + fee;
+
+                // Smart Escrow Deposit Engine (Refunded upon gate scan)
+                const depVal = parseFloat(currentCheckoutEvent.refundableDeposit) || 0;
+                const hasDeposit = (currentCheckoutEvent.hasDepositBond === true || currentCheckoutEvent.hasDepositBond === 'true' || depVal > 0) && depVal > 0;
+                const depositPerTicket = hasDeposit ? depVal : 0;
+                const totalDeposit = depositPerTicket * currentQty;
+
+                const depositRow = document.getElementById('summaryDepositRow');
+                const depositAmtEl = document.getElementById('summaryDepositAmount');
+                if (totalDeposit > 0) {
+                    if (depositRow) depositRow.style.display = 'flex';
+                    if (depositAmtEl) depositAmtEl.textContent = `+₹${totalDeposit}`;
+                } else {
+                    if (depositRow) depositRow.style.display = 'none';
+                }
+
+                const grandTotal = discountedSubtotal + fee + totalDeposit;
 
                 // Update UI elements
                 document.getElementById('checkoutQtyDisplay').textContent = currentQty;
@@ -1390,9 +1531,47 @@
                 document.getElementById('summaryFee').textContent = `₹${fee}`;
                 document.getElementById('summaryGrandTotal').textContent = `₹${grandTotal}`;
 
+                // Group Split Booking Controls (Revealed when Qty >= 2)
+                const splitContainer = document.getElementById('groupSplitOptionContainer');
+                const splitToggle = document.getElementById('splitBillToggle');
+                const splitQtyCount = document.getElementById('splitQtyCount');
+                const splitPerPersonDisplay = document.getElementById('splitPerPersonDisplay');
+                const summarySplitRow = document.getElementById('summarySplitRow');
+                const summarySplitTotalCount = document.getElementById('summarySplitTotalCount');
+                const summarySplitYourShare = document.getElementById('summarySplitYourShare');
+
+                let isSplitActive = false;
+                let perPersonShare = grandTotal;
+
+                if (currentQty >= 2) {
+                    if (splitContainer) splitContainer.style.display = 'block';
+                    if (splitQtyCount) splitQtyCount.textContent = currentQty;
+                    perPersonShare = Math.ceil(grandTotal / currentQty);
+                    if (splitPerPersonDisplay) splitPerPersonDisplay.textContent = `₹${perPersonShare}`;
+
+                    if (splitToggle && splitToggle.checked) {
+                        isSplitActive = true;
+                        if (summarySplitRow) summarySplitRow.style.display = 'flex';
+                        if (summarySplitTotalCount) summarySplitTotalCount.textContent = currentQty;
+                        if (summarySplitYourShare) summarySplitYourShare.textContent = `₹${perPersonShare}`;
+                    } else {
+                        if (summarySplitRow) summarySplitRow.style.display = 'none';
+                    }
+                } else {
+                    if (splitContainer) splitContainer.style.display = 'none';
+                    if (splitToggle) splitToggle.checked = false;
+                    if (summarySplitRow) summarySplitRow.style.display = 'none';
+                }
+
                 const payBtn = document.getElementById('checkoutPayBtn');
-                if (grandTotal > 0) {
-                    payBtn.textContent = `Proceed to Pay ₹${grandTotal}`;
+                if (isSplitActive) {
+                    payBtn.textContent = `Pay Your Share (₹${perPersonShare}) & Lock ${currentQty} Seats`;
+                } else if (grandTotal > 0) {
+                    if (discountedSubtotal === 0 && totalDeposit > 0) {
+                        payBtn.textContent = `Pay Refundable Pledge ₹${grandTotal}`;
+                    } else {
+                        payBtn.textContent = `Proceed to Pay ₹${grandTotal}`;
+                    }
                 } else {
                     payBtn.textContent = `Confirm Free Booking`;
                 }
@@ -1424,26 +1603,42 @@
 
                 const discountedSubtotal = Math.max(0, subtotal - discount);
                 const fee = discountedSubtotal > 0 ? Math.round(discountedSubtotal * 0.015) : 0;
-                const grandTotal = discountedSubtotal + fee;
 
-                // Razorpay Payment if paid event
-                if (grandTotal > 0 && typeof Razorpay !== 'undefined') {
+                const depVal = parseFloat(ev.refundableDeposit) || 0;
+                const hasDeposit = (ev.hasDepositBond === true || ev.hasDepositBond === 'true' || depVal > 0) && depVal > 0;
+                const depositPerTicket = hasDeposit ? depVal : 0;
+                const totalDeposit = depositPerTicket * currentQty;
+
+                const grandTotal = discountedSubtotal + fee + totalDeposit;
+
+                // Check if user is using Group Split
+                const splitToggle = document.getElementById('splitBillToggle');
+                const isSplit = !!(splitToggle && splitToggle.checked && currentQty >= 2);
+                const payAmount = isSplit ? Math.ceil(grandTotal / currentQty) : grandTotal;
+
+                // Razorpay Payment if payable amount > 0
+                if (payAmount > 0 && typeof Razorpay !== 'undefined') {
                     try {
                         const response = await fetch('https://s3eg7kdaja.execute-api.ap-south-1.amazonaws.com/prod/api/payment/create-order', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ amount: grandTotal, receipt: 'ev_' + ev.eventId })
+                            body: JSON.stringify({ amount: payAmount, receipt: 'ev_' + ev.eventId })
                         });
                         const data = await response.json();
                         
+                        const paymentDesc = isSplit ? 
+                            `${ev.eventName} (Group Split - 1 of ${currentQty})` : 
+                            ((unitPrice === 0 && totalDeposit > 0) ? `${ev.eventName} (Refundable Gate Pledge ₹${payAmount})` : `${ev.eventName} (${currentQty} Ticket${currentQty > 1 ? 's' : ''})`);
+
                         const options = {
                             key: 'rzp_test_TfToXPA1e0mdDo',
-                            amount: grandTotal * 100,
+                            amount: payAmount * 100,
                             currency: 'INR',
                             name: 'EventPro',
-                            description: `${ev.eventName} (${currentQty} Ticket${currentQty > 1 ? 's' : ''})`,
+                            description: paymentDesc,
+                            order_id: (data && data.order && data.order.id) ? data.order.id : (data && data.id ? data.id : undefined),
                             handler: function (response) {
-                                completeBooking(ev, currentQty, grandTotal, appliedOffer);
+                                completeBooking(ev, currentQty, grandTotal, appliedOffer, isSplit, payAmount, totalDeposit);
                             },
                             prefill: {
                                 name: (userProfile.firstName || 'Guest') + ' ' + (userProfile.lastName || ''),
@@ -1453,32 +1648,41 @@
                             modal: {
                                 ondismiss: function() {
                                     payBtn.disabled = false;
-                                    payBtn.textContent = `Proceed to Pay ₹${grandTotal}`;
+                                    recalculateCheckout();
                                 }
                             }
                         };
                         const rzp = new Razorpay(options);
                         rzp.open();
                     } catch (e) {
-                        completeBooking(ev, currentQty, grandTotal, appliedOffer);
+                        completeBooking(ev, currentQty, grandTotal, appliedOffer, isSplit, payAmount, totalDeposit);
                     }
                 } else {
-                    completeBooking(ev, currentQty, grandTotal, appliedOffer);
+                    completeBooking(ev, currentQty, grandTotal, appliedOffer, isSplit, payAmount, totalDeposit);
                 }
             }
 
-            function showBookingSuccess(ev, quantity, amountPaid, offer) {
+            function showBookingSuccess(ev, quantity, amountPaid, offer, totalDeposit) {
                 const successModal = document.getElementById('bookingSuccessModal');
                 const titleEl = document.getElementById('successEventTitle');
                 const qtyEl = document.getElementById('successQty');
                 const amountEl = document.getElementById('successAmount');
                 const dtEl = document.getElementById('successDateTime');
                 const emailEl = document.getElementById('successEmailDisplay');
+                const depositNotice = document.getElementById('successDepositNotice');
+                const depositAmtEl = document.getElementById('successDepositAmount');
 
                 if (titleEl) titleEl.textContent = ev.eventName || 'Event';
                 if (qtyEl) qtyEl.textContent = quantity + (quantity > 1 ? ' tickets' : ' ticket');
                 if (amountEl) amountEl.textContent = amountPaid > 0 ? ('₹' + amountPaid.toFixed(2)) : 'Free Entry';
                 if (dtEl) dtEl.textContent = `${ev.date || 'TBD'} • ${ev.time || 'TBD'}`;
+
+                if (totalDeposit > 0) {
+                    if (depositNotice) depositNotice.style.display = 'flex';
+                    if (depositAmtEl) depositAmtEl.textContent = `₹${totalDeposit} (Held in Escrow)`;
+                } else {
+                    if (depositNotice) depositNotice.style.display = 'none';
+                }
 
                 // Resolve user email
                 const email = (userProfile && userProfile.email) || (window.EVENTPRO_DASHBOARD_AUTH && window.EVENTPRO_DASHBOARD_AUTH.userEmail) || 'your registered email';
@@ -1510,9 +1714,170 @@
                 }
             }
 
-            function completeBooking(ev, quantity, amountPaid, offer) {
+            function showGroupSplitSuccess(ev, quantity, grandTotal, perPerson, ticket) {
+                const splitModal = document.getElementById('groupSplitSuccessModal');
+                const titleEl = document.getElementById('splitSuccessEventTitle');
+                const clockEl = document.getElementById('splitCountdownClock');
+                const linkInput = document.getElementById('splitInviteLinkInput');
+                const copyBtn = document.getElementById('copySplitLinkBtn');
+                const waBtn = document.getElementById('whatsappSplitBtn');
+                const closeBtn = document.getElementById('closeSplitModalBtn');
+                const viewBtn = document.getElementById('viewSplitBookingsBtn');
+
+                if (titleEl) titleEl.textContent = ev.eventName || 'Event';
+
+                const shareUrl = `${window.location.origin}/Attendee_Dashboard/Your_Booking.html?splitTicket=${(ticket && ticket.ticketId) || 'TKT'}`;
+                if (linkInput) linkInput.value = shareUrl;
+
+                // 15-Minute Countdown
+                if (window.splitTimerInterval) clearInterval(window.splitTimerInterval);
+                let secondsLeft = 15 * 60;
+                const updateCountdown = () => {
+                    const m = Math.floor(secondsLeft / 60).toString().padStart(2, '0');
+                    const s = (secondsLeft % 60).toString().padStart(2, '0');
+                    if (clockEl) clockEl.textContent = `${m}:${s}`;
+                    if (secondsLeft <= 0) {
+                        clearInterval(window.splitTimerInterval);
+                        if (clockEl) clockEl.textContent = 'EXPIRED';
+                    }
+                    secondsLeft--;
+                };
+                updateCountdown();
+                window.splitTimerInterval = setInterval(updateCountdown, 1000);
+
+                // Render dynamic member list
+                function renderMembers(splitMembers, paidCount) {
+                    const list = document.getElementById('splitMembersList');
+                    const prog = document.getElementById('splitProgressCount');
+                    if (prog) prog.textContent = `${paidCount}/${quantity} Settled`;
+                    if (!list) return;
+
+                    list.innerHTML = '';
+                    const safeMembers = (splitMembers && splitMembers.length > 0) ? splitMembers : [
+                        { name: "You (Organizer)", amount: perPerson, status: "Paid" },
+                        ...Array.from({ length: Math.max(0, quantity - 1) }, (_, i) => ({
+                            name: `Friend #${i + 2}`,
+                            amount: perPerson,
+                            status: "Pending"
+                        }))
+                    ];
+
+                    safeMembers.forEach((m, idx) => {
+                        const isPaid = m.status === 'Paid';
+                        const memberAmt = m.amount !== undefined ? m.amount : perPerson;
+                        const row = document.createElement('div');
+                        row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; background:#161922; border:1px solid #232a3b; padding:10px 12px; border-radius:10px; font-size:0.82rem;';
+                        row.innerHTML = `
+                            <div>
+                                <strong style="color:#fff; display:block;">${m.name}</strong>
+                                <span style="font-size:0.75rem; color:${isPaid ? '#10b981' : '#f59e0b'};">
+                                    ${isPaid ? '✓ Paid ₹' + memberAmt : '⏳ Pending ₹' + memberAmt}
+                                </span>
+                            </div>
+                            <div>
+                                ${isPaid ? 
+                                    '<span style="background:rgba(16,185,129,0.15); color:#10b981; font-weight:700; padding:4px 8px; border-radius:6px; font-size:0.75rem;">PAID</span>' : 
+                                    `<button type="button" class="simulate-pay-btn" data-index="${idx}" style="background:rgba(59,130,246,0.2); color:#60a5fa; border:1px solid rgba(59,130,246,0.4); padding:4px 10px; border-radius:6px; font-size:0.72rem; font-weight:700; cursor:pointer;">⚡ Simulate Friend Pay</button>`
+                                }
+                            </div>
+                        `;
+                        list.appendChild(row);
+                    });
+
+                    list.querySelectorAll('.simulate-pay-btn').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            const memberIdx = parseInt(this.getAttribute('data-index'), 10);
+                            this.disabled = true;
+                            this.textContent = 'Settling...';
+                            if (window.AttendeeBackend && typeof window.AttendeeBackend.updateSplitPayment === 'function') {
+                                window.AttendeeBackend.updateSplitPayment((ticket && ticket.ticketId), memberIdx, (err, updatedTicket) => {
+                                    if (!err && updatedTicket) {
+                                        renderMembers(updatedTicket.splitMembers, updatedTicket.paidMembers);
+                                    } else {
+                                        alert('Could not update payment status.');
+                                        this.disabled = false;
+                                        this.textContent = '⚡ Simulate Friend Pay';
+                                    }
+                                });
+                            }
+                        });
+                    });
+                }
+
+                renderMembers(ticket ? ticket.splitMembers : null, (ticket && ticket.paidMembers) || 1);
+
+                // Copy Link Action
+                if (copyBtn) {
+                    copyBtn.onclick = () => {
+                        if (linkInput) {
+                            navigator.clipboard.writeText(linkInput.value).then(() => {
+                                copyBtn.textContent = 'Copied!';
+                                setTimeout(() => copyBtn.textContent = 'Copy', 2000);
+                            });
+                        }
+                    };
+                }
+
+                // WhatsApp Action
+                if (waBtn) {
+                    waBtn.onclick = () => {
+                        const text = `Hey! I locked our group tickets for "${ev.eventName}". Pay your individual share of ₹${perPerson} here: ${linkInput ? linkInput.value : ''}`;
+                        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+                    };
+                }
+
+                // Modal close & view bookings
+                if (closeBtn) closeBtn.onclick = () => splitModal.classList.remove('active');
+                if (viewBtn) viewBtn.onclick = () => window.location.href = 'Your_Booking.html';
+                if (splitModal) {
+                    splitModal.onclick = (e) => {
+                        if (e.target === splitModal) splitModal.classList.remove('active');
+                    };
+                }
+
+                splitModal.classList.add('active');
+            }
+
+            function completeBooking(ev, quantity, grandTotal, offer, isSplit, amountPaidNow, totalDeposit) {
                 const modal = document.getElementById('bmsCheckoutModal');
                 const payBtn = document.getElementById('checkoutPayBtn');
+
+                // Dismiss checkout modal immediately and reset button
+                if (modal) modal.classList.remove('active');
+                if (payBtn) {
+                    payBtn.disabled = false;
+                    payBtn.textContent = 'Proceed to Pay';
+                }
+
+                let handled = false;
+                const finishBookingUI = (err, ticket) => {
+                    if (handled) return;
+                    handled = true;
+
+                    // Update booking count in top summary
+                    const countEl = document.getElementById('bookingCount');
+                    if (countEl) countEl.textContent = (parseInt(countEl.textContent || '0', 10) + quantity);
+
+                    const resolvedTicket = ticket || {
+                        ticketId: 'TKT-' + Date.now(),
+                        paidMembers: 1,
+                        perPersonAmount: amountPaidNow,
+                        splitMembers: [
+                            { name: "You (Organizer)", amount: amountPaidNow, status: "Paid" },
+                            ...Array.from({ length: Math.max(0, quantity - 1) }, (_, i) => ({
+                                name: `Friend #${i + 2}`,
+                                amount: amountPaidNow,
+                                status: "Pending"
+                            }))
+                        ]
+                    };
+
+                    if (isSplit) {
+                        showGroupSplitSuccess(ev, quantity, grandTotal, amountPaidNow, resolvedTicket);
+                    } else {
+                        showBookingSuccess(ev, quantity, grandTotal, offer, totalDeposit);
+                    }
+                };
 
                 if (window.AttendeeBackend && typeof window.AttendeeBackend.bookTicket === 'function') {
                     const ticketPayload = {
@@ -1522,25 +1887,33 @@
                         time: ev.time || 'TBD',
                         location: ev.location || 'Auditorium',
                         quantity: quantity,
-                        price: amountPaid,
-                        promoCode: offer ? offer.code : null
+                        price: grandTotal,
+                        promoCode: offer ? offer.code : null,
+                        hasDeposit: totalDeposit > 0,
+                        depositAmount: totalDeposit,
+                        isGroupSplit: !!isSplit,
+                        totalSplitMembers: isSplit ? quantity : 1,
+                        perPersonAmount: isSplit ? amountPaidNow : grandTotal
                     };
 
-                    window.AttendeeBackend.bookTicket(ticketPayload, (err, ticket) => {
-                        modal.classList.remove('active');
-                        payBtn.disabled = false;
-                        payBtn.textContent = 'Proceed to Pay';
+                    // Safety timeout fallback: if DynamoDB/AWS has network latency, don't leave user hanging
+                    const safetyTimeout = setTimeout(() => {
+                        console.warn("DynamoDB save slow or delayed, proceeding to confirmation view");
+                        finishBookingUI(null, null);
+                    }, 4000);
 
-                        // Update booking count in top summary
-                        const countEl = document.getElementById('bookingCount');
-                        if (countEl) countEl.textContent = (parseInt(countEl.textContent || '0', 10) + quantity);
-
-                        showBookingSuccess(ev, quantity, amountPaid, offer);
-                    });
+                    try {
+                        window.AttendeeBackend.bookTicket(ticketPayload, (err, ticket) => {
+                            clearTimeout(safetyTimeout);
+                            finishBookingUI(err, ticket);
+                        });
+                    } catch (e) {
+                        clearTimeout(safetyTimeout);
+                        console.error("bookTicket synchronous error caught:", e);
+                        finishBookingUI(e, null);
+                    }
                 } else {
-                    modal.classList.remove('active');
-                    payBtn.disabled = false;
-                    showBookingSuccess(ev, quantity, amountPaid, offer);
+                    finishBookingUI(null, null);
                 }
             }
 

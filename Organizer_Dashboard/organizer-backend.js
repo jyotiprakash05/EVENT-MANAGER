@@ -116,6 +116,8 @@
                             salesDeadlineTime: eventData.salesDeadlineTime || "",
                             capacity: eventData.capacity,
                             price: eventData.price,
+                            hasDepositBond: !!eventData.hasDepositBond,
+                            refundableDeposit: parseFloat(eventData.refundableDeposit) || 0,
                             description: eventData.description,
                             imageUrl: eventData.imageUrl || "",
                             status: eventData.status || "Active",
@@ -251,6 +253,21 @@
                         }
 
                         const now = new Date().toISOString();
+                        const hasDeposit = !!(ticket.hasDeposit || ticket.depositAmount > 0);
+                        const depositAmt = parseFloat(ticket.depositAmount || 0);
+
+                        let updateExp = "SET #s = :used, checkedInAt = :now, scannedBy = :scanner";
+                        const expVals = {
+                            ":used": "Used",
+                            ":valid": "Valid",
+                            ":now": now,
+                            ":scanner": currentUserSub
+                        };
+
+                        if (hasDeposit) {
+                            updateExp += ", depositStatus = :refunded, depositRefundedAt = :now";
+                            expVals[":refunded"] = "Refunded";
+                        }
 
                         // 2. Perform ATOMIC conditional update:
                         // Condition: attribute_exists(ticketId) AND status = 'Valid'
@@ -258,15 +275,10 @@
                         const updateParams = {
                             TableName: config.ticketsTableName,
                             Key: { ticketId: ticketId },
-                            UpdateExpression: "SET #s = :used, checkedInAt = :now, scannedBy = :scanner",
+                            UpdateExpression: updateExp,
                             ConditionExpression: "attribute_exists(ticketId) AND #s = :valid",
                             ExpressionAttributeNames: { "#s": "status" },
-                            ExpressionAttributeValues: {
-                                ":used": "Used",
-                                ":valid": "Valid",
-                                ":now": now,
-                                ":scanner": currentUserSub
-                            },
+                            ExpressionAttributeValues: expVals,
                             ReturnValues: "ALL_NEW"
                         };
 
@@ -285,7 +297,7 @@
                                 return callback(updateErr);
                             }
 
-                            const updatedTicket = (updateData && updateData.Attributes) ? updateData.Attributes : { ...ticket, status: 'Used', checkedInAt: now };
+                            const updatedTicket = (updateData && updateData.Attributes) ? updateData.Attributes : { ...ticket, status: 'Used', checkedInAt: now, depositStatus: hasDeposit ? 'Refunded' : undefined };
 
                             // 3. Log into EventProCheckins table
                             const checkinItem = {
@@ -297,7 +309,9 @@
                                 attendeeName: ticket.attendeeName || "Verified Attendee",
                                 scannedBy: currentUserSub,
                                 organizerId: currentUserSub,
-                                timestamp: now
+                                timestamp: now,
+                                depositRefunded: hasDeposit,
+                                depositAmount: depositAmt
                             };
 
                             const checkinParams = {
@@ -313,7 +327,9 @@
                                     success: true,
                                     message: `Ticket verified! Welcome, ${ticket.attendeeName || 'Attendee'}.`,
                                     ticket: updatedTicket,
-                                    checkin: checkinItem
+                                    checkin: checkinItem,
+                                    depositRefunded: hasDeposit,
+                                    depositAmount: depositAmt
                                 });
                             });
                         });
