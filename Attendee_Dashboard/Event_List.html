@@ -868,134 +868,8 @@
         document.addEventListener('DOMContentLoaded', function() {
             let userProfile = {};
             let activeEvents = [];
-            let currentCity = localStorage.getItem('bms_attendee_city') || 'Delhi-NCR';
+            let currentCity = localStorage.getItem('bms_attendee_city') || 'All Cities';
             let currentCat = 'all';
-
-            // Curated BookMyShow Default Live Events for Attendees
-            const defaultShows = [
-                {
-                    eventId: 'bms-show-1',
-                    eventName: 'Arijit Singh: Grand Symphonic Tour 2026',
-                    category: 'concert',
-                    city: 'Delhi-NCR',
-                    rating: '9.8',
-                    votes: '126.5K',
-                    price: 1800,
-                    date: '2026-11-02',
-                    time: '06:30 PM',
-                    location: 'JLN Arena, Delhi-NCR',
-                    tags: 'Hindi • Soul, Bollywood • 4h',
-                    imageUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=600&q=80',
-                    isLive: true
-                },
-                {
-                    eventId: 'bms-show-2',
-                    eventName: 'Avengers: Secret Wars (4DX 3D)',
-                    category: 'movies',
-                    city: 'Delhi-NCR',
-                    rating: '9.9',
-                    votes: '260K',
-                    price: 520,
-                    date: '2026-10-22',
-                    time: '09:30 PM',
-                    location: 'PVR Director’s Cut, Ambience Mall, Delhi',
-                    tags: 'UA 13+ • English, Hindi • Superhero Marvel',
-                    imageUrl: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=600&q=80',
-                    isLive: true
-                },
-                {
-                    eventId: 'bms-show-3',
-                    eventName: 'Coldplay: Music of the Spheres Tour',
-                    category: 'concert',
-                    city: 'Mumbai',
-                    rating: '9.9',
-                    votes: '184.2K',
-                    price: 2500,
-                    date: '2026-10-24',
-                    time: '07:00 PM',
-                    location: 'DY Patil Stadium, Mumbai',
-                    tags: 'English • Rock, Pop • 3h 30m',
-                    imageUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=600&q=80',
-                    isLive: true
-                },
-                {
-                    eventId: 'bms-show-4',
-                    eventName: 'Zakir Khan: Papa Yaar Live Tour',
-                    category: 'comedy',
-                    city: 'Delhi-NCR',
-                    rating: '9.7',
-                    votes: '94.8K',
-                    price: 999,
-                    date: '2026-10-26',
-                    time: '08:00 PM',
-                    location: 'Siri Fort Auditorium, Delhi-NCR',
-                    tags: 'Hindi • Standup Comedy • 1h 45m',
-                    imageUrl: 'https://images.unsplash.com/photo-1585699324551-f6c309eedeca?auto=format&fit=crop&w=600&q=80',
-                    isLive: true
-                },
-                {
-                    eventId: 'bms-show-5',
-                    eventName: 'Tata IPL 2026: Delhi Capitals vs MI',
-                    category: 'sports',
-                    city: 'Delhi-NCR',
-                    rating: '9.8',
-                    votes: '210K',
-                    price: 1100,
-                    date: '2026-10-28',
-                    time: '07:30 PM',
-                    location: 'Arun Jaitley Stadium, Delhi-NCR',
-                    tags: 'Live Stadium Sports • T20 Cricket',
-                    imageUrl: 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?auto=format&fit=crop&w=600&q=80',
-                    isLive: true
-                },
-                {
-                    eventId: 'bms-show-6',
-                    eventName: 'Mastering Fluid Acrylics & Modern Canvas',
-                    category: 'workshop',
-                    city: 'Delhi-NCR',
-                    rating: '9.4',
-                    votes: '18.4K',
-                    price: 650,
-                    date: '2026-10-29',
-                    time: '11:00 AM',
-                    location: 'Habitat World, Lodhi Road, Delhi',
-                    tags: 'English • Hands-on Workshop • Art Materials Included',
-                    imageUrl: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=600&q=80',
-                    isLive: true
-                },
-                {
-                    eventId: 'bms-show-7',
-                    eventName: 'Starlight Wilderness Camp & Bonfire Night',
-                    category: 'camping',
-                    city: 'Delhi-NCR',
-                    rating: '9.6',
-                    votes: '24.1K',
-                    price: 850,
-                    date: '2026-11-05',
-                    time: '04:00 PM',
-                    location: 'Camp Wild Dhauj, Aravalli Valley',
-                    tags: 'Outdoor Camping • Bonfire, Stargazing & BBQ',
-                    imageUrl: 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80',
-                    isLive: true
-                },
-                {
-                    eventId: 'bms-show-free-deposit',
-                    eventName: 'Google Cloud & AI Next Forum 2026',
-                    category: 'workshop',
-                    city: 'Delhi-NCR',
-                    rating: '9.9',
-                    votes: '38K',
-                    price: 0,
-                    hasDepositBond: true,
-                    refundableDeposit: 50,
-                    date: '2026-11-12',
-                    time: '10:00 AM',
-                    location: 'Bharat Mandapam, Pragati Maidan, Delhi',
-                    tags: 'Free Admission • 100% Refundable Gate Pledge (₹50)',
-                    imageUrl: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=600&q=80',
-                    isLive: true
-                }
-            ];
 
             // Initialize Controls
             initCityPicker();
@@ -1019,7 +893,7 @@
 
                         window.AttendeeBackend.getAllEvents(function(err, events) {
                             if (!err && events && events.length > 0) {
-                                const dbMapped = events.map(e => {
+                                activeEvents = events.map(e => {
                                     let derivedCity = e.city || '';
                                     if (!derivedCity && e.location) {
                                         const parts = e.location.split(',');
@@ -1046,15 +920,14 @@
                                         isLive: true
                                     };
                                 });
-                                activeEvents = [...dbMapped, ...defaultShows];
                             } else {
-                                activeEvents = [...defaultShows];
+                                activeEvents = [];
                             }
                             renderEvents();
                         });
                     });
                 } else {
-                    activeEvents = [...defaultShows];
+                    activeEvents = [];
                     renderEvents();
                 }
             }
@@ -1168,6 +1041,19 @@
             function renderEvents() {
                 const grid = document.getElementById('eventGrid');
                 grid.innerHTML = '';
+
+                if (activeEvents.length === 0) {
+                    grid.innerHTML = `
+                        <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: #94a3b8;">
+                            <span style="font-size: 3rem; display: block; margin-bottom: 14px;">🎟️</span>
+                            <h4 style="color: #fff; margin-bottom: 6px; font-size: 1.25rem;">No Events Currently Listed</h4>
+                            <p style="font-size: 0.88rem; color: #94a3b8; max-width: 420px; margin: 0 auto;">There are no active public events published right now. Please check back later!</p>
+                        </div>
+                    `;
+                    document.getElementById('liveEventCount').textContent = `0 live events`;
+                    document.getElementById('popularCount').textContent = 0;
+                    return;
+                }
 
                 const q = document.getElementById('eventSearch').value.toLowerCase().trim();
                 const priceFilter = document.getElementById('priceFilter').value;
@@ -1726,7 +1612,7 @@
 
                 if (titleEl) titleEl.textContent = ev.eventName || 'Event';
 
-                const shareUrl = `${window.location.origin}/Attendee_Dashboard/Your_Booking.html?splitTicket=${(ticket && ticket.ticketId) || 'TKT'}`;
+                const shareUrl = `${window.location.origin}/Attendee_Dashboard/Pay_Split.html?ticketId=${(ticket && ticket.ticketId) || 'TKT'}`;
                 if (linkInput) linkInput.value = shareUrl;
 
                 // 15-Minute Countdown

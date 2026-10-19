@@ -20,7 +20,20 @@
 
         const user = pool.getCurrentUser();
         if (!user) {
-            callback(new Error("No user logged in"));
+            // Unauthenticated guest access (e.g. paying split links)
+            AWS.config.region = config.region;
+            AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+                IdentityPoolId: config.identityPoolId
+            });
+
+            AWS.config.credentials.get(function(err) {
+                if (err) {
+                    callback(err);
+                    return;
+                }
+                docClient = new AWS.DynamoDB.DocumentClient();
+                callback(null);
+            });
             return;
         }
 
@@ -82,8 +95,12 @@
 
     function isEventSalesClosed(event) {
         if (!event) return false;
-        const status = (event.status || '').toLowerCase();
-        if (['closed', 'ended', 'inactive', 'draft', 'cancelled'].includes(status)) {
+        const status = (event.status || '').toLowerCase().trim();
+        if (['closed', 'ended', 'inactive', 'draft', 'cancelled', 'unlisted'].includes(status)) {
+            return true;
+        }
+
+        if (event.isUnlisted === true || event.isUnlisted === 'true' || event.unlisted === true) {
             return true;
         }
 
@@ -147,7 +164,7 @@
                             name: `Friend #${idx}`,
                             amount: perPersonAmt,
                             status: "Pending",
-                            inviteLink: `https://eventpro.live/split?ref=${ticketId}&m=${idx}`
+                            inviteLink: `${window.location.origin}/Attendee_Dashboard/Pay_Split.html?ticketId=${ticketId}&m=${idx}`
                         });
                     }
                 }
@@ -283,22 +300,43 @@
             });
         },
 
-        updateSplitPayment: function(ticketId, memberIndex, callback) {
+        getSplitTicket: function(ticketId, callback) {
             initAWS((err) => {
                 if (err) return callback(err);
                 const params = {
                     TableName: config.ticketsTableName,
                     Key: { ticketId: ticketId }
                 };
+                docClient.get(params, function(getErr, data) {
+                    if (getErr) return callback(getErr);
+                    if (!data || !data.Item) return callback(new Error("Ticket record not found"));
+                    callback(null, data.Item);
+                });
+            });
+        },
+
+        updateSplitPayment: function(ticketId, memberIndex, payerNameOrCb, callback) {
+            const payerName = typeof payerNameOrCb === 'string' ? payerNameOrCb : null;
+            const cb = typeof payerNameOrCb === 'function' ? payerNameOrCb : callback;
+
+            initAWS((err) => {
+                if (err) return cb(err);
+                const params = {
+                    TableName: config.ticketsTableName,
+                    Key: { ticketId: ticketId }
+                };
                 docClient.get(params, (getErr, data) => {
-                    if (getErr || !data.Item) return callback(getErr || new Error("Ticket record not found"));
+                    if (getErr || !data.Item) return cb(getErr || new Error("Ticket record not found"));
                     const t = data.Item;
                     if (!t.splitMembers || !t.splitMembers[memberIndex]) {
-                        return callback(new Error("Split member not found"));
+                        return cb(new Error("Split member not found"));
                     }
 
                     t.splitMembers[memberIndex].status = "Paid";
                     t.splitMembers[memberIndex].paidAt = new Date().toISOString();
+                    if (payerName) {
+                        t.splitMembers[memberIndex].name = payerName;
+                    }
                     const paidCount = t.splitMembers.filter(m => m.status === "Paid").length;
                     t.paidMembers = paidCount;
                     if (paidCount >= (t.totalSplitMembers || 2)) {
@@ -321,8 +359,8 @@
                     };
 
                     docClient.update(updateParams, (upErr, upData) => {
-                        if (upErr) return callback(upErr);
-                        callback(null, upData.Attributes);
+                        if (upErr) return cb(upErr);
+                        cb(null, upData.Attributes);
                     });
                 });
             });

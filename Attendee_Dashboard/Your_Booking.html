@@ -772,7 +772,7 @@
 
                 if (titleEl) titleEl.textContent = ticket.eventName || 'Event';
 
-                const shareUrl = `${window.location.origin}/Attendee_Dashboard/Your_Booking.html?splitTicket=${ticket.ticketId}`;
+                const shareUrl = `${window.location.origin}/Attendee_Dashboard/Pay_Split.html?ticketId=${ticket.ticketId}`;
                 if (linkInput) linkInput.value = shareUrl;
 
                 const updateBanner = (paidCount, totalCount, isSettled) => {
