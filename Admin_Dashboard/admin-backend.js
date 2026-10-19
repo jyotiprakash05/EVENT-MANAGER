@@ -1,3 +1,4 @@
+// EventPro Admin Backend v2.5 - Multi-table correlation engine
 window.AdminBackend = (function() {
     let docClient;
 
@@ -22,23 +23,26 @@ window.AdminBackend = (function() {
             const usersTable = config.dynamoDBTableName || "EventProUsers";
             const eventsTable = config.eventsTableName || "EventProEvents";
             const ticketsTable = config.ticketsTableName || "EventProTickets";
-            const checkinsTable = config.checkinsTableName || "EventProCheckins";
 
             // 1. Scan Users
             docClient.scan({ TableName: usersTable }, function(err, usersData) {
-                if (err) return callback(err);
-                const rawUsers = usersData.Items || [];
+                if (err) {
+                    console.error("Error scanning users:", err);
+                    return callback(err);
+                }
+                const rawUsers = (usersData && usersData.Items) ? usersData.Items : [];
 
                 // 2. Scan Events
                 docClient.scan({ TableName: eventsTable }, function(eventsErr, eventsData) {
-                    if (eventsErr) return callback(eventsErr);
-                    const rawEvents = eventsData.Items || [];
+                    const rawEvents = (!eventsErr && eventsData && eventsData.Items) ? eventsData.Items : [];
+                    if (eventsErr) console.warn("Notice: could not scan events table:", eventsErr);
 
-                    // 3. Scan Tickets (for revenue, escrow deposits, and attendee correlation)
+                    // 3. Scan Tickets
                     docClient.scan({ TableName: ticketsTable }, function(ticketsErr, ticketsData) {
-                        const rawTickets = (!ticketsErr && ticketsData) ? (ticketsData.Items || []) : [];
+                        const rawTickets = (!ticketsErr && ticketsData && ticketsData.Items) ? ticketsData.Items : [];
+                        if (ticketsErr) console.warn("Notice: could not scan tickets table:", ticketsErr);
 
-                        // Build cross-reference lookups
+                        // Build organizer lookups from events
                         const organizerIdSet = new Set();
                         const organizerEmailSet = new Set();
                         const organizerEventCounts = {};
@@ -50,9 +54,10 @@ window.AdminBackend = (function() {
                         let featuredEventsCount = 0;
 
                         rawEvents.forEach(e => {
-                            if (e.organizerId) {
-                                organizerIdSet.add(e.organizerId);
-                                organizerEventCounts[e.organizerId] = (organizerEventCounts[e.organizerId] || 0) + 1;
+                            const orgId = e.organizerId || e.creatorId || e.userId;
+                            if (orgId) {
+                                organizerIdSet.add(orgId);
+                                organizerEventCounts[orgId] = (organizerEventCounts[orgId] || 0) + 1;
                             }
                             if (e.organizerEmail) {
                                 const oEmail = e.organizerEmail.toLowerCase().trim();
@@ -72,7 +77,7 @@ window.AdminBackend = (function() {
                             totalGrossSales += rev;
                         });
 
-                        // Analyze Tickets & Escrow Refund Metrics
+                        // Analyze Tickets & Escrow Metrics
                         let totalTicketsSold = 0;
                         let totalEscrowCollected = 0;
                         let totalEscrowRefunded = 0;
@@ -118,16 +123,18 @@ window.AdminBackend = (function() {
                             }
                         });
 
-                        // Correlate and identify exact roles (Admin vs Organizer vs Attendee)
+                        // Accurate Role Detection across multiple fields (role, userType, user_type, events created)
                         let countAdmins = 0;
                         let countOrganizers = 0;
                         let countAttendees = 0;
 
                         const enrichedUsers = rawUsers.map(u => {
                             const uEmail = (u.email || '').toLowerCase().trim();
-                            const isMasterAdmin = uEmail === 'admin@eventpro.com' || u.role === 'admin' || u.userType === 'admin';
+                            const uRole = (u.role || u.userType || u.user_type || u.accountType || '').toLowerCase().trim();
+
+                            const isMasterAdmin = uEmail === 'admin@eventpro.com' || uRole === 'admin';
                             const hasEvents = (u.userId && organizerIdSet.has(u.userId)) || (uEmail && organizerEmailSet.has(uEmail));
-                            const isExplicitOrg = u.role === 'organizer' || u.userType === 'organizer';
+                            const isExplicitOrg = uRole === 'organizer' || uRole.includes('org');
 
                             let detectedRole = 'attendee';
                             if (isMasterAdmin) {
@@ -152,13 +159,13 @@ window.AdminBackend = (function() {
                             };
                         });
 
-                        // Check for event organizers that haven't yet been registered in EventProUsers table
-                        const existingUserEmails = new Set(enrichedUsers.map(u => (u.email || '').toLowerCase().trim()));
-                        const existingUserIds = new Set(enrichedUsers.map(u => u.userId));
+                        // Merge any event organizers who created events but whose user profile was not yet registered in EventProUsers
+                        const existingUserEmails = new Set(enrichedUsers.map(u => (u.email || '').toLowerCase().trim()).filter(Boolean));
+                        const existingUserIds = new Set(enrichedUsers.map(u => u.userId).filter(Boolean));
 
                         rawEvents.forEach(e => {
                             const eOrgEmail = (e.organizerEmail || '').toLowerCase().trim();
-                            const eOrgId = e.organizerId;
+                            const eOrgId = e.organizerId || e.creatorId || e.userId;
                             if (eOrgId && !existingUserIds.has(eOrgId) && (!eOrgEmail || !existingUserEmails.has(eOrgEmail))) {
                                 existingUserIds.add(eOrgId);
                                 if (eOrgEmail) existingUserEmails.add(eOrgEmail);

@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>EventPro Admin | Master Control Hub</title>
     
     <!-- Google Fonts -->
@@ -14,11 +17,73 @@
     <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1000.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/amazon-cognito-identity-js@5.2.3/dist/amazon-cognito-identity.min.js"></script>
     
-    <!-- Config and Backend -->
-    <script src="../aws-config.js"></script>
-    <script src="admin-backend.js"></script>
-    
-    <link rel="stylesheet" href="admin.css">
+    <!-- Config and Backend (Cache-Busted) -->
+    <script src="../aws-config.js?v=20261020_v3"></script>
+    <script src="admin-backend.js?v=20261020_v3"></script>
+    <link rel="stylesheet" href="admin.css?v=20261020_v3">
+
+    <!-- Critical Inlined Dark Theme Styles to override any browser cache -->
+    <style>
+        :root {
+            --bg-main: #0b0e14 !important;
+            --bg-surface: #10141e !important;
+            --bg-card: #151a27 !important;
+            --border: rgba(255, 255, 255, 0.08) !important;
+            --text: #f1f5f9 !important;
+            --text-muted: #94a3b8 !important;
+            --text-dim: #64748b !important;
+            --primary: #6366f1 !important;
+        }
+        body {
+            background-color: #0b0e14 !important;
+            color: #f1f5f9 !important;
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+        }
+        .main-content {
+            background-color: #0b0e14 !important;
+            color: #f1f5f9 !important;
+        }
+        .stat-card {
+            background: #151a27 !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            color: #fff !important;
+        }
+        .stat-card h3 {
+            color: #94a3b8 !important;
+        }
+        .stat-value {
+            color: #fff !important;
+        }
+        .panel-card {
+            background: #151a27 !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        }
+        .view-section {
+            display: none !important;
+        }
+        .view-section.active {
+            display: block !important;
+        }
+        .data-table th {
+            background: rgba(255, 255, 255, 0.03) !important;
+            color: #94a3b8 !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+        }
+        .data-table td {
+            color: #e2e8f0 !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+        }
+        .search-input-box input {
+            background: #10141e !important;
+            color: #fff !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        }
+        .filter-pills {
+            background: #10141e !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        }
+    </style>
 </head>
 <body>
     <!-- 1. Admin Login View -->
@@ -114,9 +179,15 @@
                     <h1 id="viewTitle">Platform Overview</h1>
                     <p id="viewSubtitle">Real-time health, users, events, and smart escrow activity.</p>
                 </div>
-                <div class="quick-meta-pill">
-                    <div class="pulse-dot"></div>
-                    <span id="liveStatusText">Live Cloud Sync</span>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <button type="button" class="btn-action btn-secondary" onclick="loadDashboard()" style="padding: 7px 14px; border-radius: 20px;">
+                        <span>🔄</span>
+                        <span>Refresh Data</span>
+                    </button>
+                    <div class="quick-meta-pill">
+                        <div class="pulse-dot"></div>
+                        <span id="liveStatusText">Live Cloud Sync</span>
+                    </div>
                 </div>
             </div>
 
@@ -371,7 +442,7 @@
         let activeEventFilter = 'all';
 
         document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(verifyAdmin, 400);
+            setTimeout(verifyAdmin, 300);
 
             // Tab Navigation Handling
             document.querySelectorAll('.nav-tab').forEach(tab => {
@@ -477,7 +548,7 @@
 
         function verifyAdmin() {
             if (!window.AWS || !window.AmazonCognitoIdentity || !window.EVENTPRO_AWS_CONFIG) {
-                return setTimeout(verifyAdmin, 400);
+                return setTimeout(verifyAdmin, 300);
             }
 
             const poolData = {
@@ -560,7 +631,7 @@
         }
 
         function loadDashboard() {
-            if (!window.AdminBackend) return setTimeout(loadDashboard, 400);
+            if (!window.AdminBackend) return setTimeout(loadDashboard, 300);
 
             window.AdminBackend.getDashboardStats(function(err, stats) {
                 if (err) {
@@ -569,49 +640,68 @@
                     return;
                 }
 
-                currentStats = stats;
+                currentStats = stats || {};
 
-                // 1. Overview KPIs
-                document.getElementById('stat-total-users').textContent = stats.totalUsers;
-                document.getElementById('stat-organizers').textContent = stats.organizers;
-                document.getElementById('stat-attendees').textContent = stats.attendees;
-                document.getElementById('stat-user-ratio').textContent = `${stats.organizers} Organizers • ${stats.attendees} Attendees`;
-                document.getElementById('stat-tickets-sold').textContent = `${stats.totalTicketsSold} Total tickets booked`;
+                // 1. Overview KPIs (Defensive with fallbacks)
+                const totalUsers = currentStats.totalUsers || 0;
+                const organizers = currentStats.organizers || 0;
+                const attendees = currentStats.attendees || 0;
+                const admins = currentStats.admins || 0;
+
+                document.getElementById('stat-total-users').textContent = totalUsers;
+                document.getElementById('stat-organizers').textContent = organizers;
+                document.getElementById('stat-attendees').textContent = attendees;
+                document.getElementById('stat-user-ratio').textContent = `${organizers} Organizers • ${attendees} Attendees`;
                 
-                document.getElementById('stat-revenue').textContent = '₹' + stats.platformRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                document.getElementById('stat-gross-volume').textContent = 'Gross Sales: ₹' + stats.totalGrossSales.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                const totalTickets = currentStats.totalTicketsSold !== undefined ? currentStats.totalTicketsSold : (currentStats.totalTickets || 0);
+                document.getElementById('stat-tickets-sold').textContent = `${totalTickets} Total tickets booked`;
+                
+                const platformRev = currentStats.platformRevenue || 0;
+                document.getElementById('stat-revenue').textContent = '₹' + Number(platformRev).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                
+                const grossSales = currentStats.totalGrossSales !== undefined ? currentStats.totalGrossSales : (platformRev > 0 ? (platformRev / 0.03) : 0);
+                document.getElementById('stat-gross-volume').textContent = 'Gross Sales: ₹' + Number(grossSales).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
                 // Escrow & Split metrics
-                const esc = stats.escrowStats;
-                document.getElementById('ov-escrow-collected').textContent = '₹' + esc.totalCollected.toLocaleString();
-                document.getElementById('ov-escrow-refunded').textContent = '₹' + esc.totalRefunded.toLocaleString();
-                document.getElementById('ov-escrow-held').textContent = '₹' + esc.totalHeld.toLocaleString();
-                document.getElementById('ov-split-count').textContent = esc.totalSplitBookings;
-                document.getElementById('ov-split-settled').textContent = `${esc.settledSplits} Fully Settled • ${esc.pendingSplits} Pending`;
+                const esc = currentStats.escrowStats || {
+                    totalCollected: 0,
+                    totalRefunded: 0,
+                    totalHeld: 0,
+                    totalSplitBookings: 0,
+                    settledSplits: 0,
+                    pendingSplits: 0
+                };
+
+                document.getElementById('ov-escrow-collected').textContent = '₹' + Number(esc.totalCollected || 0).toLocaleString();
+                document.getElementById('ov-escrow-refunded').textContent = '₹' + Number(esc.totalRefunded || 0).toLocaleString();
+                document.getElementById('ov-escrow-held').textContent = '₹' + Number(esc.totalHeld || 0).toLocaleString();
+                document.getElementById('ov-split-count').textContent = esc.totalSplitBookings || 0;
+                document.getElementById('ov-split-settled').textContent = `${esc.settledSplits || 0} Fully Settled • ${esc.pendingSplits || 0} Pending`;
 
                 // Detailed Tab Escrow Values
-                document.getElementById('escrow-total-collected').textContent = '₹' + esc.totalCollected.toLocaleString();
-                document.getElementById('escrow-total-refunded').textContent = '₹' + esc.totalRefunded.toLocaleString();
-                document.getElementById('escrow-total-held').textContent = '₹' + esc.totalHeld.toLocaleString();
-                document.getElementById('split-total-count').textContent = esc.totalSplitBookings;
-                document.getElementById('split-settled-count').textContent = esc.settledSplits;
-                document.getElementById('split-pending-count').textContent = esc.pendingSplits;
+                document.getElementById('escrow-total-collected').textContent = '₹' + Number(esc.totalCollected || 0).toLocaleString();
+                document.getElementById('escrow-total-refunded').textContent = '₹' + Number(esc.totalRefunded || 0).toLocaleString();
+                document.getElementById('escrow-total-held').textContent = '₹' + Number(esc.totalHeld || 0).toLocaleString();
+                document.getElementById('split-total-count').textContent = esc.totalSplitBookings || 0;
+                document.getElementById('split-settled-count').textContent = esc.settledSplits || 0;
+                document.getElementById('split-pending-count').textContent = esc.pendingSplits || 0;
 
                 // Nav Badges
-                document.getElementById('nav-badge-users').textContent = stats.totalUsers;
-                document.getElementById('nav-badge-events').textContent = stats.totalEvents;
+                const totalEvents = currentStats.totalEvents || (currentStats.eventsList ? currentStats.eventsList.length : 0);
+                document.getElementById('nav-badge-users').textContent = totalUsers;
+                document.getElementById('nav-badge-events').textContent = totalEvents;
 
                 // Filter Counts for Users
-                document.getElementById('count-pill-all').textContent = stats.totalUsers;
-                document.getElementById('count-pill-org').textContent = stats.organizers;
-                document.getElementById('count-pill-att').textContent = stats.attendees;
-                document.getElementById('count-pill-adm').textContent = stats.admins;
+                document.getElementById('count-pill-all').textContent = totalUsers;
+                document.getElementById('count-pill-org').textContent = organizers;
+                document.getElementById('count-pill-att').textContent = attendees;
+                document.getElementById('count-pill-adm').textContent = admins;
 
                 // Filter Counts for Events
-                document.getElementById('count-events-all').textContent = stats.totalEvents;
-                document.getElementById('count-events-live').textContent = stats.activeEvents;
-                document.getElementById('count-events-unlisted').textContent = stats.unlistedEvents;
-                document.getElementById('count-events-featured').textContent = stats.featuredEvents;
+                document.getElementById('count-events-all').textContent = totalEvents;
+                document.getElementById('count-events-live').textContent = currentStats.activeEvents || 0;
+                document.getElementById('count-events-unlisted').textContent = currentStats.unlistedEvents || 0;
+                document.getElementById('count-events-featured').textContent = currentStats.featuredEvents || 0;
 
                 // Render Sub-Views
                 renderOverviewEvents();
@@ -662,7 +752,7 @@
             users.forEach(u => {
                 const tr = document.createElement('tr');
                 const fullName = (u.firstName || u.lastName) ? `${u.firstName || ''} ${u.lastName || ''}`.trim() : 'EventPro User';
-                const role = u.detectedRole;
+                const role = u.detectedRole || 'attendee';
                 
                 let roleBadgeHtml = '';
                 let activityHtml = '';
@@ -683,7 +773,7 @@
                 tr.innerHTML = `
                     <td>
                         <div style="font-weight: 700; color: #fff;">${fullName}</div>
-                        <small style="font-family: monospace; color: var(--text-dim); font-size: 0.72rem;">ID: ${u.userId.substring(0, 12)}...</small>
+                        <small style="font-family: monospace; color: var(--text-dim); font-size: 0.72rem;">ID: ${(u.userId || '').substring(0, 12)}...</small>
                     </td>
                     <td>
                         <span style="color: var(--text-muted); font-size: 0.88rem;">${u.email || 'No email attached'}</span>
