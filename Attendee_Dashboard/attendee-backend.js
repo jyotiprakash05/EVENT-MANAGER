@@ -11,14 +11,15 @@
     
     let docClient = null;
     let currentUserSub = null;
+    let currentUserEmail = null;
     
     function initAWS(callback) {
-        if (docClient) {
+        const user = pool.getCurrentUser();
+        if (docClient && (!user || currentUserSub)) {
             callback(null);
             return;
         }
 
-        const user = pool.getCurrentUser();
         if (!user) {
             // Unauthenticated guest access (e.g. paying split links)
             AWS.config.region = config.region;
@@ -45,6 +46,7 @@
 
             const idToken = session.getIdToken().getJwtToken();
             currentUserSub = session.getIdToken().payload.sub;
+            currentUserEmail = session.getIdToken().payload.email || null;
             
             const logins = {};
             logins[`cognito-idp.${config.region}.amazonaws.com/${config.userPoolId}`] = idToken;
@@ -272,22 +274,30 @@
                 };
                 
                 docClient.scan(params, function(err, data) {
-                    if (err) callback(err);
-                    else {
+                    if (err) return callback(err);
+                    
+                    try {
                         // Gather any local passes saved in browser storage
                         const localPassIds = [];
                         try {
                             const cached = JSON.parse(localStorage.getItem('eventpro_my_passes') || '[]');
-                            cached.forEach(c => { if (c.ticketId) localPassIds.push(c.ticketId); });
+                            if (Array.isArray(cached)) {
+                                cached.forEach(c => { if (c && c.ticketId) localPassIds.push(c.ticketId); });
+                            }
                         } catch (e) {}
 
+                        const emailLower = (currentUserEmail || '').toLowerCase();
                         const myTickets = (data.Items || []).filter(t => {
-                            const isOwner = t.attendeeId && currentUserSub && t.attendeeId === currentUserSub;
-                            const isEmail = t.attendeeEmail && userEmail && t.attendeeEmail.toLowerCase() === userEmail.toLowerCase();
-                            const isLocalPass = localPassIds.includes(t.ticketId);
-                            return isOwner || isEmail || isLocalPass;
+                            const isOwner = !!(t.attendeeId && currentUserSub && t.attendeeId === currentUserSub);
+                            const isUser = !!(t.userId && currentUserSub && t.userId === currentUserSub);
+                            const isEmail = !!(t.attendeeEmail && emailLower && t.attendeeEmail.toLowerCase() === emailLower);
+                            const isLocalPass = !!(t.ticketId && localPassIds.includes(t.ticketId));
+                            return isOwner || isUser || isEmail || isLocalPass;
                         });
                         callback(null, myTickets);
+                    } catch (scanErr) {
+                        console.error("getMyBookings error:", scanErr);
+                        callback(scanErr);
                     }
                 });
             });
