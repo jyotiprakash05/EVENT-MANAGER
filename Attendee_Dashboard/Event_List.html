@@ -871,10 +871,112 @@
             let currentCity = localStorage.getItem('bms_attendee_city') || 'All Cities';
             let currentCat = 'all';
 
+            // Notification Center Functionality
+            let currentAlerts = [];
+            function loadAttendeeAlerts() {
+                if (!window.AttendeeBackend || !window.AttendeeBackend.getAttendeeAlerts) {
+                    setTimeout(loadAttendeeAlerts, 500);
+                    return;
+                }
+
+                window.AttendeeBackend.getAttendeeAlerts(function(err, alerts, unreadCount) {
+                    if (err) return;
+                    currentAlerts = alerts || [];
+
+                    const badge = document.getElementById('unreadAlertBadge');
+                    const list = document.getElementById('notificationList');
+
+                    if (unreadCount > 0) {
+                        if (badge) {
+                            badge.style.display = 'block';
+                            badge.textContent = unreadCount > 9 ? '9+' : unreadCount;
+                        }
+                    } else {
+                        if (badge) badge.style.display = 'none';
+                    }
+
+                    if (!currentAlerts || currentAlerts.length === 0) {
+                        if (list) {
+                            list.innerHTML = `
+                                <div style="text-align: center; padding: 24px 12px; color: #94a3b8; font-size: 0.85rem;">
+                                    <span style="font-size: 1.8rem; display: block; margin-bottom: 6px;">✨</span>
+                                    No event alerts or schedule updates at this time.
+                                </div>
+                            `;
+                        }
+                        return;
+                    }
+
+                    if (list) {
+                        list.innerHTML = currentAlerts.map(a => {
+                            const isUnread = !a.isRead;
+                            const icon = a.type === 'reminder' ? '⏰' : (a.priority === 'high' ? '🚨' : '📢');
+                            const borderColor = a.priority === 'high' ? '#ef4444' : (a.type === 'reminder' ? '#f59e0b' : '#3b82f6');
+                            return `
+                                <div class="alert-item" data-id="${a.alertId}" style="padding: 10px 12px; margin-bottom: 8px; border-radius: 10px; background: ${isUnread ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.2)'}; border-left: 3px solid ${borderColor}; cursor: pointer; transition: background 0.2s;">
+                                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 4px;">
+                                        <strong style="font-size: 0.85rem; color: ${isUnread ? '#fff' : '#94a3b8'}; display: flex; align-items: center; gap: 6px;">
+                                            <span>${icon}</span> ${a.title}
+                                        </strong>
+                                        ${isUnread ? '<span style="width: 6px; height: 6px; border-radius: 50%; background: #f84464; display: inline-block;"></span>' : ''}
+                                    </div>
+                                    <p style="margin: 0; font-size: 0.8rem; color: #94a3b8; line-height: 1.3;">${a.message}</p>
+                                    <small style="display: block; margin-top: 4px; font-size: 0.7rem; color: #64748b;">${a.eventName || 'Event'}</small>
+                                </div>
+                            `;
+                        }).join('');
+
+                        list.querySelectorAll('.alert-item').forEach(el => {
+                            el.addEventListener('click', function() {
+                                const alertId = this.getAttribute('data-id');
+                                if (window.AttendeeBackend && window.AttendeeBackend.markAlertAsRead) {
+                                    window.AttendeeBackend.markAlertAsRead(alertId, () => {
+                                        loadAttendeeAlerts();
+                                    });
+                                }
+                            });
+                        });
+                    }
+                });
+            }
+
+            function initNotificationCenter() {
+                const notifBtn = document.getElementById('notificationBellBtn');
+                const dropdown = document.getElementById('notificationDropdown');
+                const markAllBtn = document.getElementById('markAllReadBtn');
+
+                if (notifBtn && dropdown) {
+                    notifBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const isHidden = dropdown.style.display === 'none' || !dropdown.style.display;
+                        dropdown.style.display = isHidden ? 'block' : 'none';
+                    });
+                }
+
+                document.addEventListener('click', function(e) {
+                    if (dropdown && !dropdown.contains(e.target) && (!notifBtn || !notifBtn.contains(e.target))) {
+                        dropdown.style.display = 'none';
+                    }
+                });
+
+                if (markAllBtn) {
+                    markAllBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const allIds = currentAlerts.map(a => a.alertId);
+                        if (window.AttendeeBackend && window.AttendeeBackend.markAllAlertsAsRead) {
+                            window.AttendeeBackend.markAllAlertsAsRead(allIds, () => {
+                                loadAttendeeAlerts();
+                            });
+                        }
+                    });
+                }
+            }
+
             // Initialize Controls
             initCityPicker();
             initCategoryRibbon();
             initCheckoutModal();
+            initNotificationCenter();
 
             // Load Data & AWS Integration
             function loadData() {
@@ -883,6 +985,11 @@
                         if (!err && profile) {
                             userProfile = profile;
                             document.getElementById('savedCount').textContent = (profile.savedEvents || []).length;
+                            const avatar = document.querySelector('.user-pill .user-avatar');
+                            const nameSpan = document.querySelector('.user-pill span:last-child');
+                            const fullName = `${profile.firstName || ''} ${profile.lastName || ''}`.trim();
+                            if (nameSpan) nameSpan.textContent = fullName || profile.email || 'Attendee';
+                            if (avatar) avatar.textContent = (profile.firstName ? profile.firstName[0] : (profile.email ? profile.email[0] : 'A')).toUpperCase();
                         }
 
                         window.AttendeeBackend.getMyBookings((err, tickets) => {
@@ -890,6 +997,8 @@
                                 document.getElementById('bookingCount').textContent = tickets.length;
                             }
                         });
+
+                        loadAttendeeAlerts();
 
                         window.AttendeeBackend.getAllEvents(function(err, events) {
                             if (!err && events && events.length > 0) {
@@ -915,6 +1024,7 @@
                                         date: e.date || 'TBD',
                                         time: e.time || '07:00 PM',
                                         location: e.location || 'City Auditorium',
+                                        googleMapLink: e.googleMapLink || '',
                                         tags: e.tags || (hasBond ? '100% Refundable Gate Deposit (₹' + depAmt + ')' : 'Live Experience • Instant M-Ticket'),
                                         imageUrl: e.imageUrl || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=600&q=80',
                                         isLive: true
@@ -1112,6 +1222,7 @@
                     const isSaved = savedEventsList.includes(ev.eventId);
                     const depAmt = parseFloat(ev.refundableDeposit) || 0;
                     const hasDeposit = (ev.hasDepositBond === true || ev.hasDepositBond === 'true' || depAmt > 0) && depAmt > 0;
+                    const mapUrl = ev.googleMapLink && ev.googleMapLink.trim() ? ev.googleMapLink.trim() : ('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(ev.location || ''));
 
                     let priceHtml = '';
                     if (ev.price > 0) {
@@ -1140,7 +1251,11 @@
                             <div>
                                 <h4 class="bms-card-title" title="${ev.eventName}">${ev.eventName}</h4>
                                 <p class="bms-card-meta">${ev.tags || 'Live Performance'}</p>
-                                <p class="bms-card-location">📍 ${ev.location}</p>
+                                <p class="bms-card-location" title="Click to view location on Google Maps" style="cursor: pointer; display: inline-flex; align-items: center; gap: 4px; z-index: 2; position: relative;">
+                                    <span style="color: #f84464;">📍</span>
+                                    <span style="text-decoration: underline; text-underline-offset: 3px; font-weight: 500;">${ev.location}</span>
+                                    <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="opacity: 0.7;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                                </p>
                             </div>
                             <div class="bms-card-footer">
                                 <div class="bms-card-price">
@@ -1153,6 +1268,15 @@
                             </div>
                         </div>
                     `;
+
+                    // Location Click Action - Redirect to Google Maps
+                    const locEl = card.querySelector('.bms-card-location');
+                    if (locEl) {
+                        locEl.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            window.open(mapUrl, '_blank', 'noopener,noreferrer');
+                        });
+                    }
 
                     // Book Tickets Click Action - Opens Order Summary & Offers Modal
                     card.querySelector('.book-ticket-btn').addEventListener('click', (e) => {
@@ -1338,9 +1462,10 @@
                 if (badge) badge.style.display = 'none';
                 if (splitToggle) splitToggle.checked = false;
 
+                const modalMapUrl = ev.googleMapLink && ev.googleMapLink.trim() ? ev.googleMapLink.trim() : ('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(ev.location || ''));
                 document.getElementById('checkoutCategoryBadge').textContent = (ev.category || 'EVENT').toUpperCase();
                 document.getElementById('checkoutEventTitle').textContent = ev.eventName;
-                document.getElementById('checkoutEventMeta').textContent = `📍 ${ev.location} • ${ev.date} at ${ev.time}`;
+                document.getElementById('checkoutEventMeta').innerHTML = `<a href="${modalMapUrl}" target="_blank" rel="noopener noreferrer" style="color:#f84464; text-decoration:underline; text-underline-offset:2px; font-weight:600; cursor:pointer;" title="Click to view on Google Maps">📍 ${ev.location} ↗</a> • ${ev.date} at ${ev.time}`;
 
                 const unitPrice = ev.price || 0;
                 const depVal = parseFloat(ev.refundableDeposit) || 0;

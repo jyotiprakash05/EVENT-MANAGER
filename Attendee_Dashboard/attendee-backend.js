@@ -274,7 +274,19 @@
                 docClient.scan(params, function(err, data) {
                     if (err) callback(err);
                     else {
-                        const myTickets = data.Items.filter(t => t.attendeeId === currentUserSub);
+                        // Gather any local passes saved in browser storage
+                        const localPassIds = [];
+                        try {
+                            const cached = JSON.parse(localStorage.getItem('eventpro_my_passes') || '[]');
+                            cached.forEach(c => { if (c.ticketId) localPassIds.push(c.ticketId); });
+                        } catch (e) {}
+
+                        const myTickets = (data.Items || []).filter(t => {
+                            const isOwner = t.attendeeId && currentUserSub && t.attendeeId === currentUserSub;
+                            const isEmail = t.attendeeEmail && userEmail && t.attendeeEmail.toLowerCase() === userEmail.toLowerCase();
+                            const isLocalPass = localPassIds.includes(t.ticketId);
+                            return isOwner || isEmail || isLocalPass;
+                        });
                         callback(null, myTickets);
                     }
                 });
@@ -315,9 +327,23 @@
             });
         },
 
-        updateSplitPayment: function(ticketId, memberIndex, payerNameOrCb, callback) {
-            const payerName = typeof payerNameOrCb === 'string' ? payerNameOrCb : null;
-            const cb = typeof payerNameOrCb === 'function' ? payerNameOrCb : callback;
+        updateSplitPayment: function(ticketId, memberIndex, payerNameOrCb, payerEmailOrCb, callback) {
+            let payerName = null;
+            let payerEmail = null;
+            let cb = null;
+
+            if (typeof payerNameOrCb === 'string') {
+                payerName = payerNameOrCb;
+            } else if (typeof payerNameOrCb === 'function') {
+                cb = payerNameOrCb;
+            }
+
+            if (typeof payerEmailOrCb === 'string') {
+                payerEmail = payerEmailOrCb;
+                cb = callback;
+            } else if (typeof payerEmailOrCb === 'function') {
+                cb = payerEmailOrCb;
+            }
 
             initAWS((err) => {
                 if (err) return cb(err);
@@ -337,12 +363,41 @@
                     if (payerName) {
                         t.splitMembers[memberIndex].name = payerName;
                     }
+                    if (payerEmail) {
+                        t.splitMembers[memberIndex].email = payerEmail;
+                    }
                     const paidCount = t.splitMembers.filter(m => m.status === "Paid").length;
                     t.paidMembers = paidCount;
                     if (paidCount >= (t.totalSplitMembers || 2)) {
                         t.status = "Valid";
                         t.splitStatus = "Fully Settled";
                     }
+
+                    const memberTicketId = `${ticketId}-M${memberIndex + 1}`;
+                    t.splitMembers[memberIndex].memberTicketId = memberTicketId;
+
+                    const subTicketItem = {
+                        ticketId: memberTicketId,
+                        parentTicketId: ticketId,
+                        eventId: t.eventId,
+                        eventName: t.eventName,
+                        attendeeName: payerName || `Friend #${memberIndex + 1}`,
+                        attendeeEmail: payerEmail || null,
+                        attendeeId: currentUserSub || t.attendeeId,
+                        status: "Valid",
+                        date: t.date,
+                        time: t.time,
+                        location: t.location,
+                        quantity: 1,
+                        price: t.perPersonAmount || Math.round((t.price || 0) / (t.totalSplitMembers || 2)),
+                        purchasedAt: new Date().toISOString(),
+                        isGroupSplitMember: true,
+                        memberIndex: memberIndex
+                    };
+
+                    docClient.put({ TableName: config.ticketsTableName, Item: subTicketItem }, (subErr) => {
+                        if (subErr) console.warn("Could not save member sub-ticket:", subErr);
+                    });
 
                     const updateParams = {
                         TableName: config.ticketsTableName,
@@ -360,7 +415,9 @@
 
                     docClient.update(updateParams, (upErr, upData) => {
                         if (upErr) return cb(upErr);
-                        cb(null, upData.Attributes);
+                        const resultAttr = upData.Attributes || t;
+                        resultAttr.activeMemberTicketId = memberTicketId;
+                        cb(null, resultAttr);
                     });
                 });
             });

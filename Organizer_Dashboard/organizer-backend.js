@@ -323,6 +323,34 @@
                                 if (checkinErr) {
                                     console.warn("Notice: checkin log put warning (non-fatal):", checkinErr);
                                 }
+
+                                // If this was an individual split sub-ticket, sync the parent ticket's splitMembers array
+                                if (ticket.parentTicketId && ticket.memberIndex !== undefined) {
+                                    const parentGet = {
+                                        TableName: config.ticketsTableName,
+                                        Key: { ticketId: ticket.parentTicketId }
+                                    };
+                                    docClient.get(parentGet, (pErr, pData) => {
+                                        if (!pErr && pData && pData.Item && Array.isArray(pData.Item.splitMembers)) {
+                                            const sm = pData.Item.splitMembers;
+                                            const mIdx = parseInt(ticket.memberIndex, 10);
+                                            if (sm[mIdx]) {
+                                                sm[mIdx].status = "Used";
+                                                sm[mIdx].isUsed = true;
+                                                sm[mIdx].checkedInAt = now;
+                                                docClient.update({
+                                                    TableName: config.ticketsTableName,
+                                                    Key: { ticketId: ticket.parentTicketId },
+                                                    UpdateExpression: "SET splitMembers = :sm",
+                                                    ExpressionAttributeValues: { ":sm": sm }
+                                                }, (upErr) => {
+                                                    if (upErr) console.warn("Could not sync parent splitMembers status:", upErr);
+                                                });
+                                            }
+                                        }
+                                    });
+                                }
+
                                 callback(null, {
                                     success: true,
                                     message: `Ticket verified! Welcome, ${ticket.attendeeName || 'Attendee'}.`,

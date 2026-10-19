@@ -256,6 +256,13 @@
             cursor: default;
         }
 
+        .member-pill.used {
+            opacity: 0.55;
+            cursor: pointer;
+            border-color: rgba(239, 68, 68, 0.35);
+            background: rgba(239, 68, 68, 0.06);
+        }
+
         /* Payer Details Form */
         .form-group {
             margin-top: 20px;
@@ -466,7 +473,96 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        /* Dynamic Rolling Pass Visuals */
+        .qr-wrapper {
+            position: relative;
+            width: 210px;
+            height: 210px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 10px;
+            border-radius: 14px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+        }
+
+        .qr-laser-beam {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #ef4444, #f43f5e, transparent);
+            box-shadow: 0 0 14px #ef4444;
+            animation: laserScan 2.2s ease-in-out infinite alternate;
+            z-index: 5;
+        }
+
+        @keyframes laserScan {
+            0% { top: 6px; }
+            100% { top: 200px; }
+        }
+
+        .pulse-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+        }
+
+        .pulse-indicator .dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #10b981;
+            animation: dotPulse 1.2s infinite;
+        }
+
+        @keyframes dotPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.3; transform: scale(1.4); }
+        }
+
+        .pass-card-box {
+            background: #ffffff;
+            color: #0f172a;
+            border-radius: 16px;
+            padding: 20px 16px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 12px 35px rgba(0,0,0,0.4);
+        }
+
+        .countdown-track {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 8px 0;
+        }
+
+        .countdown-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #06b6d4);
+            border-radius: 6px;
+            transition: width 1s linear;
+        }
     </style>
+    <!-- Dynamic Pass Engines -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="../rolling-ticket-engine.js"></script>
 </head>
 <body>
     <div class="ambient-glow-1"></div>
@@ -503,6 +599,42 @@
                 <h3 style="color: #fff; margin-bottom: 8px;">Split Link Unavailable</h3>
                 <p id="errorMessage" style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 20px;">Could not load split reservation. The booking may have expired or is invalid.</p>
                 <a href="Event_List.html" class="btn-view-bookings" style="display: inline-block; width: auto; padding: 10px 24px;">Browse Events</a>
+            </div>
+
+            <!-- Ticket Already Used / Deactivated View -->
+            <div id="ticketUsedState" style="display: none; text-align: center; padding: 24px 10px;">
+                <div style="width: 68px; height: 68px; background: rgba(239, 68, 68, 0.15); border: 2px solid rgba(239, 68, 68, 0.4); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 2rem;">
+                    🚫
+                </div>
+                <div style="display: inline-block; background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.35); padding: 4px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.06em; margin-bottom: 12px;">
+                    ADMISSION PASS USED
+                </div>
+                <h2 style="color: #fff; font-size: 1.35rem; font-weight: 800; margin-bottom: 8px;">Ticket Link Deactivated</h2>
+                <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.5; margin-bottom: 22px; max-width: 380px; margin-left: auto; margin-right: auto;">
+                    This split admission pass was already scanned and verified at the venue gate. This link is now permanently inactive and cannot be reused.
+                </p>
+
+                <div class="pass-card-box" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); text-align: left; color: #fff; margin-bottom: 24px; padding: 18px 20px;">
+                    <div style="font-size: 0.74rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Event</div>
+                    <div style="font-weight: 800; font-size: 1.05rem; color: #fff; margin-bottom: 12px;" id="usedEventName">Event Name</div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 0.82rem;">
+                        <div>
+                            <span style="color: #94a3b8; display: block; font-size: 0.74rem;">Attendee</span>
+                            <strong style="color: #fff;" id="usedAttendeeName">Friend #2</strong>
+                        </div>
+                        <div>
+                            <span style="color: #94a3b8; display: block; font-size: 0.74rem;">Pass ID</span>
+                            <strong style="color: #f87171; font-family: monospace;" id="usedTicketId">TKT-xxx-M2</strong>
+                        </div>
+                    </div>
+                    <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 0.78rem; color: #f87171; display: flex; align-items: center; gap: 6px;">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <span id="usedCheckinTime">Checked in at the event gate</span>
+                    </div>
+                </div>
+
+                <a href="Event_List.html" class="btn-view-bookings" style="display: inline-block; width: auto; padding: 12px 28px;">Browse Other Events</a>
             </div>
 
             <!-- Active Payment View -->
@@ -577,32 +709,77 @@
                 </p>
             </div>
 
-            <!-- Success Screen -->
-            <div id="successContent" class="success-screen">
+            <!-- Success Screen / Dynamic Ticket View -->
+            <div id="successContent" class="success-screen" style="display: none;">
                 <div class="success-icon-wrap">✓</div>
-                <h2 class="success-title">You're All Set!</h2>
-                <p class="success-sub" id="successSubText">Your individual share has been paid and your seat is locked.</p>
+                <h2 class="success-title" id="successTitle">You're All Set!</h2>
+                <p class="success-sub" id="successSubText">Your individual share has been paid and your personal live ticket is activated.</p>
 
-                <div class="ticket-pill-receipt">
-                    <div class="receipt-row">
-                        <span style="color:var(--text-muted)">Event</span>
-                        <strong style="color:#fff;" id="receiptEvent">Event Name</strong>
+                <!-- Anti-Scalp Header Badge -->
+                <div style="margin-bottom: 14px; display: flex; flex-direction: column; align-items: center; gap: 6px;">
+                    <span class="pulse-indicator">
+                        <span class="dot"></span>
+                        <span>LIVE CRYPTOGRAPHIC PASS</span>
+                    </span>
+                    <p style="margin: 0; font-size: 0.76rem; color: #94a3b8; max-width: 340px; text-align: center;">
+                        🛡️ Protected by <strong>Zero-Scalp Rolling Protocol</strong>. This QR updates every 20 seconds. Screenshots are rejected at the gate.
+                    </p>
+                </div>
+
+                <!-- Printable & Viewable Ticket Box -->
+                <div id="pdfContent" class="pass-card-box">
+                    <h4 id="pdfEventName" style="font-weight: 800; font-size: 1.15rem; margin: 0 0 4px; color: #0f172a;">Event Ticket</h4>
+                    <p id="pdfEventDetails" style="font-size: 0.82rem; color: #475569; margin: 0 0 12px;">Date & Venue</p>
+                    
+                    <!-- Dynamic QR Viewfinder Container -->
+                    <div class="qr-wrapper">
+                        <div class="qr-laser-beam"></div>
+                        <div id="dynamicQrCanvas" style="width: 190px; height: 190px; display: flex; align-items: center; justify-content: center;">
+                            <img id="qrImage" src="" alt="Dynamic Ticket QR" style="width: 190px; height: 190px; display: block;">
+                        </div>
                     </div>
-                    <div class="receipt-row">
-                        <span style="color:var(--text-muted)">Attendee</span>
-                        <strong style="color:#fff;" id="receiptName">Aarav</strong>
-                    </div>
-                    <div class="receipt-row">
-                        <span style="color:var(--text-muted)">Amount Paid</span>
-                        <strong style="color:#10b981;" id="receiptAmount">₹50</strong>
-                    </div>
-                    <div class="receipt-row">
-                        <span style="color:var(--text-muted)">Booking ID</span>
-                        <strong style="color:#fff; font-family:monospace;" id="receiptTicketId">TKT-12345</strong>
+
+                    <div style="margin-top: 10px;">
+                        <span style="font-family: monospace; font-weight: 800; font-size: 1rem; color: #059669; letter-spacing: 0.05em;" id="ticketCodeDisplay">TKT-LOADING</span>
+                        <div style="font-size: 0.72rem; color: #64748b; font-family: monospace; margin-top: 2px;" id="rollingHashDisplay">Rolling Token: #Computing...</div>
+                        <div style="font-size: 0.75rem; color: #334155; font-weight: 600; margin-top: 4px;" id="attendeePillName">Attendee: Name</div>
                     </div>
                 </div>
 
-                <a href="Your_Booking.html" class="btn-view-bookings">View Ticket in Your Bookings</a>
+                <!-- Live Countdown Timer & Progress Bar -->
+                <div style="margin-bottom: 18px; text-align: left; background: rgba(255,255,255,0.03); padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.07);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem;">
+                        <span style="color: var(--text-muted); font-size: 0.75rem;" id="liveClockDisplay">Live Clock: --:--:--</span>
+                        <span style="color: #38bdf8; font-weight: 700; font-size: 0.8rem;" id="countdownText">Refreshing in 20s</span>
+                    </div>
+                    <div class="countdown-track">
+                        <div id="countdownBar" class="countdown-fill" style="width: 100%;"></div>
+                    </div>
+                    <div style="font-size: 0.7rem; color: #94a3b8; text-align: center;">
+                        ⚡ Auto-rolling cryptographic token to prevent ticket duplication.
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                    <button type="button" id="downloadPdfBtn" class="pay-btn" style="flex: 1; padding: 11px; font-size: 0.85rem; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); box-shadow: none;">
+                        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        <span>Download PDF</span>
+                    </button>
+                    <button type="button" id="waSharePassBtn" class="pay-btn" style="flex: 1; padding: 11px; font-size: 0.85rem; background: rgba(37, 211, 102, 0.15); color: #25d366; border: 1px solid rgba(37, 211, 102, 0.3); box-shadow: none;">
+                        <svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.174.086.275.072.376-.043.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.043.073.043.419-.101.824z"/></svg>
+                        <span>Save to WhatsApp</span>
+                    </button>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button type="button" id="copyDirectLinkBtn" class="pay-btn" style="flex: 1; padding: 11px; font-size: 0.85rem; background: rgba(99, 102, 241, 0.15); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3); box-shadow: none;">
+                        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                        <span id="copyLinkText">Copy Pass Link</span>
+                    </button>
+                    <a href="Your_Booking.html" class="btn-view-bookings" style="flex: 1; padding: 11px; margin-top: 0; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; text-decoration: none;">
+                        <span>My Bookings</span>
+                    </a>
+                </div>
             </div>
         </main>
     </div>
@@ -650,6 +827,42 @@
                 secondsLeft--;
             }, 1000);
 
+            const ticketUsedState = document.getElementById('ticketUsedState');
+
+            function showTicketUsedView(ticket, attendeeName, tId, checkedInTime) {
+                stopRollingTimer();
+                loadingState.style.display = 'none';
+                paymentContent.style.display = 'none';
+                successContent.style.display = 'none';
+                errorState.style.display = 'none';
+                if (ticketUsedState) ticketUsedState.style.display = 'block';
+
+                const qrContainer = document.getElementById('dynamicQrCanvas');
+                if (qrContainer) qrContainer.innerHTML = '';
+
+                const evNameEl = document.getElementById('usedEventName');
+                if (evNameEl) evNameEl.textContent = ticket.eventName || 'Event Admission';
+                
+                const attEl = document.getElementById('usedAttendeeName');
+                if (attEl) attEl.textContent = attendeeName || 'Group Attendee';
+                
+                const tIdEl = document.getElementById('usedTicketId');
+                if (tIdEl) tIdEl.textContent = tId || ticket.ticketId;
+
+                const timeStr = checkedInTime ? new Date(checkedInTime).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Verified at event gate';
+                const timeEl = document.getElementById('usedCheckinTime');
+                if (timeEl) timeEl.textContent = 'Scanned & checked in at gate: ' + timeStr;
+
+                const lockBadge = document.getElementById('seatLockBadge');
+                if (lockBadge) {
+                    lockBadge.style.background = 'rgba(239, 68, 68, 0.15)';
+                    lockBadge.style.borderColor = 'rgba(239, 68, 68, 0.35)';
+                    lockBadge.style.color = '#f87171';
+                }
+                const clockEl = document.getElementById('countdownDisplay');
+                if (clockEl) clockEl.textContent = 'PASS USED';
+            }
+
             // Fetch Ticket Data
             function loadSplitDetails() {
                 if (!window.AttendeeBackend || !window.AttendeeBackend.getSplitTicket) {
@@ -667,6 +880,35 @@
                     }
 
                     currentTicket = ticket;
+
+                    // 1. If parent ticket itself is already used
+                    if (ticket.status === 'Used') {
+                        showTicketUsedView(ticket, ticket.attendeeName || 'Attendee', ticket.ticketId, ticket.checkedInAt);
+                        return;
+                    }
+
+                    // 2. If a specific member is targeted via ?m= parameter
+                    const paramIdx = memberParam !== null ? parseInt(memberParam, 10) : null;
+                    if (paramIdx !== null) {
+                        const member = ticket.splitMembers && ticket.splitMembers[paramIdx];
+                        const subId = (member && (member.memberTicketId || member.subTicketId)) || `${ticket.ticketId}-M${paramIdx + 1}`;
+
+                        if (member && (member.status === 'Used' || member.isUsed)) {
+                            showTicketUsedView(ticket, member.name, subId, member.checkedInAt);
+                            return;
+                        }
+
+                        // Also query individual sub-ticket in database to check if scanned at gate
+                        window.AttendeeBackend.getSplitTicket(subId, (subErr, subTicket) => {
+                            if (!subErr && subTicket && subTicket.status === 'Used') {
+                                showTicketUsedView(ticket, subTicket.attendeeName || (member && member.name), subId, subTicket.checkedInAt);
+                                return;
+                            }
+                            renderTicketUI(ticket);
+                        });
+                        return;
+                    }
+
                     renderTicketUI(ticket);
                 });
             }
@@ -679,7 +921,7 @@
                 document.getElementById('eventLocation').textContent = ticket.location || 'Auditorium';
 
                 const totalSplit = ticket.totalSplitMembers || (ticket.splitMembers ? ticket.splitMembers.length : 2);
-                const paidCount = ticket.paidMembers || (ticket.splitMembers ? ticket.splitMembers.filter(m => m.status === 'Paid').length : 1);
+                const paidCount = ticket.paidMembers || (ticket.splitMembers ? ticket.splitMembers.filter(m => m.status === 'Paid' || m.status === 'Used').length : 1);
                 shareAmount = ticket.perPersonAmount || Math.round((ticket.price || 0) / totalSplit) || 50;
 
                 document.getElementById('settledCountText').textContent = `${paidCount} of ${totalSplit} Settled`;
@@ -703,55 +945,101 @@
                     }))
                 ];
 
-                // Auto-select preferred pending member index from URL or first pending member
                 const paramIdx = memberParam !== null ? parseInt(memberParam, 10) : null;
                 let defaultIndex = null;
 
                 members.forEach((m, idx) => {
+                    const isUsed = m.status === 'Used' || m.isUsed === true;
                     const isPaid = m.status === 'Paid';
-                    if (!isPaid && defaultIndex === null) {
+
+                    if (!isPaid && !isUsed && defaultIndex === null) {
                         defaultIndex = idx;
                     }
-                    if (paramIdx === idx && !isPaid) {
+                    if (paramIdx === idx && !isPaid && !isUsed) {
                         defaultIndex = idx;
                     }
 
                     const pill = document.createElement('div');
-                    pill.className = `member-pill ${isPaid ? 'paid' : ''}`;
+                    pill.className = `member-pill ${isUsed ? 'used' : (isPaid ? 'paid' : '')}`;
                     pill.setAttribute('data-index', idx);
+
+                    let statusLabel = 'SELECT TO PAY';
+                    let statusColor = '#818cf8';
+                    let subText = `⏳ Unpaid Share ₹${m.amount || shareAmount}`;
+                    let subColor = '#f59e0b';
+
+                    if (isUsed) {
+                        statusLabel = 'USED';
+                        statusColor = '#ef4444';
+                        subText = '⛔ Admission Used at Gate';
+                        subColor = '#ef4444';
+                    } else if (isPaid) {
+                        statusLabel = 'SETTLED';
+                        statusColor = '#10b981';
+                        subText = `✓ Paid ₹${m.amount || shareAmount}`;
+                        subColor = '#10b981';
+                    }
+
                     pill.innerHTML = `
                         <div>
                             <strong style="color:#fff; display:block;">${m.name}</strong>
-                            <span style="font-size:0.75rem; color:${isPaid ? '#10b981' : '#f59e0b'};">
-                                ${isPaid ? '✓ Paid ₹' + (m.amount || shareAmount) : '⏳ Unpaid Share ₹' + (m.amount || shareAmount)}
+                            <span style="font-size:0.75rem; color:${subColor};">
+                                ${subText}
                             </span>
                         </div>
-                        <span style="font-size:0.75rem; font-weight:700; color:${isPaid ? '#10b981' : '#818cf8'};">
-                            ${isPaid ? 'SETTLED' : 'SELECT TO PAY'}
+                        <span style="font-size:0.75rem; font-weight:700; color:${statusColor};">
+                            ${statusLabel}
                         </span>
                     `;
 
-                    if (!isPaid) {
+                    if (isUsed) {
+                        pill.addEventListener('click', () => {
+                            const subId = m.memberTicketId || m.subTicketId || `${ticket.ticketId}-M${idx + 1}`;
+                            showTicketUsedView(ticket, m.name, subId, m.checkedInAt);
+                        });
+                    } else if (!isPaid) {
                         pill.addEventListener('click', () => {
                             selectMember(idx);
+                        });
+                    } else {
+                        // Paid: click to view dynamic rolling ticket
+                        pill.addEventListener('click', () => {
+                            const subId = m.memberTicketId || m.subTicketId || `${ticket.ticketId}-M${idx + 1}`;
+                            showRollingPass(subId, ticket.eventId, m.name, ticket, idx);
                         });
                     }
 
                     list.appendChild(pill);
                 });
 
+                // If specific member parameter given in URL:
+                if (paramIdx !== null && members[paramIdx]) {
+                    const targetSubId = members[paramIdx].memberTicketId || members[paramIdx].subTicketId || `${ticket.ticketId}-M${paramIdx + 1}`;
+                    if (members[paramIdx].status === 'Used' || members[paramIdx].isUsed) {
+                        showTicketUsedView(ticket, members[paramIdx].name, targetSubId, members[paramIdx].checkedInAt);
+                        return;
+                    }
+                    if (members[paramIdx].status === 'Paid') {
+                        showRollingPass(targetSubId, ticket.eventId, members[paramIdx].name, ticket, paramIdx);
+                        return;
+                    }
+                }
+
+                // If all members in group are used
+                const allUsed = members.every(m => m.status === 'Used' || m.isUsed);
+                if (allUsed) {
+                    showTicketUsedView(ticket, 'All Group Members', ticket.ticketId, ticket.checkedInAt);
+                    return;
+                }
+
                 if (defaultIndex !== null) {
                     selectMember(defaultIndex);
                 } else {
-                    // All members paid!
-                    paymentContent.style.display = 'none';
-                    successContent.style.display = 'block';
+                    // All members paid and none pending
+                    const subId = `${ticket.ticketId}-M1`;
+                    showRollingPass(subId, ticket.eventId, (members[0] && members[0].name) || 'Group Attendee', ticket, 0);
                     document.getElementById('successTitle').textContent = 'Group Fully Settled! 🎉';
                     document.getElementById('successSubText').textContent = 'All tickets in this group booking have been successfully paid!';
-                    document.getElementById('receiptEvent').textContent = ticket.eventName;
-                    document.getElementById('receiptName').textContent = 'All Friends';
-                    document.getElementById('receiptAmount').textContent = `₹${ticket.price}`;
-                    document.getElementById('receiptTicketId').textContent = ticket.ticketId;
                 }
             }
 
@@ -768,6 +1056,136 @@
                 const nameInput = document.getElementById('payerName');
                 if (member && member.name && !member.name.startsWith('Friend')) {
                     nameInput.value = member.name;
+                }
+            }
+
+            // Rolling Dynamic Ticket State & Controller
+            let currentRollingTicket = null;
+            let rollingTimerInterval = null;
+
+            function stopRollingTimer() {
+                if (rollingTimerInterval) {
+                    clearInterval(rollingTimerInterval);
+                    rollingTimerInterval = null;
+                }
+                currentRollingTicket = null;
+            }
+
+            async function refreshRollingPassUI() {
+                if (!currentRollingTicket || !window.RollingTicketEngine) return;
+                const subTicketId = currentRollingTicket.ticketId;
+                const eventId = currentRollingTicket.eventId;
+
+                const tokenData = await window.RollingTicketEngine.generateToken(subTicketId, eventId);
+
+                const qrContainer = document.getElementById('dynamicQrCanvas');
+                if (window.QRCode && qrContainer) {
+                    qrContainer.innerHTML = '';
+                    new QRCode(qrContainer, {
+                        text: tokenData.qrPayload,
+                        width: 190,
+                        height: 190,
+                        colorDark: "#0f172a",
+                        colorLight: "#ffffff",
+                        correctLevel: QRCode.CorrectLevel.M
+                    });
+                } else {
+                    const img = document.getElementById('qrImage');
+                    if (img) img.src = `https://quickchart.io/qr?text=${encodeURIComponent(tokenData.qrPayload)}&size=190`;
+                }
+
+                const hashElem = document.getElementById('rollingHashDisplay');
+                if (hashElem) {
+                    hashElem.textContent = `Rolling Token: #${tokenData.hashSignature}`;
+                }
+            }
+
+            function startRollingTimer(subTicketId, eventId) {
+                stopRollingTimer();
+                currentRollingTicket = { ticketId: subTicketId, eventId };
+
+                refreshRollingPassUI();
+
+                rollingTimerInterval = setInterval(() => {
+                    if (!currentRollingTicket) return;
+                    const now = new Date();
+                    const nowSec = Math.floor(now.getTime() / 1000);
+                    const rem = 20 - (nowSec % 20);
+                    const pct = (rem / 20) * 100;
+
+                    const liveClock = document.getElementById('liveClockDisplay');
+                    if (liveClock) liveClock.textContent = `Live Clock: ${now.toLocaleTimeString()}`;
+
+                    const countdownText = document.getElementById('countdownText');
+                    if (countdownText) countdownText.textContent = `Refreshing in ${rem}s`;
+
+                    const countdownBar = document.getElementById('countdownBar');
+                    if (countdownBar) countdownBar.style.width = `${pct}%`;
+
+                    if (rem === 20) {
+                        refreshRollingPassUI();
+                    }
+                }, 1000);
+            }
+
+            function showRollingPass(subTicketId, eventId, attendeeName, ticket, mIdx) {
+                paymentContent.style.display = 'none';
+                successContent.style.display = 'block';
+
+                document.getElementById('pdfEventName').textContent = ticket.eventName || 'Event Admission';
+                document.getElementById('pdfEventDetails').textContent = `${ticket.date || 'TBD'} • ${ticket.time || 'TBD'} | ${ticket.location || 'Auditorium'}`;
+                document.getElementById('ticketCodeDisplay').textContent = subTicketId;
+                document.getElementById('attendeePillName').textContent = `Attendee: ${attendeeName || 'Attendee'}`;
+
+                startRollingTimer(subTicketId, eventId || ticket.eventId);
+
+                const activeMemberIdx = mIdx !== undefined ? mIdx : (selectedMemberIndex !== null ? selectedMemberIndex : 0);
+                const directUrl = `${window.location.origin}${window.location.pathname}?ticketId=${encodeURIComponent(ticket.ticketId)}&m=${activeMemberIdx}`;
+
+                // WhatsApp Share Button
+                const waBtn = document.getElementById('waSharePassBtn');
+                if (waBtn) {
+                    waBtn.onclick = function () {
+                        const msg = `Here is my live EventPro admission pass for "${ticket.eventName}":\n${directUrl}\n(Present this dynamic QR code at the venue entrance)`;
+                        window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+                    };
+                }
+
+                // Copy Direct Link Button
+                const copyBtn = document.getElementById('copyDirectLinkBtn');
+                const copyText = document.getElementById('copyLinkText');
+                if (copyBtn) {
+                    copyBtn.onclick = function () {
+                        if (navigator.clipboard) {
+                            navigator.clipboard.writeText(directUrl).then(() => {
+                                if (copyText) copyText.textContent = 'Copied to Clipboard!';
+                                setTimeout(() => { if (copyText) copyText.textContent = 'Copy Pass Link'; }, 2000);
+                            });
+                        } else {
+                            prompt('Copy your direct event pass link:', directUrl);
+                        }
+                    };
+                }
+
+                // Bind Download PDF Button
+                const downloadPdfBtn = document.getElementById('downloadPdfBtn');
+                if (downloadPdfBtn) {
+                    downloadPdfBtn.onclick = function () {
+                        const element = document.getElementById('pdfContent');
+                        if (!element) return;
+                        const opt = {
+                            margin: 8,
+                            filename: `Ticket_${subTicketId}.pdf`,
+                            image: { type: 'jpeg', quality: 0.98 },
+                            html2canvas: { scale: 2 },
+                            jsPDF: { unit: 'mm', format: 'a5', orientation: 'portrait' }
+                        };
+                        if (window.html2pdf) {
+                            window.html2pdf().set(opt).from(element).save();
+                        } else {
+                            window.print();
+                        }
+                    };
                 }
             }
 
@@ -841,28 +1259,46 @@
             });
 
             function finalizePayment(payerName, payerEmail) {
-                payBtn.innerHTML = '<span>Locking Your Seat...</span>';
+                payBtn.innerHTML = '<span>Locking Your Seat & Activating Dynamic Pass...</span>';
 
-                window.AttendeeBackend.updateSplitPayment(ticketId, selectedMemberIndex, payerName, (err, updated) => {
+                window.AttendeeBackend.updateSplitPayment(ticketId, selectedMemberIndex, payerName, payerEmail, (err, updated) => {
                     payBtn.disabled = false;
 
                     // Trigger celebratory confetti
                     if (typeof confetti === 'function') {
                         confetti({
-                            particleCount: 80,
+                            particleCount: 90,
                             spread: 70,
                             origin: { y: 0.6 }
                         });
                     }
 
-                    // Display Success Screen
-                    paymentContent.style.display = 'none';
-                    successContent.style.display = 'block';
+                    const subTicketId = (updated && updated.activeMemberTicketId) || `${ticketId}-M${selectedMemberIndex + 1}`;
+                    const directPassUrl = `${window.location.origin}${window.location.pathname}?ticketId=${encodeURIComponent(ticketId)}&m=${selectedMemberIndex}`;
 
-                    document.getElementById('receiptEvent').textContent = currentTicket.eventName || 'Event';
-                    document.getElementById('receiptName').textContent = payerName;
-                    document.getElementById('receiptAmount').textContent = `₹${shareAmount}`;
-                    document.getElementById('receiptTicketId').textContent = ticketId;
+                    // Cache in browser local passes for direct 1-tap view in My Bookings
+                    try {
+                        const localPasses = JSON.parse(localStorage.getItem('eventpro_my_passes') || '[]');
+                        if (!localPasses.some(p => p.ticketId === subTicketId)) {
+                            localPasses.push({
+                                ticketId: subTicketId,
+                                parentTicketId: ticketId,
+                                memberIndex: selectedMemberIndex,
+                                eventName: currentTicket.eventName,
+                                date: currentTicket.date,
+                                time: currentTicket.time,
+                                location: currentTicket.location,
+                                attendeeName: payerName,
+                                attendeeEmail: payerEmail,
+                                directPassUrl: directPassUrl
+                            });
+                            localStorage.setItem('eventpro_my_passes', JSON.stringify(localPasses));
+                        }
+                    } catch (e) {
+                        console.warn('Could not cache pass locally:', e);
+                    }
+
+                    showRollingPass(subTicketId, currentTicket.eventId, payerName, currentTicket, selectedMemberIndex);
                 });
             }
 
