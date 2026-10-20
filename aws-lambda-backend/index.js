@@ -1,11 +1,22 @@
-const Razorpay = require('razorpay');
 const crypto = require('crypto');
 
-// Initialize Razorpay
-const razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_dummy_key_id',
-    key_secret: process.env.RAZORPAY_KEY_SECRET || 'rzp_test_dummy_key_secret',
-});
+// Lazy-load Razorpay so missing npm module doesn't crash entire Lambda initialization
+let razorpayInstance = null;
+function getRazorpay() {
+    if (!razorpayInstance) {
+        try {
+            const Razorpay = require('razorpay');
+            razorpayInstance = new Razorpay({
+                key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_TfToXPA1e0mdDo',
+                key_secret: process.env.RAZORPAY_KEY_SECRET || 'FRah4GpXGOZW3X5pNqs7Lr10',
+            });
+        } catch (e) {
+            console.warn('Razorpay package not bundled:', e.message);
+            return null;
+        }
+    }
+    return razorpayInstance;
+}
 
 // Initialize AWS SES (Supports both AWS SDK v3 in Node 18/20 and v2 in Node 16)
 let sesClient = null;
@@ -63,8 +74,11 @@ async function sendSESEmail({ fromEmail, toEmail, replyTo, subject, htmlBody, te
     }
 }
 
-function buildTicketEmailHtml({ attendeeName, eventName, date, time, venue, ticketId, quantity, price, qrUrl }) {
-    const qrImage = qrUrl || `https://quickchart.io/qr?text=${encodeURIComponent('Ticket ID: ' + ticketId + '\nEvent: ' + eventName + '\nAttendee: ' + attendeeName)}&size=220`;
+function buildTicketEmailHtml({ attendeeName, eventName, date, time, venue, ticketId, quantity, price }) {
+    const livePassUrl = `https://eventpro24.online/Attendee_Dashboard/Your_Booking.html?ticketId=${encodeURIComponent(ticketId)}`;
+    const googleCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('Event: ' + eventName)}&details=${encodeURIComponent('Ticket ID: ' + ticketId + '\nYour live entry pass: ' + livePassUrl)}&location=${encodeURIComponent(venue || 'Venue')}`;
+    const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue || eventName)}`;
+
     return `
 <!DOCTYPE html>
 <html>
@@ -74,21 +88,21 @@ function buildTicketEmailHtml({ attendeeName, eventName, date, time, venue, tick
     <title>Your EventPro Ticket</title>
 </head>
 <body style="margin:0; padding:0; background-color:#0b0d14; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color:#ffffff;">
-    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#0b0d14; padding:20px 10px;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#0b0d14; padding:24px 10px;">
         <tr>
             <td align="center">
-                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px; background:#121622; border:1px solid #1f2739; border-radius:16px; overflow:hidden; box-shadow:0 12px 36px rgba(0,0,0,0.5);">
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px; background:#121622; border:1px solid #1f2739; border-radius:18px; overflow:hidden; box-shadow:0 16px 40px rgba(0,0,0,0.6);">
                     <!-- Header -->
                     <tr>
-                        <td style="padding:28px 30px; background:linear-gradient(135deg, #f84464 0%, #c81d45 100%); text-align:left;">
+                        <td style="padding:28px 32px; background:linear-gradient(135deg, #f84464 0%, #c81d45 100%); text-align:left;">
                             <table width="100%">
                                 <tr>
                                     <td>
                                         <div style="font-size:22px; font-weight:800; color:#ffffff; letter-spacing:0.5px;">EVENTPRO</div>
-                                        <div style="font-size:13px; color:rgba(255,255,255,0.85); margin-top:3px;">Official Ticket & Booking Confirmation</div>
+                                        <div style="font-size:13px; color:rgba(255,255,255,0.9); margin-top:3px;">Official Ticket & Booking Confirmation</div>
                                     </td>
                                     <td align="right">
-                                        <span style="background:rgba(255,255,255,0.2); color:#fff; font-size:11px; font-weight:700; padding:6px 12px; border-radius:20px; text-transform:uppercase; letter-spacing:1px;">CONFIRMED</span>
+                                        <span style="background:rgba(255,255,255,0.22); color:#fff; font-size:11px; font-weight:700; padding:6px 14px; border-radius:20px; text-transform:uppercase; letter-spacing:1px;">CONFIRMED</span>
                                     </td>
                                 </tr>
                             </table>
@@ -97,12 +111,30 @@ function buildTicketEmailHtml({ attendeeName, eventName, date, time, venue, tick
                     
                     <!-- Content -->
                     <tr>
-                        <td style="padding:30px;">
+                        <td style="padding:32px;">
                             <p style="margin:0 0 16px 0; font-size:16px; color:#e2e8f0;">Hi <strong>${attendeeName || 'Attendee'}</strong>,</p>
                             <p style="margin:0 0 24px 0; font-size:14px; line-height:1.6; color:#94a3b8;">
-                                Your reservation has been secured! Present this digital pass or QR code at the entrance for express check-in.
+                                Your reservation has been secured! Tap the button below anytime on your phone to display your live entry pass.
                             </p>
                             
+                            <!-- Primary Live Pass Action Box -->
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0b0d14; border:1px solid #2a354c; border-radius:14px; padding:24px; text-align:center; margin-bottom:26px;">
+                                <tr>
+                                    <td align="center">
+                                        <div style="font-size:11px; color:#38bdf8; letter-spacing:1px; text-transform:uppercase; margin-bottom:12px; font-weight:700;">GATE ADMISSION PASS</div>
+                                        <div style="font-family:Courier, monospace; font-size:16px; color:#ffffff; font-weight:700; margin-bottom:18px; letter-spacing:1px;">
+                                            ${ticketId}
+                                        </div>
+                                        <a href="${livePassUrl}" target="_blank" style="display:inline-block; background:linear-gradient(135deg, #f84464 0%, #d81b40 100%); color:#ffffff; font-size:15px; font-weight:700; padding:14px 32px; border-radius:10px; text-decoration:none; box-shadow:0 6px 20px rgba(248,68,100,0.4); letter-spacing:0.3px;">
+                                            ⚡ View Live Dynamic Pass
+                                        </a>
+                                        <div style="font-size:12px; color:#64748b; margin-top:12px;">
+                                            Opens your rolling live ticket in the EventPro app
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+
                             <!-- Event Details Card -->
                             <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#181e2e; border:1px solid #232b3e; border-radius:12px; padding:20px; margin-bottom:24px;">
                                 <tr>
@@ -112,38 +144,40 @@ function buildTicketEmailHtml({ attendeeName, eventName, date, time, venue, tick
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td width="50%" style="padding:8px 0; border-top:1px solid #232b3e;">
+                                    <td width="50%" style="padding:10px 0; border-top:1px solid #232b3e;">
                                         <div style="font-size:11px; color:#94a3b8; text-transform:uppercase;">📅 Date & Time</div>
                                         <div style="font-size:14px; color:#ffffff; font-weight:600; margin-top:2px;">${date || 'TBD'} ${time ? '• ' + time : ''}</div>
                                     </td>
-                                    <td width="50%" style="padding:8px 0; border-top:1px solid #232b3e;">
+                                    <td width="50%" style="padding:10px 0; border-top:1px solid #232b3e;">
                                         <div style="font-size:11px; color:#94a3b8; text-transform:uppercase;">📍 Location</div>
                                         <div style="font-size:14px; color:#ffffff; font-weight:600; margin-top:2px;">${venue || 'TBA'}</div>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td width="50%" style="padding:8px 0; border-top:1px solid #232b3e;">
+                                    <td width="50%" style="padding:10px 0; border-top:1px solid #232b3e;">
                                         <div style="font-size:11px; color:#94a3b8; text-transform:uppercase;">🎟️ Quantity</div>
                                         <div style="font-size:14px; color:#ffffff; font-weight:600; margin-top:2px;">${quantity || 1} Ticket(s)</div>
                                     </td>
-                                    <td width="50%" style="padding:8px 0; border-top:1px solid #232b3e;">
+                                    <td width="50%" style="padding:10px 0; border-top:1px solid #232b3e;">
                                         <div style="font-size:11px; color:#94a3b8; text-transform:uppercase;">💳 Total Paid</div>
                                         <div style="font-size:14px; color:#10b981; font-weight:700; margin-top:2px;">${price ? '₹' + price : 'Free'}</div>
                                     </td>
                                 </tr>
                             </table>
-                            
-                            <!-- QR Code Card -->
-                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0b0d14; border:1px dashed #334155; border-radius:12px; padding:20px; text-align:center; margin-bottom:24px;">
+
+                            <!-- Quick Action Buttons (Calendar & Maps) -->
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:24px;">
                                 <tr>
-                                    <td align="center">
-                                        <div style="font-size:11px; color:#94a3b8; letter-spacing:1px; text-transform:uppercase; margin-bottom:12px; font-weight:600;">GATE ADMISSION PASS</div>
-                                        <div style="display:inline-block; padding:10px; background:#ffffff; border-radius:10px;">
-                                            <img src="${qrImage}" alt="Ticket QR" width="180" height="180" style="display:block; border:0;" />
-                                        </div>
-                                        <div style="font-family:Courier, monospace; font-size:13px; color:#38bdf8; font-weight:700; margin-top:12px; letter-spacing:1px;">
-                                            ${ticketId}
-                                        </div>
+                                    <td width="48%" align="center">
+                                        <a href="${googleCalUrl}" target="_blank" style="display:block; background:#181e2e; border:1px solid #2a354c; color:#cbd5e1; font-size:13px; font-weight:600; padding:11px 14px; border-radius:8px; text-decoration:none; text-align:center;">
+                                            📅 Add to Google Calendar
+                                        </a>
+                                    </td>
+                                    <td width="4%"></td>
+                                    <td width="48%" align="center">
+                                        <a href="${googleMapsUrl}" target="_blank" style="display:block; background:#181e2e; border:1px solid #2a354c; color:#cbd5e1; font-size:13px; font-weight:600; padding:11px 14px; border-radius:8px; text-decoration:none; text-align:center;">
+                                            📍 Directions on Maps
+                                        </a>
                                     </td>
                                 </tr>
                             </table>
@@ -240,7 +274,15 @@ exports.handler = async (event) => {
                 receipt: receipt || `receipt_${Date.now()}`
             };
             
-            const order = await razorpay.orders.create(options);
+            const rzp = getRazorpay();
+            if (!rzp) {
+                return {
+                    statusCode: 500,
+                    headers,
+                    body: JSON.stringify({ success: false, error: 'Razorpay SDK is not bundled in Lambda package' })
+                };
+            }
+            const order = await rzp.orders.create(options);
             return {
                 statusCode: 200,
                 headers,

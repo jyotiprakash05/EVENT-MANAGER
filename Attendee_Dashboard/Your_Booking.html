@@ -530,6 +530,15 @@
                         if (splitParam) {
                             openGroupSplitHub(splitParam);
                         }
+
+                        // Auto-open Live Dynamic Pass if navigating from email link with ?ticketId=TKT-xxx
+                        const targetTicketId = urlParams.get('ticketId') || urlParams.get('ticket');
+                        if (targetTicketId) {
+                            const targetBtn = document.querySelector(`.view-ticket-btn[data-id="${targetTicketId}"]`);
+                            if (targetBtn) {
+                                targetBtn.click();
+                            }
+                        }
                     });
                 } else {
                     setTimeout(loadBookings, 500);
