@@ -239,8 +239,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <!-- Dynamic Anti-Screenshot Ticket Modal -->
-    <div id="ticketModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; justify-content:center; align-items:center; backdrop-filter: blur(8px);">
-        <div style="background:var(--bg-panel); padding:28px 24px; border-radius:20px; text-align:center; box-shadow:0 24px 60px rgba(0,0,0,0.7); position:relative; max-width:440px; width:92%; border: 1px solid rgba(255,255,255,0.12);">
+    <div id="ticketModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; justify-content:center; align-items:center; backdrop-filter: blur(8px); overflow-y:auto; padding:20px 10px; box-sizing:border-box;">
+        <div style="background:var(--bg-panel); padding:28px 24px; border-radius:20px; text-align:center; box-shadow:0 24px 60px rgba(0,0,0,0.7); position:relative; max-width:440px; width:92%; border: 1px solid rgba(255,255,255,0.12); margin:auto;">
             <button id="closeTicketModalBtn" style="position:absolute; top:14px; right:14px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:var(--text); cursor:pointer; font-size:1.1rem; width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; transition: all 0.2s;">✖</button>
             
             <!-- Anti-Scalp Header Badge -->
@@ -509,6 +509,8 @@
                                             data-date="${encodeURIComponent(formattedDate)}" 
                                             data-time="${encodeURIComponent(ticket.time || 'TBD')}" 
                                             data-venue="${encodeURIComponent(ticket.location || 'TBA')}" 
+                                            data-attendee="${encodeURIComponent(ticket.attendeeName || '')}" 
+                                            data-status="${encodeURIComponent(ticket.status || 'Valid')}" 
                                             data-qr="${encodeURIComponent(qrPayload)}" 
                                             ${(isCancelled || isUsed) ? 'disabled' : ''}>
                                             View Ticket
@@ -532,11 +534,14 @@
                         }
 
                         // Auto-open Live Dynamic Pass if navigating from email link with ?ticketId=TKT-xxx
-                        const targetTicketId = urlParams.get('ticketId') || urlParams.get('ticket');
+                        const targetTicketId = urlParams.get('ticketId') || urlParams.get('ticket') || urlParams.get('t');
                         if (targetTicketId) {
-                            const targetBtn = document.querySelector(`.view-ticket-btn[data-id="${targetTicketId}"]`);
-                            if (targetBtn) {
-                                targetBtn.click();
+                            const modal = document.getElementById('ticketModal');
+                            if (!modal || modal.style.display !== 'flex') {
+                                const targetBtn = document.querySelector(`.view-ticket-btn[data-id="${targetTicketId}"]`);
+                                if (targetBtn) {
+                                    targetBtn.click();
+                                }
                             }
                         }
                     });
@@ -676,6 +681,163 @@
                 };
             }
 
+            function openTicketModalWithData(ticketId, eventId, evName, evDate, evVenue, attendeeName, status) {
+                const nameEl = document.getElementById('pdfEventName');
+                if (nameEl) nameEl.textContent = evName || 'Event Ticket';
+
+                let detailsHtml = `<strong>Date:</strong> ${evDate || 'TBD'}<br><strong>Venue:</strong> ${evVenue || 'TBA'}`;
+                if (attendeeName) {
+                    detailsHtml += `<br><span style="display:inline-block; margin-top:4px; font-size:0.8rem; color:#4f46e5; font-weight:700;">Attendee: ${attendeeName}</span>`;
+                }
+                const detailsEl = document.getElementById('pdfEventDetails');
+                if (detailsEl) detailsEl.innerHTML = detailsHtml;
+
+                const codeEl = document.getElementById('ticketCodeDisplay');
+                if (codeEl) codeEl.textContent = ticketId;
+
+                const isUsed = status === 'Used';
+                const hashElem = document.getElementById('rollingHashDisplay');
+                const countdownText = document.getElementById('countdownText');
+
+                if (isUsed) {
+                    stopRollingTimer();
+                    if (hashElem) hashElem.innerHTML = `<span style="color:#ef4444; font-weight:bold;">⚠️ PASS ALREADY SCANNED & USED AT GATE</span>`;
+                    if (countdownText) countdownText.textContent = 'SCANNED';
+                } else {
+                    startRollingTimer(ticketId, eventId || '');
+                }
+
+                document.getElementById('ticketModal').style.display = 'flex';
+            }
+
+            function updateGuestUserPill(name) {
+                const userPill = document.querySelector('.user-pill');
+                if (!userPill) return;
+
+                const sdk = window.AmazonCognitoIdentity;
+                const config = window.EVENTPRO_AWS_CONFIG;
+                let isLoggedIn = false;
+                if (sdk && config && config.userPoolId && !config.userPoolId.startsWith("YOUR_")) {
+                    const pool = new sdk.CognitoUserPool({ UserPoolId: config.userPoolId, ClientId: config.clientId });
+                    if (pool.getCurrentUser()) isLoggedIn = true;
+                }
+                if (!isLoggedIn) {
+                    const displayName = name ? name.split(' ')[0] : 'Attendee';
+                    const initial = displayName.charAt(0).toUpperCase();
+                    userPill.innerHTML = `<span class="user-avatar" style="background:#4f46e5; color:#fff;">${initial}</span><span title="Click to Sign In" style="display:flex; align-items:center; gap:6px;">${displayName} <small style="color:#6366f1; font-weight:700;">(Sign In)</small></span>`;
+                    userPill.onclick = function() {
+                        window.location.href = '../SIGNIN.html';
+                    };
+                }
+            }
+
+            function prependTargetTicketCard(ticket) {
+                const list = document.getElementById('bookingList');
+                if (!list) return;
+
+                if (list.querySelector(`.view-ticket-btn[data-id="${ticket.ticketId}"]`)) {
+                    return; // Already in DOM
+                }
+
+                const emptyP = list.querySelector('p');
+                if (emptyP && (emptyP.textContent.includes('Loading') || emptyP.textContent.includes("haven't booked"))) {
+                    list.innerHTML = '';
+                }
+
+                let formattedDate = 'TBD';
+                if (ticket.date && ticket.date !== 'TBD') {
+                    const dateObj = new Date(ticket.date);
+                    if (!isNaN(dateObj)) {
+                        formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                    } else {
+                        formattedDate = ticket.date;
+                    }
+                }
+                const initial = ticket.eventName ? ticket.eventName.substring(0, 2).toUpperCase() : 'TK';
+                const isCancelled = ticket.status === 'Cancelled';
+                const isUsed = ticket.status === 'Used';
+                const qrPayload = `Ticket ID: ${ticket.ticketId}\nEvent: ${ticket.eventName || "Unnamed Event"}\nDate: ${ticket.date || "TBD"} at ${ticket.time || "TBD"}\nVenue: ${ticket.location || "TBA"}`;
+
+                const article = document.createElement('article');
+                article.className = 'booking-card';
+                article.innerHTML = `
+                    <div class="event-thumb gradient-one">${initial}</div>
+                    <div class="booking-details">
+                        <div class="booking-topline">
+                            <div>
+                                <p class="event-tag">Verified Pass</p>
+                                <h4>${ticket.eventName || 'Unnamed Event'}</h4>
+                            </div>
+                            <span class="status ${ticket.status || 'Valid'}">${ticket.status || 'Valid'}</span>
+                        </div>
+                        <div class="meta-grid">
+                            <div><label>Date</label><span>${formattedDate}</span></div>
+                            <div><label>Time</label><span>${ticket.time || 'TBD'}</span></div>
+                            <div><label>Location</label><span>${ticket.location || ticket.venue || 'TBA'}</span></div>
+                            <div><label>Ticket ID</label><span>${(ticket.ticketId || 'N/A').substring(0,8)}...</span></div>
+                        </div>
+                        <div class="booking-actions">
+                            <button class="primary-btn view-ticket-btn" 
+                                data-id="${ticket.ticketId || ''}" 
+                                data-eventid="${ticket.eventId || ''}" 
+                                data-eventname="${encodeURIComponent(ticket.eventName || 'Unnamed Event')}" 
+                                data-date="${encodeURIComponent(formattedDate)}" 
+                                data-time="${encodeURIComponent(ticket.time || 'TBD')}" 
+                                data-venue="${encodeURIComponent(ticket.location || ticket.venue || 'TBA')}" 
+                                data-attendee="${encodeURIComponent(ticket.attendeeName || '')}" 
+                                data-status="${encodeURIComponent(ticket.status || 'Valid')}" 
+                                data-qr="${encodeURIComponent(qrPayload)}" 
+                                ${(isCancelled || isUsed) ? 'disabled' : ''}>
+                                View Ticket
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                list.prepend(article);
+                attachListeners();
+            }
+
+            function loadDirectTicketPass(ticketId) {
+                if (!window.AttendeeBackend || !window.AttendeeBackend.getSplitTicket) {
+                    setTimeout(() => loadDirectTicketPass(ticketId), 150);
+                    return;
+                }
+
+                window.AttendeeBackend.getSplitTicket(ticketId, function(err, ticket) {
+                    if (err || !ticket) {
+                        console.warn("Could not find ticket for ID:", ticketId, err);
+                        return;
+                    }
+
+                    let formattedDate = 'TBD';
+                    if (ticket.date && ticket.date !== 'TBD') {
+                        const dateObj = new Date(ticket.date);
+                        if (!isNaN(dateObj)) {
+                            formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                        } else {
+                            formattedDate = ticket.date;
+                        }
+                    }
+                    if (ticket.time && ticket.time !== 'TBD') {
+                        formattedDate += ' at ' + ticket.time;
+                    }
+
+                    openTicketModalWithData(
+                        ticket.ticketId,
+                        ticket.eventId,
+                        ticket.eventName,
+                        formattedDate,
+                        ticket.location || ticket.venue || 'TBA',
+                        ticket.attendeeName,
+                        ticket.status
+                    );
+
+                    prependTargetTicketCard(ticket);
+                    updateGuestUserPill(ticket.attendeeName);
+                });
+            }
+
             function attachListeners() {
                 // Cancel buttons
                 document.querySelectorAll('.cancel-btn').forEach(btn => {
@@ -694,13 +856,10 @@
                         const evName = decodeURIComponent(this.getAttribute('data-eventname') || 'Event Ticket');
                         const evDate = decodeURIComponent(this.getAttribute('data-date') || 'TBD');
                         const evVenue = decodeURIComponent(this.getAttribute('data-venue') || 'TBA');
+                        const attendeeName = decodeURIComponent(this.getAttribute('data-attendee') || '');
+                        const status = decodeURIComponent(this.getAttribute('data-status') || 'Valid');
 
-                        document.getElementById('pdfEventName').textContent = evName;
-                        document.getElementById('pdfEventDetails').innerHTML = `<strong>Date:</strong> ${evDate}<br><strong>Venue:</strong> ${evVenue}`;
-                        document.getElementById('ticketCodeDisplay').textContent = ticketId;
-                        
-                        document.getElementById('ticketModal').style.display = 'flex';
-                        startRollingTimer(ticketId, eventId);
+                        openTicketModalWithData(ticketId, eventId, evName, evDate, evVenue, attendeeName, status);
                     });
                 });
                 
@@ -991,6 +1150,13 @@
                     loadAttendeeAlerts();
                 });
             });
+
+            // If navigating directly from email pass link, launch dynamic pass immediately
+            const urlParams = new URLSearchParams(window.location.search);
+            const targetTicketId = urlParams.get('ticketId') || urlParams.get('ticket') || urlParams.get('t');
+            if (targetTicketId) {
+                loadDirectTicketPass(targetTicketId);
+            }
 
             setTimeout(() => {
                 loadBookings();

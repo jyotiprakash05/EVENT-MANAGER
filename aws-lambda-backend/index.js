@@ -75,7 +75,8 @@ async function sendSESEmail({ fromEmail, toEmail, replyTo, subject, htmlBody, te
 }
 
 function buildTicketEmailHtml({ attendeeName, eventName, date, time, venue, ticketId, quantity, price }) {
-    const livePassUrl = `https://eventpro24.online/Attendee_Dashboard/Your_Booking.html?ticketId=${encodeURIComponent(ticketId)}`;
+    const frontendBase = process.env.FRONTEND_BASE_URL || 'https://eventpro24.online';
+    const livePassUrl = `${frontendBase}/Attendee_Dashboard/Your_Booking.html?ticketId=${encodeURIComponent(ticketId)}`;
     const googleCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('Event: ' + eventName)}&details=${encodeURIComponent('Ticket ID: ' + ticketId + '\nYour live entry pass: ' + livePassUrl)}&location=${encodeURIComponent(venue || 'Venue')}`;
     const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue || eventName)}`;
 

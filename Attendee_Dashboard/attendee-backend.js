@@ -367,6 +367,10 @@
             });
         },
 
+        getTicketById: function(ticketId, callback) {
+            return this.getSplitTicket(ticketId, callback);
+        },
+
         updateSplitPayment: function(ticketId, memberIndex, payerNameOrCb, payerEmailOrCb, callback) {
             let payerName = null;
             let payerEmail = null;

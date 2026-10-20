@@ -6,6 +6,9 @@
         return;
     }
 
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasDirectPassParam = urlParams.get('ticketId') || urlParams.get('ticket') || urlParams.get('t') || urlParams.get('splitTicket');
+
     const pool = new sdk.CognitoUserPool({
         UserPoolId: config.userPoolId,
         ClientId: config.clientId
@@ -13,13 +16,22 @@
     const user = pool.getCurrentUser();
 
     if (!user) {
-        window.location.replace("../SIGNIN.html");
+        if (hasDirectPassParam) {
+            // Direct ticket pass or split link from email: allow viewing without forcing login redirect
+            return;
+        }
+        const currentPath = window.location.pathname + window.location.search;
+        window.location.replace("../SIGNIN.html?redirect=" + encodeURIComponent(currentPath));
         return;
     }
 
     user.getSession(function (error, session) {
         if (error || !session || !session.isValid()) {
-            window.location.replace("../SIGNIN.html");
+            if (hasDirectPassParam) {
+                return;
+            }
+            const currentPath = window.location.pathname + window.location.search;
+            window.location.replace("../SIGNIN.html?redirect=" + encodeURIComponent(currentPath));
             return;
         }
         

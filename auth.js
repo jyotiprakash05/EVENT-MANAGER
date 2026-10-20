@@ -25,6 +25,12 @@
     }
 
     function redirectForRole(role) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const redirectUrl = urlParams.get("redirect");
+        if (redirectUrl && !redirectUrl.startsWith("//") && !redirectUrl.includes("://")) {
+            window.location.replace(redirectUrl);
+            return;
+        }
         window.location.replace(role === "organizer"
             ? "Organizer_Dashboard/Event_list_organizer.html"
             : "Attendee_Dashboard/Event_List.html");
