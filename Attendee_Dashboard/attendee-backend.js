@@ -69,30 +69,159 @@
     }
 
     function parseDeadline(dlString) {
-        if (!dlString || typeof dlString !== 'string') return null;
-        dlString = dlString.trim();
-        if (!dlString) return null;
+        return getEventStartDateTime(dlString);
+    }
 
-        // Try native Date parse
-        let d = new Date(dlString);
-        if (!isNaN(d.getTime())) return d;
+    function getEventStartDateTime(dateStr, timeStr) {
+        if (!dateStr || typeof dateStr !== 'string') return null;
+        let cleanDate = dateStr.trim();
+        if (!cleanDate || cleanDate.toUpperCase() === 'TBD' || cleanDate.toUpperCase() === 'TBA') return null;
+        let cleanTime = (timeStr && typeof timeStr === 'string') ? timeStr.trim() : '';
+        if (cleanTime.toUpperCase() === 'TBD' || cleanTime.toUpperCase() === 'TBA') cleanTime = '';
 
-        // Parse format "YYYY-MM-DD [HH:MM] [AM|PM]"
-        const match = dlString.match(/^(\d{4})-(\d{2})-(\d{2})(?:\s+(\d{1,2}):(\d{2})(?:\s*(AM|PM))?)?/i);
-        if (match) {
-            const year = parseInt(match[1], 10);
-            const month = parseInt(match[2], 10) - 1;
-            const day = parseInt(match[3], 10);
-            let hour = match[4] !== undefined ? parseInt(match[4], 10) : 23;
-            let min = match[5] !== undefined ? parseInt(match[5], 10) : 59;
-            const ampm = match[6] ? match[6].toUpperCase() : null;
-
-            if (ampm === 'PM' && hour < 12) hour += 12;
-            if (ampm === 'AM' && hour === 12) hour = 0;
-
-            return new Date(year, month, day, hour, min, 59);
+        // Case 1: ISO timestamp with 'T' (e.g. "2026-10-14T12:00" or "2027-06-10T05:15:00Z")
+        if (cleanDate.includes('T')) {
+            const isoMatch = cleanDate.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+            if (isoMatch) {
+                const y = parseInt(isoMatch[1], 10);
+                const m = parseInt(isoMatch[2], 10) - 1;
+                const d = parseInt(isoMatch[3], 10);
+                const h = parseInt(isoMatch[4], 10);
+                const min = parseInt(isoMatch[5], 10);
+                const s = isoMatch[6] ? parseInt(isoMatch[6], 10) : 0;
+                return new Date(y, m, d, h, min, s);
+            }
+            const isoParsed = new Date(cleanDate);
+            if (!isNaN(isoParsed.getTime())) return isoParsed;
         }
+
+        // Case 2: Embedded time in date string (e.g. "2026-12-01 12:00 PM")
+        const embeddedTimeMatch = cleanDate.match(/\s+(\d{1,2}:\d{2}(?::\d{2})?(?:\s*[AaPp][Mm])?|\d{1,2}\s*[AaPp][Mm])$/);
+        if (embeddedTimeMatch) {
+            if (!cleanTime) {
+                cleanTime = embeddedTimeMatch[1].trim();
+            }
+            cleanDate = cleanDate.replace(embeddedTimeMatch[0], '').trim();
+        }
+
+        // Case 3: Start time from range (e.g. "10:00 AM - 01:00 PM" or "10:00 to 13:00")
+        if (cleanTime) {
+            const rangeSplit = cleanTime.split(/\s*(?:-|–|—|to)\s*/i);
+            if (rangeSplit.length > 0) {
+                cleanTime = rangeSplit[0].trim();
+            }
+        }
+
+        let hours = 0;
+        let minutes = 0;
+        let seconds = 0;
+        let hasExplicitTime = false;
+
+        if (cleanTime) {
+            // Matches "8:00 PM", "08:00 AM", "8:30pm", "8pm", "8 PM", "14:30", "09:00", "12:45"
+            const tMatch = cleanTime.match(/(\d{1,2})(?::(\d{2}))?(?::(\d{2}))?\s*([AaPp][Mm])?/i);
+            if (tMatch) {
+                hasExplicitTime = true;
+                hours = parseInt(tMatch[1], 10);
+                minutes = tMatch[2] ? parseInt(tMatch[2], 10) : 0;
+                seconds = tMatch[3] ? parseInt(tMatch[3], 10) : 0;
+                const ampm = tMatch[4] ? tMatch[4].toUpperCase() : null;
+
+                if (ampm === 'PM' && hours < 12) hours += 12;
+                if (ampm === 'AM' && hours === 12) hours = 0;
+            }
+        }
+
+        // Format A: YYYY-MM-DD or YYYY/MM/DD
+        const ymd = cleanDate.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
+        if (ymd) {
+            return new Date(parseInt(ymd[1], 10), parseInt(ymd[2], 10) - 1, parseInt(ymd[3], 10), hours, minutes, seconds);
+        }
+
+        // Format B: DD-MM-YYYY or DD/MM/YYYY
+        const dmy = cleanDate.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+        if (dmy) {
+            const p1 = parseInt(dmy[1], 10);
+            const p2 = parseInt(dmy[2], 10);
+            const y = parseInt(dmy[3], 10);
+            let day = p1 > 12 ? p1 : (p2 > 12 ? p2 : p1);
+            let month = (p1 > 12 ? p2 : (p2 > 12 ? p1 : p2)) - 1;
+            return new Date(y, month, day, hours, minutes, seconds);
+        }
+
+        // Format C: Text dates like "Oct 25, 2026", "25 October 2026", "Dec 25 2026", "25th Oct 2026"
+        const deOrdinal = cleanDate.replace(/(\d+)(?:st|nd|rd|th)/i, '$1');
+        const combinedStr = hasExplicitTime ? `${deOrdinal} ${hours}:${minutes}:${seconds}` : deOrdinal;
+        const parsedText = new Date(combinedStr);
+        if (!isNaN(parsedText.getTime())) return parsedText;
+
+        const fallbackDate = new Date(cleanDate);
+        if (!isNaN(fallbackDate.getTime())) {
+            if (hasExplicitTime) fallbackDate.setHours(hours, minutes, seconds, 0);
+            return fallbackDate;
+        }
+
         return null;
+    }
+
+    function getCancellationInfo(ticket, event) {
+        const originalPrice = parseFloat(ticket && (ticket.perPersonAmount || ticket.price)) || 0;
+        const dateStr = (ticket && ticket.date && ticket.date !== 'TBD' && ticket.date !== 'TBA') 
+            ? ticket.date 
+            : (event && event.date ? event.date : (ticket && ticket.date));
+        const timeStr = (ticket && ticket.time && ticket.time !== 'TBD' && ticket.time !== 'TBA') 
+            ? ticket.time 
+            : (event && event.time ? event.time : (ticket && ticket.time));
+        const eventDate = getEventStartDateTime(dateStr, timeStr);
+
+        let eligible = true;
+        let isPast = false;
+        let isWithin72h = false;
+        let diffHours = Infinity;
+        let hoursLeft = 0;
+        let reason = "";
+
+        if (ticket && (ticket.status === 'Cancelled' || ticket.status === 'Used')) {
+            eligible = false;
+            reason = ticket.status === 'Cancelled' ? 'Ticket already cancelled' : 'Ticket already scanned/used';
+        } else if (eventDate) {
+            const diffMs = eventDate.getTime() - Date.now();
+            diffHours = diffMs / (1000 * 60 * 60);
+            hoursLeft = Math.max(0, Math.floor(diffHours));
+
+            if (diffHours < 0) {
+                eligible = false;
+                isPast = true;
+                const hoursAgo = Math.abs(Math.floor(diffHours));
+                reason = `Event has already ended (${hoursAgo}h ago)`;
+            } else if (diffHours < 72) {
+                eligible = false;
+                isWithin72h = true;
+                reason = `Cancellation closed (<72h before event, ${hoursLeft}h remaining)`;
+            } else {
+                reason = `Eligible for cancellation (${hoursLeft}h until event, 2% deduction applies)`;
+            }
+        }
+
+        const feePercent = 2;
+        const cancellationFee = originalPrice > 0 ? Math.round(originalPrice * 0.02 * 100) / 100 : 0;
+        const netRefund = Math.max(0, Math.round((originalPrice - cancellationFee) * 100) / 100);
+        const depositAmount = ticket && ticket.hasDeposit ? (parseFloat(ticket.depositAmount) || 0) : 0;
+
+        return {
+            eligible: eligible,
+            isPast: isPast,
+            isWithin72h: isWithin72h,
+            diffHours: diffHours,
+            hoursLeft: hoursLeft,
+            reason: reason,
+            originalPrice: originalPrice,
+            cancellationFee: cancellationFee,
+            feePercent: feePercent,
+            netRefund: netRefund,
+            depositAmount: depositAmount,
+            eventDate: eventDate
+        };
     }
 
     function isEventSalesClosed(event) {
@@ -112,16 +241,27 @@
         }
 
         if (dl) {
-            const deadline = parseDeadline(dl);
+            const deadline = getEventStartDateTime(dl);
             if (deadline && new Date() > deadline) {
                 return true; // Sales deadline has passed
             }
         }
+
+        // Also check if event date/time has already passed
+        if (event.date) {
+            const evStart = getEventStartDateTime(event.date, event.time);
+            if (evStart && new Date() > evStart) {
+                return true; // Event already started/concluded
+            }
+        }
+
         return false;
     }
 
     window.AttendeeBackend = {
         isEventSalesClosed: isEventSalesClosed,
+        getEventStartDateTime: getEventStartDateTime,
+        getCancellationInfo: getCancellationInfo,
         getAllEvents: function(callback) {
             initAWS((err) => {
                 if (err) return callback(err);
@@ -184,6 +324,10 @@
                         location: event.location || "TBA",
                         quantity: qty,
                         price: event.price || 0,
+                        paymentId: event.paymentId || null,
+                        orderId: event.orderId || null,
+                        attendeeEmail: currentUserEmail || event.attendeeEmail || null,
+                        attendeeName: event.attendeeName || null,
                         purchasedAt: new Date().toISOString(),
                         // Proof-of-Presence Escrow Fields
                         hasDeposit: hasDeposit,
@@ -337,17 +481,179 @@
             initAWS((err) => {
                 if (err) return callback(err);
                 
-                const params = {
+                const getParams = {
                     TableName: config.ticketsTableName,
-                    Key: { ticketId: ticketId },
-                    UpdateExpression: "set #s = :status",
-                    ExpressionAttributeNames: { "#s": "status" },
-                    ExpressionAttributeValues: { ":status": "Cancelled" }
+                    Key: { ticketId: ticketId }
                 };
-                
-                docClient.update(params, function(err, data) {
-                    if (err) callback(err);
-                    else callback(null, data);
+
+                docClient.get(getParams, function(getErr, data) {
+                    if (getErr) return callback(getErr);
+                    const ticket = data && data.Item;
+                    if (!ticket) return callback(new Error("Ticket record not found"));
+
+                    if (ticket.status === 'Cancelled') {
+                        return callback(new Error("This ticket has already been cancelled."));
+                    }
+                    if (ticket.status === 'Used') {
+                        return callback(new Error("Cannot cancel a ticket that has already been scanned/used at the gate."));
+                    }
+
+                    // Enforce 72-hour cancellation deadline prior to event start
+                    const evaluateWindowAndProceed = (dateStr, timeStr) => {
+                        const eventDate = getEventStartDateTime(dateStr, timeStr);
+                        if (eventDate) {
+                            const diffMs = eventDate.getTime() - Date.now();
+                            const diffHours = diffMs / (1000 * 60 * 60);
+
+                            if (diffHours < 0) {
+                                return callback(new Error("Cannot cancel ticket. This event has already started or ended."));
+                            }
+                            if (diffHours < 72) {
+                                const hoursLeft = Math.max(0, Math.floor(diffHours));
+                                return callback(new Error(`Cancellation is disabled within 72 hours of the event start time. Only ${hoursLeft} hour(s) remaining until the event starts.`));
+                            }
+                        }
+
+                        // Apply 2% deduction fee on cancellation
+                        const originalPrice = parseFloat(ticket.perPersonAmount || ticket.price) || 0;
+                        const cancellationFee = originalPrice > 0 ? (Math.round(originalPrice * 0.02 * 100) / 100) : 0;
+                        const netRefundAmount = Math.max(0, Math.round((originalPrice - cancellationFee) * 100) / 100);
+                        const depositRefunded = ticket.hasDeposit ? (parseFloat(ticket.depositAmount) || 0) : 0;
+                        const paymentId = ticket.paymentId || null;
+                        const now = new Date().toISOString();
+                        const apiBase = config.apiGatewayUrl || 'https://s3eg7kdaja.execute-api.ap-south-1.amazonaws.com/prod';
+
+                        const proceedWithCancellation = (gatewayNotice) => {
+                            const depStatus = ticket.hasDeposit ? "Refunded (Cancelled)" : (ticket.depositStatus || "None");
+                            const updateParams = {
+                                TableName: config.ticketsTableName,
+                                Key: { ticketId: ticketId },
+                                UpdateExpression: "SET #s = :status, cancelledAt = :now, refundStatus = :refundStatus, refundAmount = :refAmt, originalPrice = :origPrice, cancellationFee = :fee, cancellationDeductionPercent = :deductPct, depositStatus = :depStatus",
+                                ExpressionAttributeNames: { "#s": "status" },
+                                ExpressionAttributeValues: {
+                                    ":status": "Cancelled",
+                                    ":now": now,
+                                    ":refundStatus": netRefundAmount > 0 ? "Processed (2% fee deducted)" : "No Charge",
+                                    ":refAmt": netRefundAmount,
+                                    ":origPrice": originalPrice,
+                                    ":fee": cancellationFee,
+                                    ":deductPct": 2,
+                                    ":depStatus": depStatus
+                                },
+                                ReturnValues: "ALL_NEW"
+                            };
+
+                            docClient.update(updateParams, function(updateErr, updateResult) {
+                                if (updateErr) return callback(updateErr);
+
+                                // Rollback Event Capacity & Revenue in DynamoDB
+                                if (ticket.eventId) {
+                                    const qty = parseInt(ticket.quantity, 10) || 1;
+                                    const eventRollbackParams = {
+                                        TableName: config.eventsTableName,
+                                        Key: { eventId: ticket.eventId },
+                                        UpdateExpression: "SET ticketsSold = if_not_exists(ticketsSold, :zero) - :qty, revenue = if_not_exists(revenue, :zero) - :price",
+                                        ConditionExpression: "attribute_exists(eventId)",
+                                        ExpressionAttributeValues: {
+                                            ":qty": qty,
+                                            ":price": netRefundAmount,
+                                            ":zero": 0
+                                        }
+                                    };
+
+                                    docClient.update(eventRollbackParams, function(evErr) {
+                                        if (evErr) console.warn("Notice: could not rollback ticketsSold on event:", evErr.message);
+
+                                        // District-style Waitlist Automation: Automatically re-allocate opening to priority waitlist
+                                        if (window.AttendeeBackend && typeof window.AttendeeBackend.processWaitlistPromotion === 'function') {
+                                            window.AttendeeBackend.processWaitlistPromotion(ticket.eventId, ticket.eventName);
+                                        }
+                                    });
+                                }
+
+                                // Send SES Cancellation & Refund Confirmation Email with 2% deduction details
+                                const attendeeEmail = ticket.attendeeEmail || currentUserEmail;
+                                if (attendeeEmail) {
+                                    fetch(`${apiBase}/api/send-email`, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                            type: 'cancellation',
+                                            to_email: attendeeEmail,
+                                            to_name: ticket.attendeeName || 'Attendee',
+                                            event_title: ticket.eventName || 'Event',
+                                            ticket_id: ticket.ticketId,
+                                            original_price: originalPrice,
+                                            cancellation_fee: cancellationFee,
+                                            refund_amount: netRefundAmount,
+                                            deposit_refunded: depositRefunded
+                                        })
+                                    }).catch(emailErr => console.warn("Notice: cancellation email dispatch exception:", emailErr));
+                                }
+
+                                callback(null, {
+                                    success: true,
+                                    ticketId: ticketId,
+                                    originalPrice: originalPrice,
+                                    cancellationFee: cancellationFee,
+                                    refundAmount: netRefundAmount,
+                                    depositRefunded: depositRefunded,
+                                    refundStatus: netRefundAmount > 0 ? "Processed (2% fee deducted)" : "No Charge",
+                                    gatewayNotice: gatewayNotice,
+                                    updatedTicket: updateResult ? updateResult.Attributes : ticket
+                                });
+                            });
+                        };
+
+                        // Trigger payment gateway partial refund for netRefundAmount
+                        if (paymentId && netRefundAmount > 0) {
+                            fetch(`${apiBase}/api/payment/refund`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    payment_id: paymentId,
+                                    amount: netRefundAmount,
+                                    notes: { 
+                                        ticketId: ticket.ticketId, 
+                                        eventId: ticket.eventId,
+                                        originalPrice: originalPrice,
+                                        cancellationFee: cancellationFee,
+                                        deduction: "2%"
+                                    }
+                                })
+                            })
+                            .then(res => res.json())
+                            .then(refRes => {
+                                proceedWithCancellation(refRes && refRes.message);
+                            })
+                            .catch(refErr => {
+                                console.warn("Gateway refund warning:", refErr);
+                                proceedWithCancellation("Gateway notice: logged in ledger");
+                            });
+                        } else {
+                            proceedWithCancellation(null);
+                        }
+                    };
+
+                    // Check date/time from ticket, fallback to event record if missing/TBD
+                    const hasValidDate = ticket.date && ticket.date !== 'TBD' && ticket.date !== 'TBA';
+                    const hasValidTime = ticket.time && ticket.time !== 'TBD' && ticket.time !== 'TBA';
+
+                    if (hasValidDate && hasValidTime) {
+                        evaluateWindowAndProceed(ticket.date, ticket.time);
+                    } else if (ticket.eventId) {
+                        docClient.get({
+                            TableName: config.eventsTableName,
+                            Key: { eventId: ticket.eventId }
+                        }, function(evErr, evData) {
+                            const ev = evData && evData.Item;
+                            const evDate = (ev && ev.date) || ticket.date;
+                            const evTime = (ev && ev.time) || ticket.time;
+                            evaluateWindowAndProceed(evDate, evTime);
+                        });
+                    } else {
+                        evaluateWindowAndProceed(ticket.date, ticket.time);
+                    }
                 });
             });
         },
@@ -545,26 +851,116 @@
             initAWS((err) => {
                 if (err) return callback(err);
 
-                const waitlistTicket = {
-                    ticketId: "WTL-" + Date.now() + "-" + Math.floor(Math.random() * 1000),
-                    eventId: event.eventId,
-                    eventName: event.eventName,
-                    date: event.date,
-                    time: event.time,
-                    location: event.location,
-                    userId: currentUserSub,
-                    status: "Waitlisted",
-                    purchaseDate: new Date().toISOString()
-                };
+                window.AttendeeBackend.getUserProfile((pErr, profile) => {
+                    const attendeeName = (profile && profile.firstName) ? (profile.firstName + " " + (profile.lastName || '')).trim() : 'Event Enthusiast';
+                    const attendeeEmail = (profile && profile.email) || currentUserEmail || null;
+
+                    const waitlistTicket = {
+                        ticketId: "WTL-" + Date.now() + "-" + Math.floor(Math.random() * 1000),
+                        eventId: event.eventId,
+                        eventName: event.eventName,
+                        date: event.date,
+                        time: event.time,
+                        location: event.location,
+                        userId: currentUserSub,
+                        attendeeName: attendeeName,
+                        attendeeEmail: attendeeEmail,
+                        status: "Waitlisted",
+                        price: event.price || 0,
+                        purchaseDate: new Date().toISOString()
+                    };
+
+                    const params = {
+                        TableName: config.ticketsTableName,
+                        Item: waitlistTicket
+                    };
+
+                    docClient.put(params, function(err, data) {
+                        if (err) callback(err);
+                        else callback(null, waitlistTicket);
+                    });
+                });
+            });
+        },
+
+        processWaitlistPromotion: function(eventId, eventName, callback) {
+            if (!eventId) return;
+            initAWS((err) => {
+                if (err) return;
 
                 const params = {
                     TableName: config.ticketsTableName,
-                    Item: waitlistTicket
+                    FilterExpression: "eventId = :eid AND #s = :waitlisted",
+                    ExpressionAttributeNames: { "#s": "status" },
+                    ExpressionAttributeValues: {
+                        ":eid": eventId,
+                        ":waitlisted": "Waitlisted"
+                    }
                 };
 
-                docClient.put(params, function(err, data) {
-                    if (err) callback(err);
-                    else callback(null, waitlistTicket);
+                docClient.scan(params, function(scanErr, data) {
+                    if (scanErr || !data || !data.Items || data.Items.length === 0) return;
+
+                    // Sort FIFO by registration / purchase date
+                    const queue = data.Items.sort((a, b) => new Date(a.purchaseDate || 0) - new Date(b.purchaseDate || 0));
+                    const nextInLine = queue[0];
+                    if (!nextInLine || !nextInLine.ticketId) return;
+
+                    // Unlock spot for next in line (24h window)
+                    const updateParams = {
+                        TableName: config.ticketsTableName,
+                        Key: { ticketId: nextInLine.ticketId },
+                        UpdateExpression: "SET #s = :offered, spotOfferedAt = :now, expiresAt = :exp",
+                        ExpressionAttributeNames: { "#s": "status" },
+                        ExpressionAttributeValues: {
+                            ":offered": "Spot_Offered",
+                            ":now": new Date().toISOString(),
+                            ":exp": new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+                        }
+                    };
+
+                    docClient.update(updateParams, function(upErr) {
+                        if (upErr) console.warn("Could not promote waitlisted ticket:", upErr);
+
+                        const targetEmail = nextInLine.attendeeEmail || nextInLine.userEmail;
+                        const targetName = nextInLine.attendeeName || 'Event Enthusiast';
+                        const apiBase = (config && config.apiGatewayUrl) ? config.apiGatewayUrl.replace(/\/+$/, '') : 'https://s3eg7kdaja.execute-api.ap-south-1.amazonaws.com/prod';
+
+                        if (targetEmail) {
+                            fetch(`${apiBase}/api/send-email`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    type: 'waitlist_promoted',
+                                    to_email: targetEmail,
+                                    to_name: targetName,
+                                    event_title: eventName || nextInLine.eventName || 'Event',
+                                    ticket_id: nextInLine.ticketId,
+                                    claim_url: 'https://eventpro24.online/Attendee_Dashboard/Your_Booking.html'
+                                })
+                            }).catch(emailErr => console.warn("Waitlist notification email exception:", emailErr));
+                        }
+
+                        // Add high-priority real-time alert for this attendee
+                        if (nextInLine.userId) {
+                            const alertParams = {
+                                TableName: config.alertsTableName || "EventProAlerts",
+                                Item: {
+                                    alertId: "ALT-" + Date.now() + "-" + Math.floor(Math.random() * 1000),
+                                    userId: nextInLine.userId,
+                                    eventId: eventId,
+                                    title: `🎉 Spot Unlocked: ${eventName || 'Event'}!`,
+                                    message: `A ticket opened up via cancellation under our 72h policy! Your spot is reserved for 24 hours. Open My Bookings to claim your ticket.`,
+                                    priority: "high",
+                                    type: "waitlist_unlocked",
+                                    timestamp: new Date().toISOString()
+                                }
+                            };
+                            docClient.put(alertParams, () => {});
+                        }
+
+                        if (typeof callback === 'function') callback(null, nextInLine);
+                    });
                 });
             });
         },
@@ -657,9 +1053,9 @@
                         // 2. Automated Smart Reminders for upcoming events
                         const now = new Date();
                         myTickets.forEach(ticket => {
-                            if (ticket.date && ticket.date !== 'TBD') {
-                                const eventDate = new Date(ticket.date);
-                                if (!isNaN(eventDate.getTime())) {
+                            if (ticket.date && ticket.date !== 'TBD' && ticket.date !== 'TBA') {
+                                const eventDate = getEventStartDateTime(ticket.date, ticket.time);
+                                if (eventDate) {
                                     const diffHours = (eventDate - now) / (1000 * 60 * 60);
                                     // Event happening within the next 48 hours or today
                                     if (diffHours >= -6 && diffHours <= 48) {

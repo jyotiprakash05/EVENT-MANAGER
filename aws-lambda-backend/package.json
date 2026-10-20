@@ -4,6 +4,8 @@
   "description": "AWS Lambda function for handling Razorpay payments",
   "main": "index.js",
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.1153.0",
+    "@aws-sdk/lib-dynamodb": "^3.1153.0",
     "razorpay": "^2.9.8"
   }
 }

@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EventPro | Scanner</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="Organizer_Dashboard.css">
     <!-- AWS SDK & Auth Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/amazon-cognito-identity-js@6.3.12/dist/amazon-cognito-identity.min.js"></script>
@@ -75,18 +77,25 @@
                         </select>
                     </div>
                 </div>
-                <div style="display: flex; gap: 12px; align-items: center;">
+                <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
                     <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--muted); cursor: pointer; user-select: none;">
                         <input type="checkbox" id="soundToggle" checked style="accent-color: var(--primary); width: 16px; height: 16px;">
-                        <span>🔊 Audio Feedback</span>
+                        <span>🔊 Audio Chime</span>
                     </label>
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--muted); cursor: pointer; user-select: none;">
+                        <input type="checkbox" id="hapticToggle" checked style="accent-color: var(--primary); width: 16px; height: 16px;">
+                        <span>📳 Haptic Vibrate</span>
+                    </label>
+                    <button id="torchToggleBtn" type="button" style="background: var(--bg-dark); border: 1px solid var(--border); color: var(--text); padding: 6px 14px; border-radius: 20px; font-size: 0.82rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;">
+                        🔦 Flashlight
+                    </button>
                     <span id="scanModeBadge" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; background: rgba(16, 185, 129, 0.15); color: var(--primary); border: 1px solid rgba(16, 185, 129, 0.3);">
                         <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--primary); display: inline-block;"></span>
-                        Duplicate-Proof Active
+                        Duplicate-Proof
                     </span>
                     <span id="antiScalpBadge" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);">
                         <span style="width: 8px; height: 8px; border-radius: 50%; background: #38bdf8; display: inline-block;"></span>
-                        🛡️ Anti-Screenshot Guard Armed
+                        🛡️ Anti-Screenshot
                     </span>
                 </div>
             </section>
@@ -214,10 +223,98 @@
             }
         };
 
+        // Mobile Gate Haptic Feedback (Vibration API)
+        const GateHaptics = {
+            success: function() {
+                const toggle = document.getElementById('hapticToggle');
+                if (toggle && !toggle.checked) return;
+                if (navigator.vibrate) {
+                    try { navigator.vibrate([100]); } catch(e){}
+                }
+            },
+            error: function() {
+                const toggle = document.getElementById('hapticToggle');
+                if (toggle && !toggle.checked) return;
+                if (navigator.vibrate) {
+                    try { navigator.vibrate([150, 60, 150]); } catch(e){}
+                }
+            }
+        };
+
+        // Viewfinder Neon Glow Feedback
+        function triggerScannerGlow(type) {
+            const reader = document.getElementById('reader');
+            if (!reader) return;
+            reader.style.transition = 'border-color 0.25s, box-shadow 0.25s';
+            if (type === 'success') {
+                reader.style.borderColor = '#10b981';
+                reader.style.boxShadow = '0 0 30px rgba(16, 185, 129, 0.7)';
+            } else {
+                reader.style.borderColor = '#ef4444';
+                reader.style.boxShadow = '0 0 30px rgba(239, 68, 68, 0.7)';
+            }
+            setTimeout(() => {
+                reader.style.borderColor = 'var(--border)';
+                reader.style.boxShadow = 'none';
+            }, 1800);
+        }
+
+        let resultResetTimer = null;
+        function scheduleResultReset() {
+            if (resultResetTimer) clearTimeout(resultResetTimer);
+            resultResetTimer = setTimeout(() => {
+                const card = document.getElementById('verificationResultCard');
+                const placeholder = document.getElementById('resultPlaceholder');
+                const content = document.getElementById('resultContent');
+                if (card && placeholder && content) {
+                    card.style.borderColor = 'var(--border)';
+                    card.style.background = 'var(--bg-panel)';
+                    content.style.display = 'none';
+                    placeholder.style.display = 'block';
+                }
+            }, 5000);
+        }
+
         document.addEventListener("DOMContentLoaded", function() {
             let lastScannedCode = null;
             let scanTimeout = null;
             let sessionScans = [];
+
+            // Setup Camera Torch / Flashlight Toggle
+            const torchBtn = document.getElementById('torchToggleBtn');
+            let isTorchActive = false;
+            if (torchBtn) {
+                torchBtn.addEventListener('click', async function() {
+                    try {
+                        const videoEl = document.querySelector('#reader video');
+                        if (!videoEl || !videoEl.srcObject) {
+                            alert("Camera stream not yet active. Please start camera scanning first.");
+                            return;
+                        }
+                        const track = videoEl.srcObject.getVideoTracks()[0];
+                        if (!track) {
+                            alert("No active video track detected.");
+                            return;
+                        }
+                        const capabilities = track.getCapabilities ? track.getCapabilities() : {};
+                        if (!capabilities.torch) {
+                            alert("Flashlight / Torch is not supported by your current camera lens or device.");
+                            return;
+                        }
+                        isTorchActive = !isTorchActive;
+                        await track.applyConstraints({
+                            advanced: [{ torch: isTorchActive }]
+                        });
+                        torchBtn.textContent = isTorchActive ? '🔦 Flashlight (ON)' : '🔦 Flashlight';
+                        torchBtn.style.borderColor = isTorchActive ? '#fbbf24' : 'var(--border)';
+                        torchBtn.style.color = isTorchActive ? '#fbbf24' : 'var(--text)';
+                        torchBtn.style.background = isTorchActive ? 'rgba(251, 191, 36, 0.15)' : 'var(--bg-dark)';
+                    } catch(e) {
+                        console.warn("Torch toggle notice:", e);
+                        alert("Flashlight control notice: " + (e.message || e));
+                    }
+                });
+            }
 
             // 1. Populate Event Filter with Organizer's Active Events
             function loadOrganizerEvents() {
@@ -308,6 +405,9 @@
                         btn.textContent = 'Verify';
                         btn.disabled = false;
                         GateAudio.playError();
+                        GateHaptics.error();
+                        triggerScannerGlow('error');
+                        scheduleResultReset();
 
                         if (cryptoResult.isScreenshot) {
                             showScreenshotAlertCard(cryptoResult.ticketId, cryptoResult.ageSeconds, cryptoResult.scannedTime);
@@ -331,12 +431,18 @@
 
                     if (err) {
                         GateAudio.playError();
+                        GateHaptics.error();
+                        triggerScannerGlow('error');
+                        scheduleResultReset();
                         showErrorCard("Validation Error", err.message || "Ticket could not be verified in database.");
                         return;
                     }
 
                     if (!result.success) {
                         GateAudio.playError();
+                        GateHaptics.error();
+                        triggerScannerGlow('error');
+                        scheduleResultReset();
                         if (result.duplicate) {
                             showDuplicateCard(result.ticket, result.message, result.raceConditionBlocked);
                         } else if (result.differentEvent) {
@@ -346,6 +452,9 @@
                         }
                     } else {
                         GateAudio.playSuccess();
+                        GateHaptics.success();
+                        triggerScannerGlow('success');
+                        scheduleResultReset();
                         showSuccessCard(result.ticket, result.checkin, cryptoResult, result);
                         addSessionScan(result.ticket, cryptoResult && cryptoResult.isDynamic ? "Valid (Dynamic)" : "Valid (Standard)");
                     }

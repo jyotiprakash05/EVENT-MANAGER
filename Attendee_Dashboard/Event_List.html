@@ -26,9 +26,9 @@
     <!-- BOOKMYSHOW HEADING & EVENT LISTING STYLES -->
     <style>
         :root {
-            --bms-red: #f84464;
-            --bms-red-hover: #e03252;
-            --bms-red-glow: rgba(248, 68, 100, 0.35);
+            --bms-red: #10b981;
+            --bms-red-hover: #059669;
+            --bms-red-glow: rgba(16, 185, 129, 0.35);
             --bms-gold: #ffb400;
         }
 
@@ -78,9 +78,9 @@
         .bms-logo-title .bms-accent { color: var(--bms-red); }
         .bms-tagline-badge {
             font-size: 0.65rem;
-            background: rgba(248, 68, 100, 0.15);
+            background: rgba(16, 185, 129, 0.15);
             color: var(--bms-red);
-            border: 1px solid rgba(248, 68, 100, 0.35);
+            border: 1px solid rgba(16, 185, 129, 0.35);
             padding: 2px 7px;
             border-radius: 9999px;
             font-weight: 800;
@@ -134,7 +134,7 @@
         .bms-city-btn:hover {
             border-color: var(--bms-red);
             color: #ffffff;
-            background: rgba(248, 68, 100, 0.1);
+            background: rgba(16, 185, 129, 0.1);
         }
 
         /* BMS Category Navigation Ribbon */
@@ -196,7 +196,7 @@
         }
         .bms-poster-card:hover {
             transform: translateY(-6px);
-            border-color: rgba(248, 68, 100, 0.5);
+            border-color: rgba(16, 185, 129, 0.5);
             box-shadow: 0 16px 36px rgba(0, 0, 0, 0.7);
             background: #1b1f2e;
         }
@@ -371,7 +371,7 @@
         }
         .bms-city-badge:hover, .bms-city-badge.active {
             border-color: var(--bms-red);
-            background: rgba(248, 68, 100, 0.12);
+            background: rgba(16, 185, 129, 0.12);
             color: #ffffff;
         }
 
@@ -406,7 +406,7 @@
         .bms-qty-btn:hover:not(:disabled) {
             border-color: var(--bms-red);
             color: var(--bms-red);
-            background: rgba(248, 68, 100, 0.08);
+            background: rgba(16, 185, 129, 0.08);
         }
         .bms-qty-btn:disabled {
             opacity: 0.35;
@@ -450,9 +450,9 @@
             border-color: var(--bms-red);
         }
         .bms-offer-chip {
-            background: rgba(248, 68, 100, 0.08);
-            border: 1px dashed rgba(248, 68, 100, 0.4);
-            color: #fca5a5;
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px dashed rgba(16, 185, 129, 0.4);
+            color: #6ee7b7;
             border-radius: 8px;
             padding: 6px 10px;
             font-size: 0.74rem;
@@ -464,10 +464,59 @@
             gap: 5px;
         }
         .bms-offer-chip:hover {
-            background: rgba(248, 68, 100, 0.2);
+            background: rgba(16, 185, 129, 0.2);
             border-color: var(--bms-red);
             color: #ffffff;
             transform: translateY(-1px);
+        }
+
+        /* DISTRICT BY ZOMATO EXPERIENCE MODAL STYLES */
+        .district-vibe-chip {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #e2e8f0;
+            padding: 5px 12px;
+            border-radius: 9999px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        .district-vibe-chip:hover {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: var(--bms-red);
+            color: #fff;
+            transform: translateY(-1px);
+        }
+        .district-gallery-item {
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+            aspect-ratio: 4/3;
+            cursor: pointer;
+            border: 1px solid #282f3f;
+            transition: all 0.25s;
+        }
+        .district-gallery-item:hover {
+            transform: scale(1.03);
+            border-color: var(--bms-red);
+            box-shadow: 0 6px 18px rgba(16, 185, 129, 0.25);
+        }
+        .district-gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .district-review-card {
+            background: #0c0e14;
+            border: 1px solid #282f3f;
+            border-radius: 12px;
+            padding: 12px 16px;
+            font-size: 0.82rem;
+            line-height: 1.5;
         }
     </style>
 </head>
@@ -478,9 +527,9 @@
         <aside class="sidebar">
             <div>
                 <div class="brand-wrap">
-                    <div class="brand-mark" style="background: linear-gradient(135deg, #f84464, #d62d4c);">E</div>
+                    <div class="brand-mark" style="background: linear-gradient(135deg, #10b981, #059669);">E</div>
                     <div>
-                        <p class="brand-mini" style="color: #f84464;">Attendee</p>
+                        <p class="brand-mini" style="color: #10b981;">Attendee</p>
                         <h2>EVENTPRO</h2>
                     </div>
                 </div>
@@ -506,7 +555,7 @@
             </div>
             
             <div class="sidebar-card">
-                <p style="color: #f84464;">Trending now</p>
+                <p style="color: #10b981;">Trending now</p>
                 <h3 id="liveEventCount">0 live events</h3>
                 <span>Discover and reserve your next experience.</span>
             </div>
@@ -670,6 +719,113 @@
                 <span class="other-city-chip bms-city-badge" data-city="Patna" style="padding:6px 14px; font-size:0.8rem; border-radius:20px;">Patna</span>
                 <span class="other-city-chip bms-city-badge" data-city="Noida" style="padding:6px 14px; font-size:0.8rem; border-radius:20px;">Noida</span>
                 <span class="other-city-chip bms-city-badge" data-city="Gurgaon" style="padding:6px 14px; font-size:0.8rem; border-radius:20px;">Gurgaon</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- DISTRICT BY ZOMATO STYLE: EVENT EXPERIENCE & MEDIA GALLERY MODAL -->
+    <div class="bms-modal-backdrop" id="districtExperienceModal" style="z-index: 10001;">
+        <div class="district-modal-box" style="background:#141722; border:1px solid #282f3f; border-radius:20px; width:92%; max-width:680px; max-height:90vh; overflow-y:auto; position:relative; box-shadow:0 25px 60px rgba(0,0,0,0.85); color:#fff;">
+            <button id="closeDistrictModalBtn" style="position:absolute; top:18px; right:18px; z-index:10; background:rgba(12,14,20,0.85); border:1px solid #282f3f; color:#fff; width:36px; height:36px; border-radius:50%; cursor:pointer; font-size:1rem; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(6px);">✕</button>
+
+            <!-- Hero Image Header with Live Tags -->
+            <div style="position:relative; height:240px; overflow:hidden; border-radius:20px 20px 0 0;">
+                <img id="districtHeroImg" src="" alt="Event Atmosphere" style="width:100%; height:100%; object-fit:cover;">
+                <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(20,23,34,0.1) 0%, rgba(20,23,34,0.95) 100%);"></div>
+                <div style="position:absolute; top:16px; left:16px; display:flex; gap:8px;">
+                    <span id="districtCategoryBadge" class="bms-category-badge" style="position:static;">LIVE CONCERT</span>
+                    <span id="districtVibePill" style="background:rgba(248,68,100,0.25); border:1px solid rgba(248,68,100,0.5); color:#fca5a5; font-size:0.7rem; font-weight:700; padding:3px 9px; border-radius:20px; display:inline-flex; align-items:center; gap:4px;">🔥 TRENDING</span>
+                </div>
+                <div style="position:absolute; bottom:14px; left:20px; right:20px;">
+                    <h2 id="districtEventTitle" style="font-size:1.55rem; font-weight:800; margin:0 0 4px; color:#fff; text-shadow:0 2px 10px rgba(0,0,0,0.7);">Event Title</h2>
+                    <p id="districtEventMeta" style="font-size:0.85rem; color:#cbd5e1; margin:0; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                        <span id="districtEventDate">Date</span> • <span id="districtEventVenue">Venue</span>
+                    </p>
+                </div>
+            </div>
+
+            <div style="padding:20px 24px;">
+                <!-- Real-time Social Proof & Trust Strip (District Style) -->
+                <div style="background:linear-gradient(90deg, rgba(248,68,100,0.12), rgba(245,158,11,0.12)); border:1px solid rgba(248,68,100,0.25); border-radius:12px; padding:10px 16px; display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; flex-wrap:wrap; gap:10px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="font-size:1.2rem;">🔥</span>
+                        <div>
+                            <strong id="districtBookingBuzz" style="font-size:0.85rem; color:#fff; display:block;">38 people booked in last 24h</strong>
+                            <small id="districtUrgencyText" style="color:#fca5a5; font-size:0.75rem;">⚡ Filling fast in your city</small>
+                        </div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:6px; background:rgba(0,0,0,0.3); padding:4px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.08);">
+                        <span style="color:#fbbf24; font-weight:800; font-size:0.9rem;">★ <span id="districtRatingScore">4.9</span></span>
+                        <span style="color:#94a3b8; font-size:0.75rem;">(<span id="districtRatingCount">180+</span> reviews)</span>
+                    </div>
+                </div>
+
+                <!-- Event Highlights Photo/Media Gallery (District Visuals Reel) -->
+                <div style="margin-bottom:20px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <h4 style="font-size:0.92rem; font-weight:700; color:#fff; text-transform:uppercase; letter-spacing:0.5px; margin:0;">📸 Event Atmosphere & Visuals</h4>
+                        <span style="font-size:0.75rem; color:#94a3b8;">Verified Crowd & Stage Media</span>
+                    </div>
+                    <div id="districtGalleryGrid" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:10px;">
+                        <!-- 4 photo tiles -->
+                    </div>
+                </div>
+
+                <!-- Vibe & Experience Tags -->
+                <div style="margin-bottom:20px;">
+                    <h4 style="font-size:0.85rem; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px; margin:0 0 10px;">⚡ The Vibe & Experience</h4>
+                    <div id="districtVibeTags" style="display:flex; flex-wrap:wrap; gap:8px;">
+                        <!-- tags -->
+                    </div>
+                </div>
+
+                <!-- What to Expect / Perks Grid -->
+                <div style="background:#0c0e14; border:1px solid #282f3f; border-radius:14px; padding:16px; margin-bottom:20px;">
+                    <h4 style="font-size:0.85rem; font-weight:700; color:#cbd5e1; margin:0 0 12px; display:flex; align-items:center; gap:6px;">
+                        <span>📋 What to Expect & Venue Perks</span>
+                    </h4>
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:12px; font-size:0.8rem; color:#94a3b8;">
+                        <div style="background:rgba(255,255,255,0.03); padding:8px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
+                            <span style="color:#fff; display:block; font-weight:600; margin-bottom:2px;">🛡️ 72h Cancellation</span>
+                            <span>2% fee • Instant refund</span>
+                        </div>
+                        <div style="background:rgba(255,255,255,0.03); padding:8px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
+                            <span style="color:#fff; display:block; font-weight:600; margin-bottom:2px;">🍸 Food & Bar</span>
+                            <span>Counters Available</span>
+                        </div>
+                        <div style="background:rgba(255,255,255,0.03); padding:8px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
+                            <span style="color:#fff; display:block; font-weight:600; margin-bottom:2px;">🅿️ Parking</span>
+                            <span>Valet & Self-Park</span>
+                        </div>
+                        <div style="background:rgba(255,255,255,0.03); padding:8px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
+                            <span style="color:#fff; display:block; font-weight:600; margin-bottom:2px;">🔞 Entry Age</span>
+                            <span>All Ages / 18+ VIP</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Verified Attendee Testimonials -->
+                <div style="margin-bottom:24px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <h4 style="font-size:0.85rem; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px; margin:0;">💬 Attendee Buzz & Reviews</h4>
+                        <span style="color:#10b981; font-size:0.75rem; font-weight:600;">✓ Verified Attendees</span>
+                    </div>
+                    <div id="districtReviewsList" style="display:flex; flex-direction:column; gap:8px;">
+                        <!-- Review items -->
+                    </div>
+                </div>
+
+                <!-- Sticky Bottom Action Bar -->
+                <div style="background:#0c0e14; border:1px solid #282f3f; border-radius:14px; padding:14px 18px; display:flex; align-items:center; justify-content:space-between; gap:16px;">
+                    <div>
+                        <span style="font-size:0.75rem; color:#94a3b8; display:block;">Starting Price</span>
+                        <strong id="districtFooterPrice" style="font-size:1.25rem; color:#fff; font-weight:800;">₹0</strong>
+                    </div>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <button id="districtSaveBtn" type="button" style="background:#141722; border:1px solid #282f3f; color:#fff; border-radius:10px; width:44px; height:44px; font-size:1.1rem; cursor:pointer; display:flex; align-items:center; justify-content:center;">♡</button>
+                        <button id="districtPrimaryActionBtn" type="button" class="bms-btn-book" style="padding:12px 24px; font-size:0.95rem; font-weight:800; border-radius:10px; cursor:pointer;">Book Tickets ➔</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -976,6 +1132,7 @@
             initCityPicker();
             initCategoryRibbon();
             initCheckoutModal();
+            initDistrictExperienceModal();
             initNotificationCenter();
 
             // Load Data & AWS Integration
@@ -1235,13 +1392,30 @@
 
                     const depositBadgeMarkup = hasDeposit ? `<span class="bms-category-badge" style="background:rgba(16,185,129,0.9); color:#fff; top:36px; left:12px; font-size:0.65rem; padding:2px 7px;">🛡️ REFUNDABLE ESCROW</span>` : '';
 
+                    const cap = parseInt(ev.totalCapacity, 10) || 0;
+                    const sold = parseInt(ev.ticketsSold, 10) || 0;
+                    const isSoldOut = (cap > 0 && sold >= cap);
+                    const buzzNum = Math.max(14, ((sold * 7) % 65) + 18);
+                    const vibePillMarkup = isSoldOut 
+                        ? `<span style="position:absolute; bottom:38px; left:12px; background:rgba(239,68,68,0.9); color:#fff; font-size:0.68rem; font-weight:800; padding:2px 8px; border-radius:12px; backdrop-filter:blur(4px); letter-spacing:0.3px;">⚡ HIGH DEMAND</span>`
+                        : `<span style="position:absolute; bottom:38px; left:12px; background:rgba(248,68,100,0.9); color:#fff; font-size:0.68rem; font-weight:800; padding:2px 8px; border-radius:12px; backdrop-filter:blur(4px); letter-spacing:0.3px;">🔥 ${buzzNum} BOOKED TODAY</span>`;
+
+                    const categoryBadgeMarkup = isSoldOut
+                        ? `<span class="bms-category-badge" style="background:#ef4444; color:#fff; top:12px; left:12px; font-weight:800; border:1px solid rgba(255,255,255,0.4); box-shadow:0 4px 12px rgba(239,68,68,0.4);">⚡ SOLD OUT • WAITLIST OPEN</span>`
+                        : `<span class="bms-category-badge ${ev.isLive ? 'live' : ''}">${ev.category ? ev.category.toUpperCase() : 'EVENT'}</span>`;
+
+                    const actionBtnMarkup = isSoldOut
+                        ? `<button class="bms-btn-book waitlist-join-btn" data-id="${ev.eventId}" style="background:linear-gradient(135deg, #f59e0b, #d97706); color:#fff; font-weight:700;">Join Waitlist ⚡</button>`
+                        : `<button class="bms-btn-book book-ticket-btn" data-id="${ev.eventId}">Book Tickets</button>`;
+
                     const card = document.createElement('article');
                     card.className = 'bms-poster-card';
                     card.innerHTML = `
                         <div class="bms-poster-img-wrap">
                             <img src="${ev.imageUrl}" alt="${ev.eventName}" class="bms-poster-img" loading="lazy">
-                            <span class="bms-category-badge ${ev.isLive ? 'live' : ''}">${ev.category ? ev.category.toUpperCase() : 'EVENT'}</span>
+                            ${categoryBadgeMarkup}
                             ${depositBadgeMarkup}
+                            ${vibePillMarkup}
                             <div class="bms-rating-bar">
                                 <span class="bms-rating-score"><span class="bms-star">★</span> ${ev.rating || '9.5'}/10</span>
                                 <span class="bms-votes-sub">${ev.votes || '25K'} Votes</span>
@@ -1263,7 +1437,7 @@
                                 </div>
                                 <div style="display:flex; gap:6px;">
                                     <button class="save-btn ${isSaved ? 'saved' : ''}" data-id="${ev.eventId}" style="background:transparent; border:1px solid #282f3f; color:#fff; border-radius:6px; padding:6px 10px; cursor:pointer;">${isSaved ? '♥' : '♡'}</button>
-                                    <button class="bms-btn-book book-ticket-btn" data-id="${ev.eventId}">Book Tickets</button>
+                                    ${actionBtnMarkup}
                                 </div>
                             </div>
                         </div>
@@ -1278,14 +1452,26 @@
                         });
                     }
 
-                    // Book Tickets Click Action - Opens Order Summary & Offers Modal
-                    card.querySelector('.book-ticket-btn').addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        openCheckoutModal(ev);
-                    });
+                    // Direct Action Click (Book or Waitlist)
+                    const bookBtn = card.querySelector('.book-ticket-btn');
+                    if (bookBtn) {
+                        bookBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            openCheckoutModal(ev);
+                        });
+                    }
 
+                    const waitlistBtn = card.querySelector('.waitlist-join-btn');
+                    if (waitlistBtn) {
+                        waitlistBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            handleJoinWaitlist(ev);
+                        });
+                    }
+
+                    // Card click opens District-style Experience & Media Gallery Modal
                     card.addEventListener('click', () => {
-                        openCheckoutModal(ev);
+                        openDistrictExperienceModal(ev);
                     });
 
                     // Save toggle
@@ -1316,6 +1502,180 @@
             let currentCheckoutEvent = null;
             let currentQty = 1;
             let appliedOffer = null;
+
+            // Priority Waitlist Handler (District by Zomato style)
+            function handleJoinWaitlist(ev) {
+                if (!window.AttendeeBackend || typeof window.AttendeeBackend.joinWaitlist !== 'function') {
+                    alert("Waitlist service is currently initializing. Please try again in a moment.");
+                    return;
+                }
+                
+                if (confirm(`🎟️ Join Priority Waitlist for "${ev.eventName}"?\n\nThis event is currently sold out. Under our 72h cancellation guarantee, the moment an attendee cancels, a spot will automatically be unlocked for you via email!`)) {
+                    window.AttendeeBackend.joinWaitlist(ev, (err, waitlistTicket) => {
+                        if (err) {
+                            alert("Could not join waitlist: " + (err.message || err));
+                            return;
+                        }
+                        alert(`🎉 You're on the Priority Waitlist!\n\nWaitlist ID: ${waitlistTicket.ticketId}\nWe have registered your position in the priority queue. Check My Bookings anytime to track your waitlist status.`);
+                    });
+                }
+            }
+
+            // DISTRICT BY ZOMATO STYLE: Event Experience & Media Gallery Modal
+            function initDistrictExperienceModal() {
+                const modal = document.getElementById('districtExperienceModal');
+                const closeBtn = document.getElementById('closeDistrictModalBtn');
+                if (closeBtn) closeBtn.addEventListener('click', () => modal.classList.remove('active'));
+                if (modal) {
+                    modal.addEventListener('click', (e) => {
+                        if (e.target === modal) modal.classList.remove('active');
+                    });
+                }
+            }
+
+            function openDistrictExperienceModal(ev) {
+                const modal = document.getElementById('districtExperienceModal');
+                if (!modal) return;
+
+                const cap = parseInt(ev.totalCapacity, 10) || 0;
+                const sold = parseInt(ev.ticketsSold, 10) || 0;
+                const isSoldOut = (cap > 0 && sold >= cap);
+                const buzzCount = Math.max(16, ((sold * 5) % 60) + 22);
+
+                document.getElementById('districtHeroImg').src = ev.imageUrl || 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?auto=format&fit=crop&w=1200&q=80';
+                document.getElementById('districtCategoryBadge').textContent = (ev.category || 'EVENT').toUpperCase();
+                document.getElementById('districtEventTitle').textContent = ev.eventName || 'Live Event';
+                document.getElementById('districtEventDate').textContent = `${ev.date || 'Upcoming'} at ${ev.time || 'TBD'}`;
+                document.getElementById('districtEventVenue').textContent = `📍 ${ev.location || 'Venue TBA'}`;
+                
+                document.getElementById('districtBookingBuzz').textContent = `${buzzCount} people booked in last 24h`;
+                document.getElementById('districtUrgencyText').textContent = isSoldOut ? '⚡ 100% Sold Out • Priority Waitlist Open' : (cap > 0 ? `⚡ Filling fast • ${Math.max(1, cap - sold)} passes left` : `🔥 High demand in ${ev.city || 'your city'}`);
+                document.getElementById('districtRatingScore').textContent = ev.rating || '4.9';
+                document.getElementById('districtRatingCount').textContent = ev.votes || '180+';
+
+                // 4 High-impact atmosphere photo tiles
+                const cat = (ev.category || '').toLowerCase();
+                let galleryPhotos = [
+                    'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=600&q=80',
+                    'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=600&q=80',
+                    'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=600&q=80',
+                    'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=600&q=80'
+                ];
+                if (cat.includes('comedy')) {
+                    galleryPhotos = [
+                        'https://images.unsplash.com/photo-1585699324551-f6c309eedeca?auto=format&fit=crop&w=600&q=80',
+                        'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=600&q=80',
+                        'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=600&q=80',
+                        'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=600&q=80'
+                    ];
+                } else if (cat.includes('camp')) {
+                    galleryPhotos = [
+                        'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80',
+                        'https://images.unsplash.com/photo-1478131143081-80f7f84ca84d?auto=format&fit=crop&w=600&q=80',
+                        'https://images.unsplash.com/photo-1537905569824-f89f14cceb68?auto=format&fit=crop&w=600&q=80',
+                        'https://images.unsplash.com/photo-1510312305653-8ed496efae75?auto=format&fit=crop&w=600&q=80'
+                    ];
+                }
+
+                const galleryGrid = document.getElementById('districtGalleryGrid');
+                galleryGrid.innerHTML = galleryPhotos.map((src, idx) => `
+                    <div class="district-gallery-item" title="Click to view full atmosphere">
+                        <img src="${src}" alt="Vibe visual ${idx + 1}" loading="lazy">
+                    </div>
+                `).join('');
+
+                // Vibe chips
+                const vibeTagsContainer = document.getElementById('districtVibeTags');
+                const vibes = [
+                    '🎵 Live Music & Audio',
+                    '⚡ High Energy Crowd',
+                    '🍸 Craft Drinks & Food',
+                    '📸 Instagrammable Aesthetic',
+                    '👥 Great for Groups',
+                    '🎟️ Instant Digital Pass'
+                ];
+                vibeTagsContainer.innerHTML = vibes.map(v => `<span class="district-vibe-chip">${v}</span>`).join('');
+
+                // Attendee Reviews
+                const reviewsList = document.getElementById('districtReviewsList');
+                reviewsList.innerHTML = `
+                    <div class="district-review-card">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                            <strong style="color:#fff;">Rohan S. • <span style="color:#fbbf24;">★★★★★</span></strong>
+                            <span style="color:#64748b; font-size:0.75rem;">3 days ago</span>
+                        </div>
+                        <p style="margin:0; color:#cbd5e1;">The ambiance and organization were top notch. Gate check-in took under 5 seconds with the live QR pass!</p>
+                    </div>
+                    <div class="district-review-card">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                            <strong style="color:#fff;">Ananya K. • <span style="color:#fbbf24;">★★★★★</span></strong>
+                            <span style="color:#64748b; font-size:0.75rem;">1 week ago</span>
+                        </div>
+                        <p style="margin:0; color:#cbd5e1;">Loved the vibe and music lineup. Also great to know cancellation was 72h protected just in case.</p>
+                    </div>
+                `;
+
+                // Fetch real DynamoDB reviews if any
+                if (window.AttendeeBackend && typeof window.AttendeeBackend.getEventReviews === 'function') {
+                    window.AttendeeBackend.getEventReviews(ev.eventId, (err, dbReviews) => {
+                        if (!err && dbReviews && dbReviews.length > 0) {
+                            reviewsList.innerHTML = dbReviews.slice(0, 3).map(r => `
+                                <div class="district-review-card">
+                                    <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                                        <strong style="color:#fff;">${r.userName || 'Attendee'} • <span style="color:#fbbf24;">${'★'.repeat(r.rating || 5)}</span></strong>
+                                        <span style="color:#64748b; font-size:0.75rem;">Verified Buyer</span>
+                                    </div>
+                                    <p style="margin:0; color:#cbd5e1;">${r.comment || 'Amazing experience!'}</p>
+                                </div>
+                            `).join('');
+                        }
+                    });
+                }
+
+                // Pricing & Primary Action
+                const priceEl = document.getElementById('districtFooterPrice');
+                const actionBtn = document.getElementById('districtPrimaryActionBtn');
+                const saveBtn = document.getElementById('districtSaveBtn');
+
+                if (ev.price > 0) {
+                    priceEl.textContent = `₹${ev.price}`;
+                } else {
+                    priceEl.textContent = 'Free Admission';
+                }
+
+                const savedEventsList = userProfile.savedEvents || [];
+                saveBtn.textContent = savedEventsList.includes(ev.eventId) ? '♥' : '♡';
+                saveBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    if (window.AttendeeBackend && typeof window.AttendeeBackend.toggleSavedEvent === 'function') {
+                        window.AttendeeBackend.toggleSavedEvent(ev.eventId, (err, data) => {
+                            if (!err && data) {
+                                saveBtn.textContent = data.isSaved ? '♥' : '♡';
+                                document.getElementById('savedCount').textContent = data.savedEvents.length;
+                                renderEvents();
+                            }
+                        });
+                    }
+                };
+
+                if (isSoldOut) {
+                    actionBtn.textContent = 'Join Priority Waitlist ⚡';
+                    actionBtn.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
+                    actionBtn.onclick = () => {
+                        modal.classList.remove('active');
+                        handleJoinWaitlist(ev);
+                    };
+                } else {
+                    actionBtn.textContent = 'Book Tickets ➔';
+                    actionBtn.style.background = '';
+                    actionBtn.onclick = () => {
+                        modal.classList.remove('active');
+                        openCheckoutModal(ev);
+                    };
+                }
+
+                modal.classList.add('active');
+            }
 
             // Initialize Checkout Modal Controls
             function initCheckoutModal() {
@@ -1649,7 +2009,7 @@
                             description: paymentDesc,
                             order_id: (data && data.order && data.order.id) ? data.order.id : (data && data.id ? data.id : undefined),
                             handler: function (response) {
-                                completeBooking(ev, currentQty, grandTotal, appliedOffer, isSplit, payAmount, totalDeposit);
+                                completeBooking(ev, currentQty, grandTotal, appliedOffer, isSplit, payAmount, totalDeposit, response.razorpay_payment_id, response.razorpay_order_id);
                             },
                             prefill: {
                                 name: (userProfile.firstName || 'Guest') + ' ' + (userProfile.lastName || ''),
@@ -1849,7 +2209,7 @@
                 splitModal.classList.add('active');
             }
 
-            function completeBooking(ev, quantity, grandTotal, offer, isSplit, amountPaidNow, totalDeposit) {
+            function completeBooking(ev, quantity, grandTotal, offer, isSplit, amountPaidNow, totalDeposit, paymentId, orderId) {
                 const modal = document.getElementById('bmsCheckoutModal');
                 const payBtn = document.getElementById('checkoutPayBtn');
 
@@ -1899,6 +2259,10 @@
                         location: ev.location || 'Auditorium',
                         quantity: quantity,
                         price: grandTotal,
+                        paymentId: paymentId || null,
+                        orderId: orderId || null,
+                        attendeeName: ((userProfile && userProfile.firstName) ? (userProfile.firstName + ' ' + (userProfile.lastName || '')).trim() : null),
+                        attendeeEmail: (userProfile && userProfile.email) || null,
                         promoCode: offer ? offer.code : null,
                         hasDeposit: totalDeposit > 0,
                         depositAmount: totalDeposit,

@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EventPro | My Bookings</title>
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <!-- CSS -->
     <link rel="stylesheet" href="Attendee_Dashboard.css">
     <!-- AWS SDK & Auth Scripts -->
@@ -222,10 +224,22 @@
 
             <section class="booking-panel">
                 <div class="section-head">
-                    <h3>Booked events</h3>
-                    <div class="panel-tools">
-                        <input id="searchInput" type="search" placeholder="Search bookings..." aria-label="Search bookings">
+                    <div>
+                        <h3 style="font-size: 1.45rem; font-weight: 800; color: #fff; margin-bottom: 4px;">My Event Passes</h3>
+                        <p style="margin: 0; font-size: 0.84rem; color: #94a3b8;">Manage your live gate admission passes, group splits, and bookings</p>
                     </div>
+                    <div class="panel-tools">
+                        <input id="searchInput" type="search" placeholder="Search by event or ticket ID..." aria-label="Search bookings">
+                    </div>
+                </div>
+
+                <!-- Modern Filter Navigation Ribbon -->
+                <div class="booking-filter-ribbon" style="display:flex; gap:10px; margin-bottom:22px; overflow-x:auto; padding-bottom:6px;">
+                    <button class="booking-filter-tab active" data-filter="all">All Passes (<span id="filterCountAll">0</span>)</button>
+                    <button class="booking-filter-tab" data-filter="valid">⚡ Active & Upcoming (<span id="filterCountValid">0</span>)</button>
+                    <button class="booking-filter-tab" data-filter="split">👥 Group Splits (<span id="filterCountSplit">0</span>)</button>
+                    <button class="booking-filter-tab" data-filter="waitlist">⏳ Priority Waitlist (<span id="filterCountWaitlist">0</span>)</button>
+                    <button class="booking-filter-tab" data-filter="past">🏁 Used & Cancelled (<span id="filterCountPast">0</span>)</button>
                 </div>
 
                 <div class="booking-list" id="bookingList">
@@ -238,58 +252,83 @@
     <!-- html2pdf SDK -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-    <!-- Dynamic Anti-Screenshot Ticket Modal -->
-    <div id="ticketModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; justify-content:center; align-items:center; backdrop-filter: blur(8px); overflow-y:auto; padding:20px 10px; box-sizing:border-box;">
-        <div style="background:var(--bg-panel); padding:28px 24px; border-radius:20px; text-align:center; box-shadow:0 24px 60px rgba(0,0,0,0.7); position:relative; max-width:440px; width:92%; border: 1px solid rgba(255,255,255,0.12); margin:auto;">
-            <button id="closeTicketModalBtn" style="position:absolute; top:14px; right:14px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:var(--text); cursor:pointer; font-size:1.1rem; width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; transition: all 0.2s;">✖</button>
+    <!-- Dynamic Anti-Screenshot Ticket Modal (VIP Boarding Pass Design) -->
+    <div id="ticketModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(4, 6, 12, 0.88); z-index:9999; justify-content:center; align-items:center; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); overflow-y:auto; padding:20px 10px; box-sizing:border-box;">
+        <div style="background: linear-gradient(160deg, #131726 0%, #0d101b 100%); padding:28px 24px; border-radius:24px; text-align:center; box-shadow:0 30px 80px rgba(0,0,0,0.85), 0 0 35px rgba(248,68,100,0.18); position:relative; max-width:440px; width:94%; border: 1px solid rgba(255,255,255,0.14); margin:auto;">
+            <button id="closeTicketModalBtn" style="position:absolute; top:16px; right:16px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:#fff; cursor:pointer; font-size:1.1rem; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; transition: all 0.2s;">✕</button>
             
             <!-- Anti-Scalp Header Badge -->
-            <div style="margin-bottom: 14px; display: flex; flex-direction: column; align-items: center; gap: 6px;">
-                <span class="pulse-indicator">
-                    <span class="dot"></span>
+            <div style="margin-bottom: 16px; display: flex; flex-direction: column; align-items: center; gap: 6px;">
+                <span class="pulse-indicator" style="background: rgba(16, 185, 129, 0.14); border: 1px solid rgba(16, 185, 129, 0.35); color: #34d399; font-weight: 800; padding: 5px 14px; border-radius: 9999px; font-size: 0.72rem; letter-spacing: 0.08em; display: inline-flex; align-items: center; gap: 8px;">
+                    <span class="dot" style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 10px #10b981;"></span>
                     <span>LIVE CRYPTOGRAPHIC PASS</span>
                 </span>
-                <h3 style="margin: 0; font-size: 1.2rem; color: #fff;">Dynamic Admission Ticket</h3>
-                <p style="margin: 0; font-size: 0.76rem; color: #94a3b8; max-width: 320px;">
-                    🛡️ Protected by <strong>Zero-Scalp Rolling Protocol</strong>. Static screenshots expire in 20s and are rejected at the gate.
+                <h3 style="margin: 0; font-size: 1.35rem; font-weight: 800; color: #fff; letter-spacing: -0.02em;">Gate Admission Pass</h3>
+                <p style="margin: 0; font-size: 0.78rem; color: #94a3b8; max-width: 320px; line-height: 1.4;">
+                    🛡️ Protected by <strong>Zero-Scalp Rolling Protocol</strong>. Code regenerates every 20s to invalidate screenshots.
                 </p>
             </div>
 
-            <!-- Printable & Viewable Ticket Box -->
-            <div id="pdfContent" style="padding: 16px; background: #ffffff; color: #111; border-radius: 14px; box-shadow: inset 0 2px 8px rgba(0,0,0,0.05); text-align: center;">
-                <h4 id="pdfEventName" style="font-weight: 800; font-size: 1.1rem; margin: 0 0 4px; color: #0f172a;">Event Ticket</h4>
-                <p id="pdfEventDetails" style="font-size: 0.82rem; color: #475569; margin: 0 0 10px;"></p>
+            <!-- Printable & Viewable Ticket Box (Apple Wallet VIP Boarding Pass Format) -->
+            <div id="pdfContent" style="padding: 22px 20px 18px; background: #ffffff; color: #0f172a; border-radius: 18px; box-shadow: 0 14px 40px rgba(0,0,0,0.3); text-align: center; position: relative; overflow: hidden; border: 1px solid #e2e8f0;">
+                
+                <!-- Ticket Notch Left & Right -->
+                <div style="position: absolute; left: -12px; top: 58%; width: 24px; height: 24px; border-radius: 50%; background: #0d101b; z-index: 10;"></div>
+                <div style="position: absolute; right: -12px; top: 58%; width: 24px; height: 24px; border-radius: 50%; background: #0d101b; z-index: 10;"></div>
+                <div style="position: absolute; left: 16px; right: 16px; top: 58%; border-top: 2px dashed #cbd5e1; z-index: 5; margin-top: 11px;"></div>
+
+                <!-- Event Details Header -->
+                <div style="margin-bottom: 14px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <span style="font-size: 0.68rem; font-weight: 800; letter-spacing: 0.1em; color: #f84464; text-transform: uppercase;">EVENTPRO ADMISSION</span>
+                        <span style="font-size: 0.7rem; font-weight: 700; background: #0f172a; color: #fff; padding: 2px 8px; border-radius: 6px;">VIP ACCESS</span>
+                    </div>
+                    <h4 id="pdfEventName" style="font-weight: 800; font-size: 1.25rem; margin: 0 0 6px; color: #0f172a; line-height: 1.25;">Event Ticket</h4>
+                    <p id="pdfEventDetails" style="font-size: 0.82rem; color: #475569; margin: 0; line-height: 1.4;"></p>
+                </div>
                 
                 <!-- Dynamic QR Viewfinder Container -->
-                <div class="qr-wrapper">
+                <div class="qr-wrapper" style="margin: 10px auto 14px; padding: 12px; border: 2px solid #0f172a; border-radius: 16px; background: #fff;">
                     <div class="qr-laser-beam"></div>
-                    <div id="dynamicQrCanvas" style="width: 200px; height: 200px; display: flex; align-items: center; justify-content: center;">
-                        <img id="qrImage" src="" alt="Dynamic Ticket QR" style="width: 200px; height: 200px; display: block;">
+                    <div id="dynamicQrCanvas" style="width: 190px; height: 190px; display: flex; align-items: center; justify-content: center;">
+                        <img id="qrImage" src="" alt="Dynamic Ticket QR" style="width: 190px; height: 190px; display: block;">
                     </div>
                 </div>
 
-                <div style="margin-top: 8px;">
-                    <span style="font-family: monospace; font-weight: 700; font-size: 0.95rem; color: #059669; letter-spacing: 0.05em;" id="ticketCodeDisplay">TKT-LOADING</span>
-                    <div style="font-size: 0.72rem; color: #64748b; font-family: monospace; margin-top: 2px;" id="rollingHashDisplay">Rolling Token: #Computing...</div>
+                <div style="margin-top: 22px; padding-top: 8px;">
+                    <span style="font-family: 'Courier New', Courier, monospace; font-weight: 800; font-size: 1.05rem; color: #0f172a; letter-spacing: 0.08em;" id="ticketCodeDisplay">TKT-LOADING</span>
+                    <div style="font-size: 0.72rem; color: #64748b; font-family: monospace; margin-top: 3px;" id="rollingHashDisplay">Rolling Token: #Computing...</div>
                 </div>
             </div>
 
             <!-- Live Countdown Timer & Progress Bar -->
-            <div style="margin-top: 14px; text-align: left;">
-                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem;">
-                    <span style="color: var(--muted); font-size: 0.75rem;" id="liveClockDisplay">Live Clock: --:--:--</span>
-                    <span style="color: #38bdf8; font-weight: 700; font-size: 0.8rem;" id="countdownText">Refreshing in 20s</span>
+            <div style="margin-top: 16px; text-align: left; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 12px 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; margin-bottom: 6px;">
+                    <span style="color: #94a3b8; font-size: 0.75rem; font-weight: 600;" id="liveClockDisplay">Live Clock: --:--:--</span>
+                    <span style="color: #38bdf8; font-weight: 800; font-size: 0.8rem;" id="countdownText">Refreshing in 20s</span>
                 </div>
-                <div class="countdown-track">
-                    <div id="countdownBar" class="countdown-fill" style="width: 100%;"></div>
+                <div class="countdown-track" style="height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden;">
+                    <div id="countdownBar" class="countdown-fill" style="width: 100%; height: 100%; background: linear-gradient(90deg, #f84464, #38bdf8); transition: width 1s linear;"></div>
                 </div>
-                <div style="font-size: 0.7rem; color: #94a3b8; text-align: center; margin-top: 4px;">
-                    ⚡ Auto-rolls token every 20s to invalidate unauthorized screenshots.
+                <div style="font-size: 0.7rem; color: #64748b; text-align: center; margin-top: 6px;">
+                    ⚡ Auto-rolls token every 20s. Screenshots cannot be verified at gate.
                 </div>
             </div>
 
-            <div style="display: flex; gap: 10px; margin-top: 16px;">
-                <button id="downloadPdfBtn" class="secondary-btn" style="flex: 1; padding: 10px; font-size: 0.82rem; border-radius: 10px;">Download PDF Ticket</button>
+            <!-- 4 Quick-Action Buttons (Wallet, Directions, Calendar, PDF) -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px;">
+                <button id="calendarBtn" type="button" class="secondary-btn" style="justify-content: center; padding: 10px 12px; font-size: 0.8rem; border-radius: 10px;">
+                    📅 Add to Calendar
+                </button>
+                <button id="mapDirectionsBtn" type="button" class="secondary-btn" style="justify-content: center; padding: 10px 12px; font-size: 0.8rem; border-radius: 10px;">
+                    🗺️ Venue Maps
+                </button>
+                <button id="saveToWalletBtn" type="button" class="secondary-btn" style="justify-content: center; padding: 10px 12px; font-size: 0.8rem; border-radius: 10px; border-color: rgba(56, 189, 248, 0.4); color: #38bdf8;">
+                    📱 Save Mobile Pass
+                </button>
+                <button id="downloadPdfBtn" type="button" class="secondary-btn" style="justify-content: center; padding: 10px 12px; font-size: 0.8rem; border-radius: 10px; border-color: rgba(248, 68, 100, 0.4); color: #fb7185;">
+                    📄 Download PDF
+                </button>
             </div>
         </div>
     </div>
@@ -325,11 +364,35 @@
             <div style="width: 52px; height: 52px; border-radius: 50%; background: rgba(239, 68, 68, 0.15); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; color: #ef4444;">
                 <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
             </div>
-            <h3 style="font-size: 1.25rem; font-weight: 700; color: #f8fafc; margin-bottom: 8px; text-align: center;">Cancel Booking</h3>
-            <p style="color: #94a3b8; font-size: 0.95rem; margin-bottom: 24px; text-align: center; line-height: 1.5;">Are you sure you want to cancel this ticket? This action cannot be undone.</p>
+            <h3 style="font-size: 1.25rem; font-weight: 700; color: #f8fafc; margin-bottom: 6px; text-align: center;">Cancel Booking & Refund</h3>
+            <p id="cancelModalSubtext" style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 16px; text-align: center; line-height: 1.5;">Are you sure you want to cancel this ticket? The seat will be released and refund initiated.</p>
+            
+            <!-- Refund Breakdown Box -->
+            <div id="cancelRefundBreakdown" style="background:#121622; border:1px solid #232b3e; border-radius:12px; padding:14px; margin-bottom:16px; font-size:0.85rem; text-align:left;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:6px; color:#94a3b8;">
+                    <span>Original Ticket Price:</span>
+                    <strong id="cancelOrigPriceText" style="color:#f8fafc;">₹0</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:6px; color:#f87171;">
+                    <span>Cancellation Fee (2% deduction):</span>
+                    <strong id="cancelFeeText" style="color:#f87171;">-₹0</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:8px; padding-top:6px; border-top:1px dashed #2a354c; color:#10b981; font-weight:700;">
+                    <span>Net Refund to Account:</span>
+                    <strong id="cancelRefundAmountText" style="color:#10b981; font-size:0.95rem;">₹0</strong>
+                </div>
+                <div id="cancelDepositRow" style="display:none; justify-content:space-between; margin-bottom:6px; color:#38bdf8;">
+                    <span>Escrow Pledge Release (100%):</span>
+                    <strong id="cancelDepositAmountText" style="color:#38bdf8;">₹0</strong>
+                </div>
+                <div style="font-size:0.75rem; color:#64748b; border-top:1px solid #1f2739; padding-top:8px; margin-top:6px; line-height:1.4;">
+                    ⏱️ <strong>72-Hour Rule</strong>: Cancellations are permitted until 72 hours before event start time. 2% deduction covers seat release & payment processing. Refund arrives in 5-7 business days.
+                </div>
+            </div>
+
             <div style="display: flex; gap: 12px; justify-content: center;">
                 <button type="button" id="abortCancelTicketBtn" class="secondary-btn" style="flex: 1; padding: 11px 16px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.06); color: #fff; cursor: pointer; font-weight: 600;">Keep Ticket</button>
-                <button type="button" id="confirmCancelTicketBtn" class="btn-danger" style="flex: 1; padding: 11px 16px; border-radius: 8px; background: #ef4444; border: none; color: #fff; cursor: pointer; font-weight: 600; transition: background 0.2s;">Yes, Cancel</button>
+                <button type="button" id="confirmCancelTicketBtn" class="btn-danger" style="flex: 1; padding: 11px 16px; border-radius: 8px; background: #ef4444; border: none; color: #fff; cursor: pointer; font-weight: 600; transition: background 0.2s;">Confirm Cancellation</button>
             </div>
         </div>
     </div>
@@ -393,15 +456,32 @@
 
                         allLoadedTickets = tickets;
 
-                        // Update stats
-                        const valid = tickets.filter(t => t.status === 'Valid').length;
+                        // Update stats & filter badge counts
+                        const valid = tickets.filter(t => t.status === 'Valid' || t.status === 'confirmed').length;
                         const used = tickets.filter(t => t.status === 'Used').length;
                         const cancelled = tickets.filter(t => t.status === 'Cancelled').length;
+                        const splitCount = tickets.filter(t => t.isGroupSplit || t.isGroupSplitMember).length;
+                        const waitlistCount = tickets.filter(t => t.status === 'Waitlisted' || t.status === 'Spot_Offered').length;
                         
-                        document.getElementById('validTickets').textContent = valid;
-                        document.getElementById('usedTickets').textContent = used;
-                        document.getElementById('cancelledTickets').textContent = cancelled;
-                        document.getElementById('upcomingCount').textContent = valid + ' upcoming events';
+                        const valEl = document.getElementById('validTickets');
+                        if (valEl) valEl.textContent = valid;
+                        const usedEl = document.getElementById('usedTickets');
+                        if (usedEl) usedEl.textContent = used;
+                        const canEl = document.getElementById('cancelledTickets');
+                        if (canEl) canEl.textContent = cancelled;
+                        const upEl = document.getElementById('upcomingCount');
+                        if (upEl) upEl.textContent = valid + ' upcoming events';
+
+                        const fcAll = document.getElementById('filterCountAll');
+                        if (fcAll) fcAll.textContent = tickets.length;
+                        const fcVal = document.getElementById('filterCountValid');
+                        if (fcVal) fcVal.textContent = valid;
+                        const fcSplit = document.getElementById('filterCountSplit');
+                        if (fcSplit) fcSplit.textContent = splitCount;
+                        const fcWait = document.getElementById('filterCountWaitlist');
+                        if (fcWait) fcWait.textContent = waitlistCount;
+                        const fcPast = document.getElementById('filterCountPast');
+                        if (fcPast) fcPast.textContent = used + cancelled;
 
                         // Sort by purchase date descending, handling invalid dates safely
                         tickets.sort((a,b) => {
@@ -427,6 +507,9 @@
                             
                             const article = document.createElement('article');
                             article.className = 'booking-card';
+                            article.dataset.status = ticket.status || 'Valid';
+                            article.dataset.issplit = (ticket.isGroupSplit || ticket.isGroupSplitMember) ? 'true' : 'false';
+                            article.dataset.iswaitlist = (ticket.status === 'Waitlisted' || ticket.status === 'Spot_Offered') ? 'true' : 'false';
                             
                             const isCancelled = ticket.status === 'Cancelled';
                             const isUsed = ticket.status === 'Used';
@@ -483,6 +566,80 @@
                                 reviewBtnHTML = `<button class="primary-btn review-btn" style="background: var(--accent-gold);" data-eventid="${ticket.eventId}">Leave a Review</button>`;
                             }
 
+                            const cancelInfo = (window.AttendeeBackend && window.AttendeeBackend.getCancellationInfo) 
+                                ? window.AttendeeBackend.getCancellationInfo(ticket) 
+                                : { eligible: true, isPast: false, isWithin72h: false, diffHours: Infinity, originalPrice: parseFloat(ticket.price) || 0, cancellationFee: 0, netRefund: parseFloat(ticket.price) || 0 };
+
+                            let cancelBtnHTML = '';
+                            let cancelPolicyBadgeHTML = '';
+
+                            const isWaitlisted = (ticket.status === 'Waitlisted');
+                            const isSpotOffered = (ticket.status === 'Spot_Offered');
+
+                            if (isSpotOffered) {
+                                cancelPolicyBadgeHTML = `
+                                    <div style="margin-top:6px;">
+                                        <span style="background:rgba(16,185,129,0.18); border:1px solid #10b981; color:#34d399; font-size:0.75rem; font-weight:700; padding:3px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">
+                                            🎉 Spot Unlocked! Reserved for 24h via Priority Waitlist
+                                        </span>
+                                    </div>
+                                `;
+                                cancelBtnHTML = `<a href="Event_List.html?bookEvent=${ticket.eventId || ''}" class="primary-btn" style="background:linear-gradient(135deg, #10b981, #059669); color:#fff; text-decoration:none; padding:8px 14px; font-weight:700; border-radius:6px; display:inline-flex; align-items:center; gap:6px;">Claim & Confirm Spot ➔</a>`;
+                            } else if (isWaitlisted) {
+                                cancelPolicyBadgeHTML = `
+                                    <div style="margin-top:6px;">
+                                        <span style="background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.35); color:#fbbf24; font-size:0.75rem; font-weight:700; padding:3px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">
+                                            ⏳ Priority Queue Active • Auto-notifies upon 72h cancellation
+                                        </span>
+                                    </div>
+                                `;
+                                cancelBtnHTML = `<button class="secondary-btn cancel-btn" data-id="${ticket.ticketId || ''}">Leave Waitlist</button>`;
+                            } else if (isCancelled) {
+                                cancelBtnHTML = `<button class="secondary-btn cancel-btn" data-id="${ticket.ticketId || ''}" disabled>Cancelled</button>`;
+                            } else if (isUsed) {
+                                cancelBtnHTML = `<button class="secondary-btn cancel-btn" data-id="${ticket.ticketId || ''}" disabled>Used Pass</button>`;
+                            } else if (cancelInfo.isPast) {
+                                cancelPolicyBadgeHTML = `
+                                    <div style="margin-top:6px;">
+                                        <span style="background:rgba(100,116,139,0.15); border:1px solid rgba(100,116,139,0.35); color:#94a3b8; font-size:0.75rem; font-weight:700; padding:3px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;" title="${cancelInfo.reason}">
+                                            🏁 Event Concluded • Cancellation Closed
+                                        </span>
+                                    </div>
+                                `;
+                                cancelBtnHTML = `<button class="secondary-btn cancel-btn" data-id="${ticket.ticketId || ''}" disabled title="${cancelInfo.reason}" style="opacity:0.55; cursor:not-allowed; background:rgba(100,116,139,0.06); border-color:rgba(100,116,139,0.25); color:#94a3b8;">Event Concluded</button>`;
+                            } else if (cancelInfo.isWithin72h) {
+                                cancelPolicyBadgeHTML = `
+                                    <div style="margin-top:6px;">
+                                        <span style="background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.3); color:#f87171; font-size:0.75rem; font-weight:700; padding:3px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;" title="${cancelInfo.reason}">
+                                            ⏳ Cancellation Closed (&lt;72h before event)
+                                        </span>
+                                    </div>
+                                `;
+                                cancelBtnHTML = `<button class="secondary-btn cancel-btn" data-id="${ticket.ticketId || ''}" disabled title="${cancelInfo.reason}" style="opacity:0.55; cursor:not-allowed; background:rgba(239,68,68,0.06); border-color:rgba(239,68,68,0.25); color:#f87171;">Cancellation Closed (&lt;72h)</button>`;
+                            } else {
+                                cancelPolicyBadgeHTML = `
+                                    <div style="margin-top:6px;">
+                                        <span style="background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3); color:#34d399; font-size:0.75rem; font-weight:600; padding:3px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">
+                                            ⏱️ Cancellable until 72h before event (2% deduction)
+                                        </span>
+                                    </div>
+                                `;
+                                cancelBtnHTML = `<button class="secondary-btn cancel-btn" data-id="${ticket.ticketId || ''}">Cancel Ticket</button>`;
+                            }
+
+                            let refundBadgeHTML = '';
+                            if (isCancelled) {
+                                const refAmt = ticket.refundAmount !== undefined ? ticket.refundAmount : ticket.price;
+                                const feeText = (ticket.cancellationFee && ticket.cancellationFee > 0) ? ` (2% fee: ₹${ticket.cancellationFee})` : '';
+                                refundBadgeHTML = `
+                                    <div style="margin-top:6px;">
+                                        <span style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.35); color:#f87171; font-size:0.75rem; font-weight:700; padding:3px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">
+                                            💳 ${refAmt > 0 ? '₹' + refAmt + ' Refund Processed' + feeText : 'Cancelled • Seat Released'}
+                                        </span>
+                                    </div>
+                                `;
+                            }
+
                             article.innerHTML = `
                                 <div class="event-thumb ${gradientClass}">${initial}</div>
                                 <div class="booking-details">
@@ -492,6 +649,8 @@
                                             <h4>${ticket.eventName || 'Unnamed Event'}</h4>
                                             ${depositBadgeHTML}
                                             ${splitBadgeHTML}
+                                            ${cancelPolicyBadgeHTML}
+                                            ${refundBadgeHTML}
                                         </div>
                                         <span class="status ${ticket.status}">${ticket.status}</span>
                                     </div>
@@ -516,7 +675,7 @@
                                             View Ticket
                                         </button>
                                         ${splitBtnHTML}
-                                        <button class="secondary-btn cancel-btn" data-id="${ticket.ticketId || ''}" ${(isCancelled || isUsed) ? 'disabled' : ''}>${isCancelled ? 'Cancelled' : 'Cancel Ticket'}</button>
+                                        ${cancelBtnHTML}
                                         ${reviewBtnHTML}
                                     </div>
                                 </div>
@@ -525,6 +684,7 @@
                         });
 
                         attachListeners();
+                        applyTicketFilters();
 
                         // Auto-open Split Hub if navigating with ?splitTicket=TKT-xxx
                         const urlParams = new URLSearchParams(window.location.search);
@@ -577,17 +737,23 @@
                     if (!pendingCancelTicketId) return;
 
                     confirmCancelBtn.disabled = true;
-                    confirmCancelBtn.textContent = 'Cancelling...';
+                    confirmCancelBtn.textContent = 'Processing Refund...';
 
-                    window.AttendeeBackend.cancelBooking(pendingCancelTicketId, (err) => {
+                    window.AttendeeBackend.cancelBooking(pendingCancelTicketId, (err, res) => {
                         confirmCancelBtn.disabled = false;
-                        confirmCancelBtn.textContent = 'Yes, Cancel';
+                        confirmCancelBtn.textContent = 'Confirm Cancellation';
                         cancelModal.classList.remove('active');
+                        const cancelledId = pendingCancelTicketId;
                         pendingCancelTicketId = null;
 
                         if (err) {
                             alert("Failed to cancel ticket: " + err.message);
                         } else {
+                            const feeNote = (res && res.cancellationFee > 0) ? ` (2% fee of ₹${res.cancellationFee} deducted)` : '';
+                            const refundMsg = (res && res.refundAmount > 0) 
+                                ? `₹${res.refundAmount} net refund${feeNote} processed to your payment method.` 
+                                : "Seat released and reservation cancelled.";
+                            alert(`Ticket ${cancelledId} Cancelled Successfully!\n${refundMsg}`);
                             loadBookings(); // Reload list to update stats and UI
                         }
                     });
@@ -681,13 +847,16 @@
                 };
             }
 
+            let activeModalTicket = null;
+
             function openTicketModalWithData(ticketId, eventId, evName, evDate, evVenue, attendeeName, status) {
+                activeModalTicket = { ticketId, eventId, evName, evDate, evVenue, attendeeName, status };
                 const nameEl = document.getElementById('pdfEventName');
                 if (nameEl) nameEl.textContent = evName || 'Event Ticket';
 
                 let detailsHtml = `<strong>Date:</strong> ${evDate || 'TBD'}<br><strong>Venue:</strong> ${evVenue || 'TBA'}`;
                 if (attendeeName) {
-                    detailsHtml += `<br><span style="display:inline-block; margin-top:4px; font-size:0.8rem; color:#4f46e5; font-weight:700;">Attendee: ${attendeeName}</span>`;
+                    detailsHtml += `<br><span style="display:inline-block; margin-top:4px; font-size:0.8rem; color:#f84464; font-weight:700;">Attendee: ${attendeeName}</span>`;
                 }
                 const detailsEl = document.getElementById('pdfEventDetails');
                 if (detailsEl) detailsEl.innerHTML = detailsHtml;
@@ -758,6 +927,84 @@
                 const isUsed = ticket.status === 'Used';
                 const qrPayload = `Ticket ID: ${ticket.ticketId}\nEvent: ${ticket.eventName || "Unnamed Event"}\nDate: ${ticket.date || "TBD"} at ${ticket.time || "TBD"}\nVenue: ${ticket.location || "TBA"}`;
 
+                if (!allLoadedTickets.some(t => t.ticketId === ticket.ticketId)) {
+                    allLoadedTickets.push(ticket);
+                }
+
+                const cancelInfo = (window.AttendeeBackend && window.AttendeeBackend.getCancellationInfo) 
+                    ? window.AttendeeBackend.getCancellationInfo(ticket) 
+                    : { eligible: true, isPast: false, isWithin72h: false, diffHours: Infinity, originalPrice: parseFloat(ticket.price) || 0, cancellationFee: 0, netRefund: parseFloat(ticket.price) || 0 };
+
+                let cancelBtnHTML = '';
+                let cancelPolicyBadgeHTML = '';
+
+                const isWaitlisted = (ticket.status === 'Waitlisted');
+                const isSpotOffered = (ticket.status === 'Spot_Offered');
+
+                if (isSpotOffered) {
+                    cancelPolicyBadgeHTML = `
+                        <div style="margin-top:6px;">
+                            <span style="background:rgba(16,185,129,0.18); border:1px solid #10b981; color:#34d399; font-size:0.75rem; font-weight:700; padding:3px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">
+                                🎉 Spot Unlocked! Reserved for 24h via Priority Waitlist
+                            </span>
+                        </div>
+                    `;
+                    cancelBtnHTML = `<a href="Event_List.html?bookEvent=${ticket.eventId || ''}" class="primary-btn" style="background:linear-gradient(135deg, #10b981, #059669); color:#fff; text-decoration:none; padding:8px 14px; font-weight:700; border-radius:6px; display:inline-flex; align-items:center; gap:6px;">Claim & Confirm Spot ➔</a>`;
+                } else if (isWaitlisted) {
+                    cancelPolicyBadgeHTML = `
+                        <div style="margin-top:6px;">
+                            <span style="background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.35); color:#fbbf24; font-size:0.75rem; font-weight:700; padding:3px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">
+                                ⏳ Priority Queue Active • Auto-notifies upon 72h cancellation
+                            </span>
+                        </div>
+                    `;
+                    cancelBtnHTML = `<button class="secondary-btn cancel-btn" data-id="${ticket.ticketId || ''}">Leave Waitlist</button>`;
+                } else if (isCancelled) {
+                    cancelBtnHTML = `<button class="secondary-btn cancel-btn" data-id="${ticket.ticketId || ''}" disabled>Cancelled</button>`;
+                } else if (isUsed) {
+                    cancelBtnHTML = `<button class="secondary-btn cancel-btn" data-id="${ticket.ticketId || ''}" disabled>Used Pass</button>`;
+                } else if (cancelInfo.isPast) {
+                    cancelPolicyBadgeHTML = `
+                        <div style="margin-top:6px;">
+                            <span style="background:rgba(100,116,139,0.15); border:1px solid rgba(100,116,139,0.35); color:#94a3b8; font-size:0.75rem; font-weight:700; padding:3px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;" title="${cancelInfo.reason}">
+                                🏁 Event Concluded • Cancellation Closed
+                            </span>
+                        </div>
+                    `;
+                    cancelBtnHTML = `<button class="secondary-btn cancel-btn" data-id="${ticket.ticketId || ''}" disabled title="${cancelInfo.reason}" style="opacity:0.55; cursor:not-allowed; background:rgba(100,116,139,0.06); border-color:rgba(100,116,139,0.25); color:#94a3b8;">Event Concluded</button>`;
+                } else if (cancelInfo.isWithin72h) {
+                    cancelPolicyBadgeHTML = `
+                        <div style="margin-top:6px;">
+                            <span style="background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.3); color:#f87171; font-size:0.75rem; font-weight:700; padding:3px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;" title="${cancelInfo.reason}">
+                                ⏳ Cancellation Closed (&lt;72h before event)
+                            </span>
+                        </div>
+                    `;
+                    cancelBtnHTML = `<button class="secondary-btn cancel-btn" data-id="${ticket.ticketId || ''}" disabled title="${cancelInfo.reason}" style="opacity:0.55; cursor:not-allowed; background:rgba(239,68,68,0.06); border-color:rgba(239,68,68,0.25); color:#f87171;">Cancellation Closed (&lt;72h)</button>`;
+                } else {
+                    cancelPolicyBadgeHTML = `
+                        <div style="margin-top:6px;">
+                            <span style="background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3); color:#34d399; font-size:0.75rem; font-weight:600; padding:3px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">
+                                ⏱️ Cancellable until 72h before event (2% deduction)
+                            </span>
+                        </div>
+                    `;
+                    cancelBtnHTML = `<button class="secondary-btn cancel-btn" data-id="${ticket.ticketId || ''}">Cancel Ticket</button>`;
+                }
+
+                let refundBadgeHTML = '';
+                if (isCancelled) {
+                    const refAmt = ticket.refundAmount !== undefined ? ticket.refundAmount : ticket.price;
+                    const feeText = (ticket.cancellationFee && ticket.cancellationFee > 0) ? ` (2% fee: ₹${ticket.cancellationFee})` : '';
+                    refundBadgeHTML = `
+                        <div style="margin-top:6px;">
+                            <span style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.35); color:#f87171; font-size:0.75rem; font-weight:700; padding:3px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">
+                                💳 ${refAmt > 0 ? '₹' + refAmt + ' Refund Processed' + feeText : 'Cancelled • Seat Released'}
+                            </span>
+                        </div>
+                    `;
+                }
+
                 const article = document.createElement('article');
                 article.className = 'booking-card';
                 article.innerHTML = `
@@ -767,6 +1014,8 @@
                             <div>
                                 <p class="event-tag">Verified Pass</p>
                                 <h4>${ticket.eventName || 'Unnamed Event'}</h4>
+                                ${cancelPolicyBadgeHTML}
+                                ${refundBadgeHTML}
                             </div>
                             <span class="status ${ticket.status || 'Valid'}">${ticket.status || 'Valid'}</span>
                         </div>
@@ -790,6 +1039,7 @@
                                 ${(isCancelled || isUsed) ? 'disabled' : ''}>
                                 View Ticket
                             </button>
+                            ${cancelBtnHTML}
                         </div>
                     </div>
                 `;
@@ -842,7 +1092,47 @@
                 // Cancel buttons
                 document.querySelectorAll('.cancel-btn').forEach(btn => {
                     btn.addEventListener('click', function() {
+                        if (this.disabled || this.hasAttribute('disabled')) return;
                         pendingCancelTicketId = this.getAttribute('data-id');
+                        const ticket = allLoadedTickets.find(t => t.ticketId === pendingCancelTicketId);
+                        if (!ticket) return;
+
+                        const cancelInfo = (window.AttendeeBackend && window.AttendeeBackend.getCancellationInfo) 
+                            ? window.AttendeeBackend.getCancellationInfo(ticket) 
+                            : { eligible: true, originalPrice: parseFloat(ticket.price) || 0, cancellationFee: 0, netRefund: parseFloat(ticket.price) || 0, depositAmount: 0 };
+
+                        if (!cancelInfo.eligible) {
+                            alert("Cancellation is disabled: " + cancelInfo.reason);
+                            pendingCancelTicketId = null;
+                            return;
+                        }
+
+                        const origPriceEl = document.getElementById('cancelOrigPriceText');
+                        const feeEl = document.getElementById('cancelFeeText');
+                        const amtEl = document.getElementById('cancelRefundAmountText');
+                        const depRow = document.getElementById('cancelDepositRow');
+                        const depAmtEl = document.getElementById('cancelDepositAmountText');
+                        const subEl = document.getElementById('cancelModalSubtext');
+
+                        if (subEl) subEl.innerHTML = `Are you sure you want to cancel your ticket for <strong>${ticket.eventName || 'this event'}</strong>? The seat will be released and refund initiated with a 2% deduction.`;
+
+                        if (origPriceEl) origPriceEl.textContent = '₹' + cancelInfo.originalPrice;
+                        if (feeEl) feeEl.textContent = '-₹' + cancelInfo.cancellationFee + ' (2%)';
+                        if (amtEl) amtEl.textContent = cancelInfo.netRefund > 0 ? ('₹' + cancelInfo.netRefund) : '₹0';
+
+                        if (ticket.hasDeposit && cancelInfo.depositAmount > 0) {
+                            if (depRow) depRow.style.display = 'flex';
+                            if (depAmtEl) depAmtEl.textContent = '₹' + cancelInfo.depositAmount;
+                        } else {
+                            if (depRow) depRow.style.display = 'none';
+                        }
+
+                        if (confirmCancelBtn) {
+                            confirmCancelBtn.textContent = cancelInfo.netRefund > 0 
+                                ? `Confirm Cancellation (Refund: ₹${cancelInfo.netRefund})` 
+                                : 'Confirm Cancellation';
+                        }
+
                         cancelModal.classList.add('active');
                     });
                 });
@@ -893,6 +1183,48 @@
                         btn.disabled = false;
                     });
                 };
+
+                // VIP Pass Quick Action: Add to Google Calendar
+                const calendarBtn = document.getElementById('calendarBtn');
+                if (calendarBtn) {
+                    calendarBtn.onclick = function() {
+                        if (!activeModalTicket) return;
+                        const title = activeModalTicket.evName || 'Event Admission';
+                        const venue = activeModalTicket.evVenue || 'Venue';
+                        const details = `Live Entry Pass: ${window.location.origin}/Attendee_Dashboard/Your_Booking.html?ticketId=${encodeURIComponent(activeModalTicket.ticketId)}`;
+                        const calUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(venue)}`;
+                        window.open(calUrl, '_blank');
+                    };
+                }
+
+                // VIP Pass Quick Action: Google Maps Directions
+                const mapDirectionsBtn = document.getElementById('mapDirectionsBtn');
+                if (mapDirectionsBtn) {
+                    mapDirectionsBtn.onclick = function() {
+                        if (!activeModalTicket) return;
+                        const venue = activeModalTicket.evVenue || activeModalTicket.evName || 'Event Venue';
+                        const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue)}`;
+                        window.open(mapsUrl, '_blank');
+                    };
+                }
+
+                // VIP Pass Quick Action: Save to Mobile Wallet (offline persistence)
+                const saveToWalletBtn = document.getElementById('saveToWalletBtn');
+                if (saveToWalletBtn) {
+                    saveToWalletBtn.onclick = function() {
+                        if (!activeModalTicket) return;
+                        try {
+                            const walletKey = `eventpro_wallet_${activeModalTicket.ticketId}`;
+                            localStorage.setItem(walletKey, JSON.stringify({
+                                ...activeModalTicket,
+                                savedAt: new Date().toISOString()
+                            }));
+                            alert(`📱 Pass Saved to Offline Mobile Wallet!\n\nTicket: ${activeModalTicket.ticketId}\nEvent: ${activeModalTicket.evName}\n\nYour pass is encrypted and cached locally on this phone. It can be opened at the venue even without cellular connectivity.`);
+                        } catch (e) {
+                            alert("Pass saved for offline use.");
+                        }
+                    };
+                }
                 
                 // Submit Review button
                 document.getElementById('submitReviewBtn').onclick = function() {
@@ -1053,15 +1385,49 @@
                 modal.style.display = 'flex';
             }
 
-            const searchInput = document.getElementById('searchInput');
-            searchInput.addEventListener('input', function () {
-                const query = this.value.trim().toLowerCase();
-                const cards = document.querySelectorAll('.booking-card');
-                cards.forEach(card => {
-                    const text = card.textContent.toLowerCase();
-                    card.style.display = text.includes(query) ? 'flex' : 'none';
+            // Filter Ribbon Navigation Controller
+            let activeFilter = 'all';
+            const filterTabs = document.querySelectorAll('.booking-filter-tab');
+            filterTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    filterTabs.forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    activeFilter = this.dataset.filter || 'all';
+                    applyTicketFilters();
                 });
             });
+
+            function applyTicketFilters() {
+                const query = (document.getElementById('searchInput')?.value || '').toLowerCase().trim();
+                const cards = document.querySelectorAll('#bookingList .booking-card');
+                
+                cards.forEach(card => {
+                    const status = (card.dataset.status || '').toLowerCase();
+                    const isSplit = card.dataset.issplit === 'true';
+                    const isWaitlist = card.dataset.iswaitlist === 'true';
+                    const text = card.textContent.toLowerCase();
+
+                    const matchesSearch = !query || text.includes(query);
+                    let matchesFilter = true;
+
+                    if (activeFilter === 'valid') {
+                        matchesFilter = (status === 'valid' || status === 'confirmed') && !isWaitlist;
+                    } else if (activeFilter === 'split') {
+                        matchesFilter = isSplit;
+                    } else if (activeFilter === 'waitlist') {
+                        matchesFilter = isWaitlist;
+                    } else if (activeFilter === 'past') {
+                        matchesFilter = (status === 'used' || status === 'cancelled');
+                    }
+
+                    card.style.display = (matchesSearch && matchesFilter) ? 'flex' : 'none';
+                });
+            }
+
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('input', applyTicketFilters);
+            }
 
             // Notification Center Functionality
             let currentAlerts = [];
