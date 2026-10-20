@@ -10,5 +10,8 @@ window.EVENTPRO_AWS_CONFIG = {
     checkinsTableName: "EventProCheckins",
     reviewsTableName: "EventProReviews",
     alertsTableName: "EventProAlerts",
-    s3BucketName: "eventpro-images" // Replace with your actual S3 bucket name
+    s3BucketName: "eventpro-images", // Replace with your actual S3 bucket name
+    apiGatewayUrl: "https://s3eg7kdaja.execute-api.ap-south-1.amazonaws.com/prod",
+    senderEmail: "no-reply@eventpro24.online",
+    supportEmail: "support@eventpro24.online"
 };

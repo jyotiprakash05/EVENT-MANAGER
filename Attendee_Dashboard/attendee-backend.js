@@ -229,35 +229,65 @@
                             }
                         }
                         
-                        if (window.emailjs) {
-                            window.AttendeeBackend.getUserProfile((profileErr, profile) => {
-                                const userEmail = (!profileErr && profile && profile.email) ? profile.email : "attendee@example.com";
-                                const userName = (!profileErr && profile) ? 
-                                    (profile.firstName && profile.lastName ? (profile.firstName + " " + profile.lastName).trim() : (profile.firstName || "Attendee")) 
-                                    : "Attendee";
-                                
-                                const qrPayload = `Ticket ID: ${ticketId}\nEvent: ${event.eventName || "Unnamed Event"}\nDate: ${event.date || "TBD"} at ${event.time || "TBD"}\nVenue: ${event.location || "TBA"}\nAttendee: ${userName}`;
+                        // Dispatch ticket confirmation email via AWS SES (with EmailJS fallback)
+                        window.AttendeeBackend.getUserProfile((profileErr, profile) => {
+                            const userEmail = (!profileErr && profile && profile.email) ? profile.email : "attendee@example.com";
+                            const userName = (!profileErr && profile) ? 
+                                (profile.firstName && profile.lastName ? (profile.firstName + " " + profile.lastName).trim() : (profile.firstName || "Attendee")) 
+                                : "Attendee";
+                            
+                            const qrPayload = `Ticket ID: ${ticketId}\nEvent: ${event.eventName || "Unnamed Event"}\nDate: ${event.date || "TBD"} at ${event.time || "TBD"}\nVenue: ${event.location || "TBA"}\nAttendee: ${userName}`;
+                            const qrUrl = `https://quickchart.io/qr?text=${encodeURIComponent(qrPayload)}&size=220`;
 
-                                const templateParams = {
-                                    to_email: userEmail,
-                                    to_name: userName,
-                                    event_title: event.eventName || "Unnamed Event",
-                                    event_date: event.date || "TBD",
-                                    event_venue: event.location || "TBA",
-                                    ticket_id: ticketId,
-                                    order_id: ticketId,
-                                    // Use quickchart or put data first so that if & is escaped to &amp; by EmailJS, the QR code still generates
-                                    qr_url: `https://quickchart.io/qr?text=${encodeURIComponent(qrPayload)}&size=200`
-                                };
-                                
-                                emailjs.send('service_w5mpz2s', 'template_cqxegxr', templateParams)
-                                    .then(function(response) {
-                                        console.log('Email sent!', response.status, response.text);
-                                    }, function(error) {
-                                        console.log('Failed to send email...', error);
-                                    });
+                            const emailPayload = {
+                                type: 'ticket',
+                                to_email: userEmail,
+                                to_name: userName,
+                                event_title: event.eventName || "Unnamed Event",
+                                event_date: event.date || "TBD",
+                                event_time: event.time || "TBD",
+                                event_venue: event.location || "TBA",
+                                ticket_id: ticketId,
+                                quantity: qty,
+                                price: event.price || 0,
+                                qr_url: qrUrl
+                            };
+
+                            const apiEndpoint = (config.apiGatewayUrl || 'https://s3eg7kdaja.execute-api.ap-south-1.amazonaws.com/prod') + '/api/send-email';
+
+                            // 1. Try sending via AWS SES via backend Lambda
+                            fetch(apiEndpoint, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(emailPayload)
+                            })
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data && data.success) {
+                                    console.log('✅ Ticket email delivered via AWS SES (no-reply@eventpro24.online):', data);
+                                } else {
+                                    throw new Error(data && data.error ? data.error : 'SES response not successful');
+                                }
+                            })
+                            .catch(sesErr => {
+                                console.warn('AWS SES dispatch note, attempting EmailJS fallback:', sesErr.message || sesErr);
+                                if (window.emailjs) {
+                                    const templateParams = {
+                                        to_email: userEmail,
+                                        to_name: userName,
+                                        event_title: event.eventName || "Unnamed Event",
+                                        event_date: event.date || "TBD",
+                                        event_venue: event.location || "TBA",
+                                        ticket_id: ticketId,
+                                        order_id: ticketId,
+                                        qr_url: qrUrl
+                                    };
+                                    emailjs.send('service_w5mpz2s', 'template_cqxegxr', templateParams)
+                                        .then(res => console.log('Email sent via EmailJS fallback!', res.status))
+                                        .catch(e => console.warn('EmailJS fallback failed:', e));
+                                }
                             });
-                        }
+                        });
                         
                         callback(null, ticketParams.Item);
                     });

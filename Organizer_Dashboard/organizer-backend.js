@@ -549,19 +549,42 @@
                             console.warn("Local alert save notice:", e);
                         }
 
-                        // Send emails if EmailJS is configured
-                        if (sendEmail && window.emailjs && attendeeTickets.length > 0) {
-                            attendeeTickets.slice(0, 5).forEach(ticket => {
-                                try {
-                                    emailjs.send('service_w5mpz2s', 'template_cqxegxr', {
-                                        to_email: ticket.attendeeEmail || "attendee@example.com",
+                        // Send emails via AWS SES (or EmailJS fallback)
+                        if (sendEmail && attendeeTickets.length > 0) {
+                            const config = window.EVENTPRO_AWS_CONFIG || {};
+                            const apiEndpoint = (config.apiGatewayUrl || 'https://s3eg7kdaja.execute-api.ap-south-1.amazonaws.com/prod') + '/api/send-email';
+
+                            attendeeTickets.slice(0, 10).forEach(ticket => {
+                                const recipientEmail = ticket.attendeeEmail || ticket.email;
+                                if (!recipientEmail) return;
+
+                                fetch(apiEndpoint, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        type: 'alert',
+                                        to_email: recipientEmail,
                                         to_name: ticket.attendeeName || "Valued Attendee",
                                         event_title: eventName || ticket.eventName,
-                                        event_date: "ALERT: " + title,
-                                        event_venue: message,
-                                        ticket_id: ticket.ticketId
-                                    }).catch(e => console.warn("Email alert notice:", e));
-                                } catch(e) {}
+                                        alert_title: title,
+                                        alert_message: message,
+                                        priority: priority || 'normal'
+                                    })
+                                })
+                                .then(res => res.json())
+                                .then(data => console.log('✅ Broadcast alert delivered via SES:', data))
+                                .catch(err => {
+                                    if (window.emailjs) {
+                                        emailjs.send('service_w5mpz2s', 'template_cqxegxr', {
+                                            to_email: recipientEmail,
+                                            to_name: ticket.attendeeName || "Valued Attendee",
+                                            event_title: eventName || ticket.eventName,
+                                            event_date: "ALERT: " + title,
+                                            event_venue: message,
+                                            ticket_id: ticket.ticketId
+                                        }).catch(e => console.warn("Email alert notice:", e));
+                                    }
+                                });
                             });
                         }
 
