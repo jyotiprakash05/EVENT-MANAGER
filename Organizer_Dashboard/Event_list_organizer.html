@@ -128,7 +128,13 @@
             <!-- Manage Events Table -->
             <section class="events-section">
                 <div class="section-head">
-                    <h3>Manage Events</h3>
+                    <div>
+                        <h3>Manage Events</h3>
+                        <p style="color: var(--muted); font-size: 0.85rem; margin: 4px 0 0;">Create and oversee your live experiences, atmosphere galleries, and gate ticket sales</p>
+                    </div>
+                    <button class="btn-primary" onclick="window.location.href='Event_update.html'">
+                        + Create New Event
+                    </button>
                 </div>
 
                 <table class="event-table">
@@ -243,7 +249,11 @@
                                     ${thumbHtml}
                                     <div class="event-info">
                                         <h4>${event.eventName || 'Unnamed Event'}</h4>
-                                        <p>${event.ticketsSold || 0}/${event.capacity || 0} Tickets Sold</p>
+                                        <p style="margin: 0; font-size: 0.8rem; color: #94a3b8;">
+                                            <span style="color: var(--primary); font-weight: 700;">📍 ${event.locality ? event.locality + (event.city ? ', ' + event.city : '') : (event.location || 'Location TBA')}</span> • 
+                                            <span>${event.ticketsSold || 0}/${event.capacity || 0} Tickets Sold</span>
+                                            ${(event.vibeTags && event.vibeTags.length > 0) ? ` • <span style="color: #38bdf8; font-weight: 600;">${event.vibeTags[0]}</span>` : ''}
+                                        </p>
                                     </div>
                                 </td>
                                 <td>

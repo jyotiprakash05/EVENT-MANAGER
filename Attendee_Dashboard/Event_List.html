@@ -779,12 +779,18 @@
                     </div>
                 </div>
 
+                <!-- Featured Artist Lineup Banner -->
+                <div id="districtLineupBanner" style="display:none; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px 16px; margin-bottom:18px;">
+                    <span style="color:#fb7185; font-size:0.75rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px;">🌟 Featured Performers & Lineup</span>
+                    <p id="districtLineupText" style="margin:4px 0 0; color:#fff; font-weight:700; font-size:0.95rem;"></p>
+                </div>
+
                 <!-- What to Expect / Perks Grid -->
                 <div style="background:#0c0e14; border:1px solid #282f3f; border-radius:14px; padding:16px; margin-bottom:20px;">
                     <h4 style="font-size:0.85rem; font-weight:700; color:#cbd5e1; margin:0 0 12px; display:flex; align-items:center; gap:6px;">
                         <span>📋 What to Expect & Venue Perks</span>
                     </h4>
-                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:12px; font-size:0.8rem; color:#94a3b8;">
+                    <div id="districtPerksGrid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:12px; font-size:0.8rem; color:#94a3b8;">
                         <div style="background:rgba(255,255,255,0.03); padding:8px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
                             <span style="color:#fff; display:block; font-weight:600; margin-bottom:2px;">🛡️ 72h Cancellation</span>
                             <span>2% fee • Instant refund</span>
@@ -1424,10 +1430,14 @@
                         <div class="bms-card-body">
                             <div>
                                 <h4 class="bms-card-title" title="${ev.eventName}">${ev.eventName}</h4>
-                                <p class="bms-card-meta">${ev.tags || 'Live Performance'}</p>
+                                <p class="bms-card-meta" style="color: #38bdf8; font-weight: 600; font-size: 0.76rem;">
+                                    ${(ev.vibeTags && ev.vibeTags.length > 0) ? ev.vibeTags.slice(0, 2).join(' • ') : (ev.tags || 'Live Performance')}
+                                </p>
                                 <p class="bms-card-location" title="Click to view location on Google Maps" style="cursor: pointer; display: inline-flex; align-items: center; gap: 4px; z-index: 2; position: relative;">
-                                    <span style="color: #f84464;">📍</span>
-                                    <span style="text-decoration: underline; text-underline-offset: 3px; font-weight: 500;">${ev.location}</span>
+                                    <span style="color: #10b981;">📍</span>
+                                    <span style="text-decoration: underline; text-underline-offset: 3px; font-weight: 500;">
+                                        ${ev.locality ? `${ev.locality}${ev.city ? ', ' + ev.city : ''}` : (ev.location || 'Venue TBA')}
+                                    </span>
                                     <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="opacity: 0.7;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
                                 </p>
                             </div>
@@ -1546,55 +1556,89 @@
                 document.getElementById('districtCategoryBadge').textContent = (ev.category || 'EVENT').toUpperCase();
                 document.getElementById('districtEventTitle').textContent = ev.eventName || 'Live Event';
                 document.getElementById('districtEventDate').textContent = `${ev.date || 'Upcoming'} at ${ev.time || 'TBD'}`;
-                document.getElementById('districtEventVenue').textContent = `📍 ${ev.location || 'Venue TBA'}`;
+                
+                const locDetail = ev.locality ? `${ev.locality} • ${ev.location || 'Venue TBA'}` : (ev.location || 'Venue TBA');
+                document.getElementById('districtEventVenue').textContent = `📍 ${locDetail}${ev.city ? ' (' + ev.city + ')' : ''}`;
                 
                 document.getElementById('districtBookingBuzz').textContent = `${buzzCount} people booked in last 24h`;
                 document.getElementById('districtUrgencyText').textContent = isSoldOut ? '⚡ 100% Sold Out • Priority Waitlist Open' : (cap > 0 ? `⚡ Filling fast • ${Math.max(1, cap - sold)} passes left` : `🔥 High demand in ${ev.city || 'your city'}`);
                 document.getElementById('districtRatingScore').textContent = ev.rating || '4.9';
                 document.getElementById('districtRatingCount').textContent = ev.votes || '180+';
 
-                // 4 High-impact atmosphere photo tiles
+                // 4 Atmosphere photo tiles (Use real gallery uploaded by organizer if present, otherwise category presets)
                 const cat = (ev.category || '').toLowerCase();
-                let galleryPhotos = [
-                    'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=600&q=80',
-                    'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=600&q=80',
-                    'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=600&q=80',
-                    'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=600&q=80'
-                ];
-                if (cat.includes('comedy')) {
-                    galleryPhotos = [
-                        'https://images.unsplash.com/photo-1585699324551-f6c309eedeca?auto=format&fit=crop&w=600&q=80',
+                let galleryPhotos = (ev.galleryImages && Array.isArray(ev.galleryImages) && ev.galleryImages.length >= 4)
+                    ? ev.galleryImages.slice(0, 4)
+                    : [
                         'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=600&q=80',
-                        'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=600&q=80',
-                        'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=600&q=80'
+                        'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=600&q=80',
+                        'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=600&q=80',
+                        'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=600&q=80'
                     ];
-                } else if (cat.includes('camp')) {
-                    galleryPhotos = [
-                        'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80',
-                        'https://images.unsplash.com/photo-1478131143081-80f7f84ca84d?auto=format&fit=crop&w=600&q=80',
-                        'https://images.unsplash.com/photo-1537905569824-f89f14cceb68?auto=format&fit=crop&w=600&q=80',
-                        'https://images.unsplash.com/photo-1510312305653-8ed496efae75?auto=format&fit=crop&w=600&q=80'
-                    ];
+
+                if (!ev.galleryImages || ev.galleryImages.length < 4) {
+                    if (cat.includes('comedy')) {
+                        galleryPhotos = [
+                            'https://images.unsplash.com/photo-1585699324551-f6c309eedeca?auto=format&fit=crop&w=600&q=80',
+                            'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=600&q=80',
+                            'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=600&q=80',
+                            'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=600&q=80'
+                        ];
+                    } else if (cat.includes('camp')) {
+                        galleryPhotos = [
+                            'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80',
+                            'https://images.unsplash.com/photo-1478131143081-80f7f84ca84d?auto=format&fit=crop&w=600&q=80',
+                            'https://images.unsplash.com/photo-1537905569824-f89f14cceb68?auto=format&fit=crop&w=600&q=80',
+                            'https://images.unsplash.com/photo-1510312305653-8ed496efae75?auto=format&fit=crop&w=600&q=80'
+                        ];
+                    }
                 }
 
                 const galleryGrid = document.getElementById('districtGalleryGrid');
                 galleryGrid.innerHTML = galleryPhotos.map((src, idx) => `
                     <div class="district-gallery-item" title="Click to view full atmosphere">
-                        <img src="${src}" alt="Vibe visual ${idx + 1}" loading="lazy">
+                        <img src="${src}" alt="Atmosphere visual ${idx + 1}" loading="lazy">
                     </div>
                 `).join('');
 
-                // Vibe chips
+                // Vibe chips (Use real tags saved by organizer if available)
                 const vibeTagsContainer = document.getElementById('districtVibeTags');
-                const vibes = [
-                    '🎵 Live Music & Audio',
-                    '⚡ High Energy Crowd',
-                    '🍸 Craft Drinks & Food',
-                    '📸 Instagrammable Aesthetic',
-                    '👥 Great for Groups',
-                    '🎟️ Instant Digital Pass'
-                ];
+                const vibes = (ev.vibeTags && Array.isArray(ev.vibeTags) && ev.vibeTags.length > 0)
+                    ? ev.vibeTags
+                    : [
+                        '🎵 Live Music & Audio',
+                        '⚡ High Energy Crowd',
+                        '🍸 Craft Drinks & Food',
+                        '📸 Instagrammable Aesthetic',
+                        '👥 Great for Groups',
+                        '🎟️ Instant Digital Pass'
+                    ];
                 vibeTagsContainer.innerHTML = vibes.map(v => `<span class="district-vibe-chip">${v}</span>`).join('');
+
+                // Lineup Banner
+                const lineupBanner = document.getElementById('districtLineupBanner');
+                const lineupText = document.getElementById('districtLineupText');
+                if (ev.lineup && ev.lineup.trim()) {
+                    lineupText.textContent = ev.lineup;
+                    lineupBanner.style.display = 'block';
+                } else {
+                    lineupBanner.style.display = 'none';
+                }
+
+                // Perks Grid
+                const perksGrid = document.getElementById('districtPerksGrid');
+                if (perksGrid) {
+                    const perksList = (ev.perks && Array.isArray(ev.perks) && ev.perks.length > 0)
+                        ? ev.perks
+                        : ['🛡️ 72h Refund Protected', '🍸 Food & Bar Counters', '🅿️ Parking Available', `🔞 ${ev.ageLimit || 'All Ages'}`];
+
+                    perksGrid.innerHTML = perksList.map(p => `
+                        <div style="background:rgba(255,255,255,0.03); padding:8px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
+                            <span style="color:#fff; display:block; font-weight:600; margin-bottom:2px;">${p}</span>
+                            <span style="color:#94a3b8; font-size:0.75rem;">Verified Venue Amenity</span>
+                        </div>
+                    `).join('');
+                }
 
                 // Attendee Reviews
                 const reviewsList = document.getElementById('districtReviewsList');
