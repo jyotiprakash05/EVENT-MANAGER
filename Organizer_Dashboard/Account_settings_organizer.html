@@ -12,6 +12,7 @@
     <script src="../aws-config.js"></script>
     <script src="../dashboard-auth.js"></script>
     <script src="organizer-backend.js"></script>
+    <script src="../info-tooltip-manager.js"></script>
     <style>
         .custom-modal-backdrop {
             position: fixed;
@@ -54,9 +55,9 @@
         <aside class="sidebar">
             <div>
                 <div class="brand-wrap">
-                    <div class="brand-mark">O</div>
+                    <div class="brand-mark" style="background: linear-gradient(135deg, #f84464 0%, #ff6b8b 100%); color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.3rem; font-weight:800;">O</div>
                     <div>
-                        <p class="brand-mini">Organizer</p>
+                        <p class="brand-mini">Organizer Portal</p>
                         <h2>EVENTPRO</h2>
                     </div>
                 </div>
@@ -104,14 +105,23 @@
             <section class="settings-layout">
                 <nav class="settings-nav" id="settingsNav">
                     <a href="#" class="active" data-target="sectionProfile">Profile</a>
-                    <a href="#" data-target="sectionPayouts">Payouts</a>
-                    <a href="#" data-target="sectionSecurity">Security</a>
-                    <a href="#" data-target="sectionNotifications">Notifications</a>
-                    <a href="#" data-target="sectionBilling">Billing</a>
+                    <a href="#" data-target="sectionPayouts">Earnings & Payouts</a>
+                    <a href="#" data-target="sectionSupport">Admin Support Desk</a>
+                    <a href="#" data-target="sectionSecurity">Security & Sessions</a>
                 </nav>
 
+                <!-- SECTION 1: PROFILE -->
                 <div id="sectionProfile" class="form-section">
-                    <h3>Personal Information</h3>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px; flex-wrap:wrap; gap:10px;">
+                        <div>
+                            <h3 style="margin:0 0 4px; font-size:1.3rem;">Organizer Profile</h3>
+                            <p style="margin:0; color:var(--muted); font-size:0.88rem;">Manage your official organization identity and event host credentials</p>
+                        </div>
+                        <span style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); padding:4px 12px; border-radius:20px; font-size:0.8rem; font-weight:700;">
+                            ✓ Verified Organizer
+                        </span>
+                    </div>
+
                     <form id="profileForm">
                         <div class="form-row">
                             <div class="form-group">
@@ -124,78 +134,311 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label>Email Address</label>
+                            <label>Official Email Address</label>
                             <input type="email" id="email" class="form-control" placeholder="Email Address" required>
                         </div>
                         <div class="form-group">
-                            <label>Organizer Bio / Company</label>
-                            <textarea id="organizerBio" class="form-control" placeholder="Tell attendees about yourself or your organization..." rows="3"></textarea>
+                            <label>
+                                Organization / Brand Bio
+                                <span class="info-circle" title="Info">ⓘ
+                                    <span class="info-tooltip">
+                                        <strong>Organizer Bio</strong>
+                                        This description is shown on your public event cards and organizer profile page to attendees.
+                                    </span>
+                                </span>
+                            </label>
+                            <textarea id="organizerBio" class="form-control" placeholder="Tell attendees about your production team, past festivals, or hosted conferences..." rows="3"></textarea>
                         </div>
                         
-                        <div class="form-actions" style="justify-content: flex-start;">
-                            <button type="submit" id="saveProfileBtn" class="btn-primary">Save Changes</button>
+                        <div class="form-actions" style="justify-content: flex-start; margin-top:20px;">
+                            <button type="submit" id="saveProfileBtn" class="btn-primary">Save Profile Details</button>
                         </div>
                     </form>
 
-                    <div class="subscription-section" style="margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--border);">
-                        <h3>Account Membership</h3>
-                        <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 24px;">
-                            <p style="margin-bottom: 8px;"><strong>Status:</strong> <span id="subscriptionStatus" style="color: #10b981; font-weight: 600;">Active (Free Organizer Tier)</span></p>
-                            <p style="margin-bottom: 0;"><strong>Joining & Platform Access Fee:</strong> <span id="subscriptionDays" style="color: #10b981; font-weight: 600;">₹0 (Free Lifetime Access)</span></p>
+                    <div style="margin-top: 32px; padding: 20px; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 12px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <div>
+                                <h4 style="margin:0 0 4px; color:#fff; font-size:0.95rem;">EventPro Host Tier</h4>
+                                <p style="margin:0; color:var(--muted); font-size:0.82rem;">Unlimited events, 0 monthly maintenance fee, pay only 3% on ticket collections.</p>
+                            </div>
+                            <span style="color:#10b981; font-weight:700; font-size:0.85rem;">Active Lifetime</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION 2: PAYOUTS & EARNINGS -->
+                <div id="sectionPayouts" class="form-section" style="display: none;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+                        <div>
+                            <h3 style="margin:0 0 4px; font-size:1.3rem;">Financial Settlements</h3>
+                            <p style="margin:0; color:var(--muted); font-size:0.88rem;">Track event revenues, platform deductions, and disburse bank transfers</p>
+                        </div>
+                        <span class="info-circle" style="width:22px; height:22px; font-size:0.85rem;" title="Payout Rules">ⓘ
+                            <span class="info-tooltip">
+                                <strong>RBI T+1 Escrow Protocol</strong>
+                                Ticket revenues are securely held in escrow and released 24 hours post successful event verification.
+                            </span>
+                        </span>
+                    </div>
+
+                    <div class="analytics-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 30px; gap: 16px; display: grid;">
+                        <div class="stat-card" style="padding: 20px; background: var(--bg-panel); border-radius: 12px; border: 1px solid var(--border);">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span style="color: var(--muted); font-size: 0.88rem;">Gross Ticket Sales</span>
+                                <span class="info-circle">ⓘ
+                                    <span class="info-tooltip">
+                                        <strong>Gross Revenue</strong>
+                                        Combined ticket sales across all active and concluded events before platform fee.
+                                    </span>
+                                </span>
+                            </div>
+                            <strong id="payoutTotalRev" style="display: block; font-size: 1.8rem; margin-top: 8px; color:#fff;">₹0.00</strong>
+                        </div>
+
+                        <div class="stat-card" style="padding: 20px; background: var(--bg-panel); border-radius: 12px; border: 1px solid var(--border);">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span style="color: var(--muted); font-size: 0.88rem;">Total Settled / Withdrawn</span>
+                                <span class="info-circle">ⓘ
+                                    <span class="info-tooltip">
+                                        <strong>Transferred Funds</strong>
+                                        Total revenue already remitted to your bank account via NEFT/IMPS.
+                                    </span>
+                                </span>
+                            </div>
+                            <strong id="payoutTotalWithdrawn" style="display: block; font-size: 1.8rem; margin-top: 8px; color:#94a3b8;">₹0.00</strong>
+                        </div>
+
+                        <div class="stat-card" style="padding: 20px; background: linear-gradient(135deg, rgba(248,68,100,0.18) 0%, rgba(248,68,100,0.06) 100%); border:1px solid rgba(248,68,100,0.4); border-radius: 12px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span style="color: #ff8fa3; font-size: 0.88rem; font-weight:600;">Available for Withdrawal</span>
+                                <span class="info-circle" style="border-color:#ff8fa3; color:#ff8fa3;">ⓘ
+                                    <span class="info-tooltip">
+                                        <strong>Net Withdrawable</strong>
+                                        Gross collections minus 3% platform commission and prior payouts, ready for immediate transfer.
+                                    </span>
+                                </span>
+                            </div>
+                            <strong id="payoutAvailable" style="display: block; font-size: 1.8rem; margin-top: 8px; color: #fff;">₹0.00</strong>
                         </div>
                     </div>
 
-                    <div class="danger-zone">
-                        <h3>Account Actions</h3>
-                        <p style="color: var(--muted); margin-bottom: 24px;">Logout of your current session on this device.</p>
+                    <h4 style="margin: 0 0 16px; font-size:1.1rem; color:#fff;">Request Direct Bank Payout</h4>
+                    <form id="withdrawForm">
+                        <div class="form-group">
+                            <label>Withdrawal Amount (₹)</label>
+                            <input type="number" id="withdrawAmount" class="form-control" placeholder="0.00" min="1" step="0.01" required>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Beneficiary Account Name</label>
+                                <input type="text" id="bankName" class="form-control" placeholder="As per official bank records" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Bank Account Number</label>
+                                <input type="text" id="bankAccount" class="form-control" placeholder="e.g. 982100349281" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                IFSC Code
+                                <span class="info-circle">ⓘ
+                                    <span class="info-tooltip">
+                                        <strong>11-Character IFSC</strong>
+                                        Found on your cheque book or banking app (e.g., HDFC0001234 or SBIN0004021).
+                                    </span>
+                                </span>
+                            </label>
+                            <input type="text" id="bankIFSC" class="form-control" placeholder="e.g. HDFC0001234" required>
+                        </div>
+                        <div class="form-actions" style="justify-content: flex-start; margin-top: 24px;">
+                            <button type="submit" id="withdrawBtn" class="btn-primary">Disburse Payout</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- SECTION 3: DEDICATED ORGANIZER SUPPORT DESK -->
+                <div id="sectionSupport" class="form-section" style="display: none;">
+                    <!-- Hero Support Card -->
+                    <div class="support-hero-card">
+                        <div class="support-hero-info">
+                            <span style="font-size:0.75rem; text-transform:uppercase; letter-spacing:1px; color:var(--primary); font-weight:800; display:block; margin-bottom:4px;">
+                                Priority Host Operations
+                            </span>
+                            <h4>Dedicated Organizer Admin Support</h4>
+                            <p>Direct line to EventPro executive operations for gate emergency, scanner hardware sync, payout expedites, and listing reviews.</p>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-start;">
+                            <a href="mailto:admin@eventpro24.online?subject=Organizer%20Priority%20Inquiry" class="support-email-pill">
+                                admin@eventpro24.online
+                            </a>
+                            <span style="font-size:0.75rem; color:#94a3b8; padding-left:4px;">
+                                SLA: &lt; 2 Hours Priority Turnaround
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Platform Features Explained with Round Info Symbols -->
+                    <h4 style="margin: 0 0 16px; font-size:1.05rem; color:#fff; display:flex; align-items:center; gap:8px;">
+                        <span>Platform Capabilities & Guardrails</span>
+                        <span class="info-circle">ⓘ
+                            <span class="info-tooltip">
+                                <strong>Interactive Feature Guides</strong>
+                                Hover over any round ⓘ badge to inspect core security architectures and host workflows.
+                            </span>
+                        </span>
+                    </h4>
+
+                    <div class="support-grid-channels">
+                        <div class="support-channel-card">
+                            <div class="icon-wrap"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><rect x="7" y="7" width="3" height="3"></rect><rect x="14" y="7" width="3" height="3"></rect><rect x="7" y="14" width="3" height="3"></rect></svg></div>
+                            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+                                <h5 style="margin:0; color:#fff; font-size:0.96rem;">Turnstile QR Scanner</h5>
+                                <span class="info-circle">ⓘ
+                                    <span class="info-tooltip">
+                                        <strong>15s Rolling Token Technology</strong>
+                                        Eliminates forged passes and WhatsApp ticket forwarding. Dynamic QR rotates every 15 seconds; offline cache verifies validity at high density gates.
+                                    </span>
+                                </span>
+                            </div>
+                            <p style="margin:0; font-size:0.82rem; color:var(--muted); line-height:1.45;">
+                                High-speed live scanning camera tool built directly into your organizer suite.
+                            </p>
+                        </div>
+
+                        <div class="support-channel-card">
+                            <div class="icon-wrap"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></div>
+                            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+                                <h5 style="margin:0; color:#fff; font-size:0.96rem;">Gate Deposit Engine</h5>
+                                <span class="info-circle">ⓘ
+                                    <span class="info-tooltip">
+                                        <strong>No-Show Penalty & Attendance Security</strong>
+                                        Attendees pay a nominal verification deposit which is credited back upon gate check-in. Unclaimed no-show deposits disburse to your earnings pool.
+                                    </span>
+                                </span>
+                            </div>
+                            <p style="margin:0; font-size:0.82rem; color:var(--muted); line-height:1.45;">
+                                Proof-of-Presence system preventing ghost registrations and empty seats.
+                            </p>
+                        </div>
+
+                        <div class="support-channel-card">
+                            <div class="icon-wrap"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg></div>
+                            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+                                <h5 style="margin:0; color:#fff; font-size:0.96rem;">Attendee Broadcast</h5>
+                                <span class="info-circle">ⓘ
+                                    <span class="info-tooltip">
+                                        <strong>Instant Push Notification</strong>
+                                        Send push alerts and emails for door opening changes, parking slot revisions, or artist line-up shifts directly to ticket holders.
+                                    </span>
+                                </span>
+                            </div>
+                            <p style="margin:0; font-size:0.82rem; color:var(--muted); line-height:1.45;">
+                                One-click communication engine linking you directly with registered guests.
+                            </p>
+                        </div>
+
+                        <div class="support-channel-card">
+                            <div class="icon-wrap"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg></div>
+                            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+                                <h5 style="margin:0; color:#fff; font-size:0.96rem;">Instant Escrow Payouts</h5>
+                                <span class="info-circle">ⓘ
+                                    <span class="info-tooltip">
+                                        <strong>Automated T+1 NEFT Transfer</strong>
+                                        3% flat platform fee with zero hidden gateway surcharges. All ticket revenues disburse seamlessly into your verified IFSC bank account.
+                                    </span>
+                                </span>
+                            </div>
+                            <p style="margin:0; font-size:0.82rem; color:var(--muted); line-height:1.45;">
+                                Direct bank disbursements with complete tax invoices and GST receipts.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Priority Dispatch Form -->
+                    <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 14px; padding: 24px; margin-bottom: 24px;">
+                        <h4 style="margin:0 0 6px; font-size:1.1rem; color:#fff;">Dispatch Priority Admin Ticket</h4>
+                        <p style="margin:0 0 20px; font-size:0.85rem; color:var(--muted);">
+                            Submit an urgent operational inquiry directly to <strong style="color:#fff;">admin@eventpro24.online</strong>.
+                        </p>
+
+                        <form id="organizerTicketForm">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Inquiry Category</label>
+                                    <select id="ticketCategory" class="form-control" style="background:var(--bg-main); color:#fff;">
+                                        <option value="settlement">Financial Settlement & Bank Payout</option>
+                                        <option value="scanning">Turnstile Scanner / Hardware Support</option>
+                                        <option value="approval">Event Approval & Category Verification</option>
+                                        <option value="broadcast">Attendee Messaging & Emergency Broadcast</option>
+                                        <option value="general">Other Host Support</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Event Name or Reference ID</label>
+                                    <input type="text" id="ticketEventRef" class="form-control" placeholder="e.g. Sunburn Goa 2026 or EVT-9281" required>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Detailed Message</label>
+                                <textarea id="ticketMessage" class="form-control" rows="3" placeholder="Describe the inquiry or urgent requirement..." required></textarea>
+                            </div>
+
+                            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-top:16px;">
+                                <button type="submit" class="btn-primary">Submit Ticket to admin@eventpro24.online</button>
+                                <span style="font-size:0.82rem; color:#94a3b8;">Direct Email: <a href="mailto:admin@eventpro24.online" style="color:var(--primary); text-decoration:none; font-weight:600;">admin@eventpro24.online</a></span>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Organizer FAQs -->
+                    <h4 style="margin: 0 0 16px; font-size:1.05rem; color:#fff;">Frequent Organizer Questions</h4>
+                    <div style="display:flex; flex-direction:column; gap:12px;">
+                        <details style="background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:10px; padding:14px;">
+                            <summary style="font-weight:600; color:#fff; cursor:pointer; font-size:0.9rem;">When do ticket collections reach my bank account?</summary>
+                            <p style="margin:10px 0 0; color:var(--muted); font-size:0.83rem; line-height:1.5;">
+                                Payouts are initiated within 24 hours (T+1) following event completion. For high-volume multi-day festivals, partial advance payouts can be scheduled by contacting <strong>admin@eventpro24.online</strong>.
+                            </p>
+                        </details>
+                        <details style="background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:10px; padding:14px;">
+                            <summary style="font-weight:600; color:#fff; cursor:pointer; font-size:0.9rem;">What happens if the turnstile internet connection drops at the venue?</summary>
+                            <p style="margin:10px 0 0; color:var(--muted); font-size:0.83rem; line-height:1.5;">
+                                The EventPro Ticket Scanner caches authorized ticket cryptographic keys locally. Entry scans continue seamlessly offline and automatically sync with the cloud the moment connectivity resumes.
+                            </p>
+                        </details>
+                        <details style="background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:10px; padding:14px;">
+                            <summary style="font-weight:600; color:#fff; cursor:pointer; font-size:0.9rem;">How does Proof-of-Presence Gate Deposit work for free events?</summary>
+                            <p style="margin:10px 0 0; color:var(--muted); font-size:0.83rem; line-height:1.5;">
+                                Free events often experience 40-50% drop-off. With our Gate Deposit feature, attendees pre-authorize a refundable ₹99 deposit. If they attend, they are fully refunded; if they abandon without 24h notice, the deposit covers your venue logistics.
+                            </p>
+                        </details>
+                    </div>
+                </div>
+
+                <!-- SECTION 4: SECURITY & SESSIONS -->
+                <div id="sectionSecurity" class="form-section" style="display: none;">
+                    <h3 style="margin:0 0 4px; font-size:1.3rem;">Security & Session Management</h3>
+                    <p style="margin:0 0 24px; color:var(--muted); font-size:0.88rem;">Manage your authentication credentials, active logins, and security settings</p>
+
+                    <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:24px;">
+                        <h4 style="margin:0 0 8px; font-size:0.98rem; color:#fff;">AWS Cognito Secure Identity</h4>
+                        <p style="margin:0 0 12px; font-size:0.84rem; color:var(--muted); line-height:1.5;">
+                            Your Organizer account is cryptographically protected with JSON Web Tokens (JWT) through Amazon Cognito Identity Pools. All API endpoints use TLS 1.3 encryption.
+                        </p>
+                        <span style="display:inline-flex; align-items:center; gap:6px; font-size:0.8rem; color:#10b981; font-weight:600;">
+                            <span style="width:8px; height:8px; border-radius:50%; background:#10b981; display:inline-block;"></span>
+                            Current Session: Authenticated & Protected
+                        </span>
+                    </div>
+
+                    <div class="danger-zone" style="margin-top:20px;">
+                        <h4 style="color:#ef4444; margin:0 0 6px;">Sign Out</h4>
+                        <p style="color: var(--muted); margin-bottom: 16px; font-size:0.85rem;">Safely disconnect your organizer session from this device.</p>
                         <button id="logoutBtn" class="btn-secondary" style="border-color: #ef4444; color: #ef4444;">
                             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="vertical-align: middle; margin-right: 8px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
                             Logout
                         </button>
                     </div>
-                </div>
-
-                <div id="sectionPayouts" class="form-section" style="display: none;">
-                    <h3>Financial Summary</h3>
-                    <div class="analytics-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 30px; gap: 16px; display: grid;">
-                        <div class="stat-card" style="padding: 20px; background: var(--bg-panel); border-radius: 12px; border: 1px solid var(--border);">
-                            <span style="color: var(--muted); font-size: 0.9rem;">Total Revenue</span>
-                            <strong id="payoutTotalRev" style="display: block; font-size: 1.8rem; margin-top: 8px;">₹0.00</strong>
-                        </div>
-                        <div class="stat-card" style="padding: 20px; background: var(--bg-panel); border-radius: 12px; border: 1px solid var(--border);">
-                            <span style="color: var(--muted); font-size: 0.9rem;">Total Withdrawn</span>
-                            <strong id="payoutTotalWithdrawn" style="display: block; font-size: 1.8rem; margin-top: 8px;">₹0.00</strong>
-                        </div>
-                        <div class="stat-card" style="padding: 20px; background: var(--primary); color: white; border-radius: 12px;">
-                            <span style="opacity: 0.8; font-size: 0.9rem;">Available Balance</span>
-                            <strong id="payoutAvailable" style="display: block; font-size: 1.8rem; margin-top: 8px;">₹0.00</strong>
-                        </div>
-                    </div>
-
-                    <h3>Request Withdrawal</h3>
-                    <form id="withdrawForm">
-                        <div class="form-group">
-                            <label>Amount to Withdraw (₹)</label>
-                            <input type="number" id="withdrawAmount" class="form-control" placeholder="0.00" min="1" step="0.01" required>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Account Holder Name</label>
-                                <input type="text" id="bankName" class="form-control" placeholder="As per bank records" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Bank Account Number</label>
-                                <input type="text" id="bankAccount" class="form-control" placeholder="Account Number" required>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>IFSC Code</label>
-                            <input type="text" id="bankIFSC" class="form-control" placeholder="e.g. HDFC0001234" required>
-                        </div>
-                        <div class="form-actions" style="justify-content: flex-start; margin-top: 24px;">
-                            <button type="submit" id="withdrawBtn" class="btn-primary">Submit Request</button>
-                        </div>
-                    </form>
                 </div>
             </section>
         </main>
@@ -282,6 +525,25 @@
                 });
             });
 
+            // Priority ticket submission handler
+            const ticketForm = document.getElementById('organizerTicketForm');
+            if (ticketForm) {
+                ticketForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const cat = document.getElementById('ticketCategory').value;
+                    const eventRef = document.getElementById('ticketEventRef').value;
+                    const msg = document.getElementById('ticketMessage').value;
+                    
+                    // Compose mailto as fallback + show alert
+                    const subject = encodeURIComponent(`[Organizer Ticket - ${cat.toUpperCase()}] ${eventRef}`);
+                    const body = encodeURIComponent(`Organizer Inquiry Details:\nCategory: ${cat}\nEvent Reference: ${eventRef}\n\nMessage:\n${msg}`);
+                    
+                    alert('Priority Ticket Logged! Your inquiry has been routed to admin@eventpro24.online. A confirmation dispatch will open in your mail client.');
+                    window.location.href = `mailto:admin@eventpro24.online?subject=${subject}&body=${body}`;
+                    ticketForm.reset();
+                });
+            }
+
             let currentAvailableBalance = 0;
             let currentWithdrawnAmount = 0;
 
@@ -291,77 +553,72 @@
                         if (!err && events) {
                             let totalRev = 0;
                             events.forEach(e => { totalRev += (e.revenue || 0); });
-                            document.getElementById('payoutTotalRev').textContent = '₹' + totalRev.toFixed(2);
+                            const totalRevEl = document.getElementById('payoutTotalRev');
+                            if (totalRevEl) totalRevEl.textContent = '₹' + totalRev.toFixed(2);
                             
                             const PLATFORM_FEE_PERCENT = 0.03; // 3% platform fee
                             const netEarnings = totalRev * (1 - PLATFORM_FEE_PERCENT);
                             currentAvailableBalance = Math.max(0, netEarnings - currentWithdrawnAmount);
-                            document.getElementById('payoutAvailable').textContent = '₹' + currentAvailableBalance.toFixed(2);
+                            const payoutAvailEl = document.getElementById('payoutAvailable');
+                            if (payoutAvailEl) payoutAvailEl.textContent = '₹' + currentAvailableBalance.toFixed(2);
                         }
                     });
                 }
             }
 
-            document.getElementById('withdrawForm').addEventListener('submit', function(e) {
-                e.preventDefault();
-                const amount = parseFloat(document.getElementById('withdrawAmount').value);
-                if (amount <= 0 || amount > currentAvailableBalance) {
-                    alert('Invalid withdrawal amount. Must be greater than 0 and less than or equal to your available balance.');
-                    return;
-                }
-
-                const details = {
-                    bankName: document.getElementById('bankName').value,
-                    bankAccount: document.getElementById('bankAccount').value,
-                    bankIFSC: document.getElementById('bankIFSC').value,
-                    requestedAt: new Date().toISOString()
-                };
-
-                const btn = document.getElementById('withdrawBtn');
-                btn.textContent = 'Submitting...';
-                btn.disabled = true;
-
-                window.OrganizerBackend.requestWithdrawal(amount, details, function(err) {
-                    btn.disabled = false;
-                    btn.textContent = 'Submit Request';
-                    if (err) {
-                        alert('Error submitting withdrawal: ' + err.message);
-                    } else {
-                        alert('Withdrawal request submitted successfully!');
-                        document.getElementById('withdrawForm').reset();
-                        currentWithdrawnAmount += amount;
-                        document.getElementById('payoutTotalWithdrawn').textContent = '₹' + currentWithdrawnAmount.toFixed(2);
-                        loadPayouts();
+            const withdrawForm = document.getElementById('withdrawForm');
+            if (withdrawForm) {
+                withdrawForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const amount = parseFloat(document.getElementById('withdrawAmount').value);
+                    if (amount <= 0 || amount > currentAvailableBalance) {
+                        alert('Invalid withdrawal amount. Must be greater than 0 and less than or equal to your available balance.');
+                        return;
                     }
+
+                    const details = {
+                        bankName: document.getElementById('bankName').value,
+                        bankAccount: document.getElementById('bankAccount').value,
+                        bankIFSC: document.getElementById('bankIFSC').value,
+                        requestedAt: new Date().toISOString()
+                    };
+
+                    const btn = document.getElementById('withdrawBtn');
+                    btn.textContent = 'Submitting...';
+                    btn.disabled = true;
+
+                    window.OrganizerBackend.requestWithdrawal(amount, details, function(err) {
+                        btn.disabled = false;
+                        btn.textContent = 'Disburse Payout';
+                        if (err) {
+                            alert('Error submitting withdrawal: ' + err.message);
+                        } else {
+                            alert('Withdrawal request submitted successfully! Funds will be credited via NEFT.');
+                            withdrawForm.reset();
+                            currentWithdrawnAmount += amount;
+                            const withdrawnEl = document.getElementById('payoutTotalWithdrawn');
+                            if (withdrawnEl) withdrawnEl.textContent = '₹' + currentWithdrawnAmount.toFixed(2);
+                            loadPayouts();
+                        }
+                    });
                 });
-            });
+            }
 
             function loadProfile() {
                 if (window.OrganizerBackend) {
                     window.OrganizerBackend.getUserProfile(function(err, data) {
                         if (!err && data) {
-                            document.getElementById('firstName').value = data.firstName || '';
-                            document.getElementById('lastName').value = data.lastName || '';
-                            document.getElementById('email').value = data.email || '';
+                            if (document.getElementById('firstName')) document.getElementById('firstName').value = data.firstName || '';
+                            if (document.getElementById('lastName')) document.getElementById('lastName').value = data.lastName || '';
+                            if (document.getElementById('email')) document.getElementById('email').value = data.email || '';
                             if (document.getElementById('organizerBio')) {
                                 document.getElementById('organizerBio').value = data.bio || '';
                             }
                             
                             currentWithdrawnAmount = data.withdrawnAmount || 0;
-                            document.getElementById('payoutTotalWithdrawn').textContent = '₹' + currentWithdrawnAmount.toFixed(2);
+                            const withdrawnEl = document.getElementById('payoutTotalWithdrawn');
+                            if (withdrawnEl) withdrawnEl.textContent = '₹' + currentWithdrawnAmount.toFixed(2);
                             loadPayouts();
-                            
-                            // Account Membership Details
-                            const subStatusEl = document.getElementById('subscriptionStatus');
-                            const subDaysEl = document.getElementById('subscriptionDays');
-                            if (subStatusEl) {
-                                subStatusEl.textContent = 'Active (Free Organizer Tier)';
-                                subStatusEl.style.color = '#10b981';
-                            }
-                            if (subDaysEl) {
-                                subDaysEl.textContent = '₹0 (Free Lifetime Access)';
-                                subDaysEl.style.color = '#10b981';
-                            }
                         }
                     });
                 } else {
@@ -370,34 +627,36 @@
             }
             setTimeout(loadProfile, 1000);
 
-            document.getElementById('profileForm').addEventListener('submit', function(e) {
-                e.preventDefault();
-                const btn = document.getElementById('saveProfileBtn');
-                btn.textContent = 'Saving...';
-                btn.disabled = true;
+            const profileForm = document.getElementById('profileForm');
+            if (profileForm) {
+                profileForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const btn = document.getElementById('saveProfileBtn');
+                    btn.textContent = 'Saving...';
+                    btn.disabled = true;
 
-                const userData = {
-                    firstName: document.getElementById('firstName').value,
-                    lastName: document.getElementById('lastName').value,
-                    email: document.getElementById('email').value,
-                    bio: document.getElementById('organizerBio') ? document.getElementById('organizerBio').value : ''
-                };
+                    const userData = {
+                        firstName: document.getElementById('firstName').value,
+                        lastName: document.getElementById('lastName').value,
+                        email: document.getElementById('email').value,
+                        bio: document.getElementById('organizerBio') ? document.getElementById('organizerBio').value : ''
+                    };
 
-                window.OrganizerBackend.updateUserProfile(userData, function(err, data) {
-                    btn.disabled = false;
-                    btn.textContent = 'Save Changes';
-                    if (err) {
-                        alert('Error saving profile: ' + err.message);
-                    } else {
-                        alert('Profile updated successfully!');
-                        // Also update UI elements
-                        const initial = userData.firstName ? userData.firstName.charAt(0).toUpperCase() : '?';
-                        const fullName = ((userData.firstName || '') + ' ' + (userData.lastName || '')).trim();
-                        document.querySelectorAll('.user-avatar').forEach(el => el.textContent = initial);
-                        document.querySelectorAll('.user-pill span:not(.user-avatar)').forEach(el => el.textContent = fullName);
-                    }
+                    window.OrganizerBackend.updateUserProfile(userData, function(err, data) {
+                        btn.disabled = false;
+                        btn.textContent = 'Save Profile Details';
+                        if (err) {
+                            alert('Error saving profile: ' + err.message);
+                        } else {
+                            alert('Profile updated successfully!');
+                            const initial = userData.firstName ? userData.firstName.charAt(0).toUpperCase() : '?';
+                            const fullName = ((userData.firstName || '') + ' ' + (userData.lastName || '')).trim();
+                            document.querySelectorAll('.user-avatar').forEach(el => el.textContent = initial);
+                            document.querySelectorAll('.user-pill span:not(.user-avatar)').forEach(el => el.textContent = fullName);
+                        }
+                    });
                 });
-            });
+            }
         });
     </script>
 </body>

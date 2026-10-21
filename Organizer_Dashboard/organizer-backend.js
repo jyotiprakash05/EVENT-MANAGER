@@ -55,25 +55,79 @@
         });
     }
 
+    function compressImageToDataUrl(file, maxWidth, maxHeight, quality, callback) {
+        if (!file) return callback(new Error("No file provided"));
+        if (typeof file === 'string') return callback(null, file);
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                try {
+                    let w = img.width;
+                    let h = img.height;
+                    const maxW = maxWidth || 1280;
+                    const maxH = maxHeight || 960;
+
+                    if (w > maxW || h > maxH) {
+                        if (w / h > maxW / maxH) {
+                            h = Math.round((h * maxW) / w);
+                            w = maxW;
+                        } else {
+                            w = Math.round((w * maxH) / h);
+                            h = maxH;
+                        }
+                    }
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = w;
+                    canvas.height = h;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, w, h);
+                    const dataUrl = canvas.toDataURL('image/jpeg', quality || 0.82);
+                    callback(null, dataUrl);
+                } catch (canvasErr) {
+                    console.warn("Canvas compression failed, returning raw data URL:", canvasErr);
+                    callback(null, e.target.result);
+                }
+            };
+            img.onerror = function(imgErr) {
+                console.warn("Image load failed for compression, returning raw data URL:", imgErr);
+                callback(null, e.target.result);
+            };
+            img.src = e.target.result;
+        };
+        reader.onerror = function(err) {
+            callback(err);
+        };
+        reader.readAsDataURL(file);
+    }
+
     window.OrganizerBackend = {
         uploadImage: function(file, callback) {
+            if (!file) return callback(new Error("No file provided"));
+            if (typeof file === 'string') return callback(null, file);
+
             initAWS((err) => {
-                if (err) return callback(err);
+                if (err || !s3Client) {
+                    console.warn("AWS S3 not fully initialized, using compressed data URL fallback:", err);
+                    return compressImageToDataUrl(file, 1280, 960, 0.82, callback);
+                }
                 
-                const fileExt = file.name.split('.').pop();
-                const fileName = `events/${currentUserSub}/${Date.now()}.${fileExt}`;
+                const fileExt = (file.name || 'image.jpg').split('.').pop();
+                const fileName = `events/${currentUserSub || 'org'}/${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
                 
                 const params = {
                     Bucket: config.s3BucketName,
                     Key: fileName,
                     Body: file,
-                    ContentType: file.type
+                    ContentType: file.type || 'image/jpeg'
                 };
                 
-                s3Client.upload(params, function(err, data) {
-                    if (err) {
-                        console.error("S3 Upload Error:", err);
-                        return callback(err);
+                s3Client.upload(params, function(uploadErr, data) {
+                    if (uploadErr) {
+                        console.warn("S3 Upload Error, falling back to compressed data URL:", uploadErr);
+                        return compressImageToDataUrl(file, 1280, 960, 0.82, callback);
                     }
                     callback(null, data.Location);
                 });

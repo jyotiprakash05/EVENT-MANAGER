@@ -80,14 +80,14 @@
                 <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
                     <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--muted); cursor: pointer; user-select: none;">
                         <input type="checkbox" id="soundToggle" checked style="accent-color: var(--primary); width: 16px; height: 16px;">
-                        <span>🔊 Audio Chime</span>
+                        <span>Audio Chime</span>
                     </label>
                     <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--muted); cursor: pointer; user-select: none;">
                         <input type="checkbox" id="hapticToggle" checked style="accent-color: var(--primary); width: 16px; height: 16px;">
-                        <span>📳 Haptic Vibrate</span>
+                        <span>Haptic Vibrate</span>
                     </label>
                     <button id="torchToggleBtn" type="button" style="background: var(--bg-dark); border: 1px solid var(--border); color: var(--text); padding: 6px 14px; border-radius: 20px; font-size: 0.82rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;">
-                        🔦 Flashlight
+                        Flashlight
                     </button>
                     <span id="scanModeBadge" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; background: rgba(16, 185, 129, 0.15); color: var(--primary); border: 1px solid rgba(16, 185, 129, 0.3);">
                         <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--primary); display: inline-block;"></span>
@@ -95,7 +95,7 @@
                     </span>
                     <span id="antiScalpBadge" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);">
                         <span style="width: 8px; height: 8px; border-radius: 50%; background: #38bdf8; display: inline-block;"></span>
-                        🛡️ Anti-Screenshot
+                        Anti-Screenshot
                     </span>
                 </div>
             </section>
@@ -126,7 +126,9 @@
                     <!-- Verification Result Display Box -->
                     <div id="verificationResultCard" style="background: var(--bg-panel); border: 1px solid var(--border); border-radius: 16px; padding: 24px; min-height: 200px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; transition: all 0.3s ease;">
                         <div id="resultPlaceholder">
-                            <div style="font-size: 2.8rem; margin-bottom: 12px; opacity: 0.5;">🎟️</div>
+                            <div style="margin-bottom: 12px; opacity: 0.5; color: var(--muted); display: flex; justify-content: center;">
+                                <svg width="44" height="44" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"></rect><rect x="7" y="7" width="3" height="3"></rect><rect x="14" y="7" width="3" height="3"></rect><rect x="7" y="14" width="3" height="3"></rect></svg>
+                            </div>
                             <h4 style="margin: 0 0 6px; color: var(--text);">Ready to Scan</h4>
                             <p style="margin: 0; color: var(--muted); font-size: 0.85rem;">Scan a QR code or enter a Ticket ID to verify admission instantly.</p>
                         </div>
@@ -305,7 +307,7 @@
                         await track.applyConstraints({
                             advanced: [{ torch: isTorchActive }]
                         });
-                        torchBtn.textContent = isTorchActive ? '🔦 Flashlight (ON)' : '🔦 Flashlight';
+                        torchBtn.textContent = isTorchActive ? 'Flashlight (ON)' : 'Flashlight';
                         torchBtn.style.borderColor = isTorchActive ? '#fbbf24' : 'var(--border)';
                         torchBtn.style.color = isTorchActive ? '#fbbf24' : 'var(--text)';
                         torchBtn.style.background = isTorchActive ? 'rgba(251, 191, 36, 0.15)' : 'var(--bg-dark)';
@@ -475,7 +477,9 @@
                 card.style.boxShadow = '0 0 35px rgba(239, 68, 68, 0.35)';
 
                 content.innerHTML = `
-                    <div style="font-size: 3.2rem; margin-bottom: 6px;">🛑</div>
+                    <div style="margin-bottom: 12px; color: #ef4444; display:flex; justify-content:center;">
+                        <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+                    </div>
                     <span style="background: #ef4444; color: #fff; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; padding: 4px 14px; border-radius: 20px; display: inline-block; margin-bottom: 12px; box-shadow: 0 0 12px rgba(239,68,68,0.5);">
                         STATIC SCREENSHOT DETECTED
                     </span>
@@ -498,7 +502,7 @@
                             <span>${scannedTime || 'Earlier'}</span>
                         </div>
                         <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(239,68,68,0.25); font-size: 0.78rem; color: #fca5a5;">
-                            🔒 <strong>Zero-Scalp Defense Rule:</strong> Pass was rejected because cryptographic time window expired. Require the attendee to display the live EventPro app on their phone.
+                            <strong>Zero-Scalp Defense Rule:</strong> Pass was rejected because cryptographic time window expired. Require the attendee to display the live EventPro app on their phone.
                         </div>
                     </div>
                 `;
@@ -522,18 +526,18 @@
 
                 const livenessBadge = isLiveDynamic ? `
                     <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #6ee7b7; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; margin-bottom: 8px;">
-                        <span>🛡️ ZERO-SCALP PASS VERIFIED</span>
+                        <span>ZERO-SCALP PASS VERIFIED</span>
                         <span style="opacity: 0.85;">(Age: +${cryptoResult.ageSeconds}s • Live)</span>
                     </div>
                 ` : `
                     <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; color: #fde68a; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; margin-bottom: 8px;">
-                        <span>⚠️ LEGACY PASS (Static)</span>
+                        <span>LEGACY PASS (Static)</span>
                     </div>
                 `;
 
                 const smartRefundBanner = isDepositRefunded ? `
                     <div style="background: rgba(16, 185, 129, 0.18); border: 1px solid #10b981; border-radius: 12px; padding: 10px 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; text-align: left;">
-                        <span style="font-size: 1.6rem; line-height: 1;">💸</span>
+                        <svg width="22" height="22" fill="none" stroke="#34d399" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"></path><path d="M12 18V6"></path></svg>
                         <div>
                             <div style="color: #6ee7b7; font-weight: 800; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.05em;">SMART REFUND ESCROW RELEASED</div>
                             <div style="color: #e2e8f0; font-size: 0.78rem;">Proof-of-Presence verified. <strong>₹${refundAmt}</strong> deposit automatically credited to attendee!</div>
@@ -542,7 +546,9 @@
                 ` : '';
 
                 content.innerHTML = `
-                    <div style="font-size: 3rem; margin-bottom: 4px;">✅</div>
+                    <div style="margin-bottom: 10px; color: #10b981; display:flex; justify-content:center;">
+                        <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    </div>
                     <span style="background: #10b981; color: #fff; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; padding: 4px 14px; border-radius: 20px; display: inline-block; margin-bottom: 8px;">ENTRY APPROVED</span>
                     <div>${livenessBadge}</div>
                     ${smartRefundBanner}
@@ -572,14 +578,16 @@
                 const firstTime = ticket && ticket.checkedInAt ? new Date(ticket.checkedInAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'}) : 'earlier';
 
                 content.innerHTML = `
-                    <div style="font-size: 3rem; margin-bottom: 8px;">🚫</div>
+                    <div style="margin-bottom: 12px; color: #ef4444; display:flex; justify-content:center;">
+                        <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                    </div>
                     <span style="background: #ef4444; color: #fff; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; padding: 4px 14px; border-radius: 20px; display: inline-block; margin-bottom: 12px;">DUPLICATE REJECTED</span>
                     <h3 style="margin: 0 0 6px; color: #fca5a5; font-size: 1.2rem;">Pass Already Used</h3>
                     <p style="margin: 0 0 16px; color: var(--muted); font-size: 0.85rem;">${message}</p>
                     
                     <div style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); border-radius: 12px; padding: 12px 16px; text-align: left; font-size: 0.85rem; color: #fecaca;">
                         <p style="margin: 0 0 4px;"><strong>Original Check-in Time:</strong> ${firstTime}</p>
-                        <p style="margin: 0; font-size: 0.8rem; color: #f87171;">${isAtomicBlocked ? '⚡ Atomic concurrency lock blocked simultaneous multi-device scan.' : 'Second admittance attempt blocked. Ticket has already been validated.'}</p>
+                        <p style="margin: 0; font-size: 0.8rem; color: #f87171;">${isAtomicBlocked ? 'Atomic concurrency lock blocked simultaneous multi-device scan.' : 'Second admittance attempt blocked. Ticket has already been validated.'}</p>
                     </div>
                 `;
             }
@@ -596,7 +604,9 @@
                 card.style.background = 'linear-gradient(180deg, rgba(245, 158, 11, 0.12) 0%, var(--bg-panel) 100%)';
 
                 content.innerHTML = `
-                    <div style="font-size: 2.8rem; margin-bottom: 8px;">⚠️</div>
+                    <div style="margin-bottom: 10px; color: #f59e0b; display:flex; justify-content:center;">
+                        <svg width="44" height="44" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                    </div>
                     <span style="background: #f59e0b; color: #111; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; padding: 4px 14px; border-radius: 20px; display: inline-block; margin-bottom: 12px;">ATTENTION</span>
                     <h3 style="margin: 0 0 6px; color: #fde68a;">${title}</h3>
                     <p style="margin: 0; color: var(--muted); font-size: 0.9rem;">${message}</p>
@@ -615,7 +625,9 @@
                 card.style.background = 'linear-gradient(180deg, rgba(239, 68, 68, 0.12) 0%, var(--bg-panel) 100%)';
 
                 content.innerHTML = `
-                    <div style="font-size: 2.8rem; margin-bottom: 8px;">❌</div>
+                    <div style="margin-bottom: 10px; color: #ef4444; display:flex; justify-content:center;">
+                        <svg width="44" height="44" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                    </div>
                     <h3 style="margin: 0 0 6px; color: #fca5a5;">${title}</h3>
                     <p style="margin: 0; color: var(--muted); font-size: 0.85rem;">${message}</p>
                 `;

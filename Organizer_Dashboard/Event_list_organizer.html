@@ -250,7 +250,7 @@
                                     <div class="event-info">
                                         <h4>${event.eventName || 'Unnamed Event'}</h4>
                                         <p style="margin: 0; font-size: 0.8rem; color: #94a3b8;">
-                                            <span style="color: var(--primary); font-weight: 700;">📍 ${event.locality ? event.locality + (event.city ? ', ' + event.city : '') : (event.location || 'Location TBA')}</span> • 
+                                            <span style="color: var(--primary); font-weight: 700; display: inline-flex; align-items: center; gap: 3px;"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg> ${event.locality ? event.locality + (event.city ? ', ' + event.city : '') : (event.location || 'Location TBA')}</span> • 
                                             <span>${event.ticketsSold || 0}/${event.capacity || 0} Tickets Sold</span>
                                             ${(event.vibeTags && event.vibeTags.length > 0) ? ` • <span style="color: #38bdf8; font-weight: 600;">${event.vibeTags[0]}</span>` : ''}
                                         </p>

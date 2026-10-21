@@ -21,6 +21,7 @@
     <script src="../aws-config.js"></script>
     <script src="../dashboard-auth.js"></script>
     <script src="attendee-backend.js"></script>
+    <script src="../info-tooltip-manager.js"></script>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
     <!-- BOOKMYSHOW HEADING & EVENT LISTING STYLES -->
@@ -527,9 +528,9 @@
         <aside class="sidebar">
             <div>
                 <div class="brand-wrap">
-                    <div class="brand-mark" style="background: linear-gradient(135deg, #10b981, #059669);">E</div>
+                    <div class="brand-mark" style="background: linear-gradient(135deg, #10b981, #059669); color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.3rem; font-weight:800;">E</div>
                     <div>
-                        <p class="brand-mini" style="color: #10b981;">Attendee</p>
+                        <p class="brand-mini" style="color: #10b981;">Attendee Portal</p>
                         <h2>EVENTPRO</h2>
                     </div>
                 </div>
@@ -555,9 +556,9 @@
             </div>
             
             <div class="sidebar-card">
-                <p style="color: #10b981;">Trending now</p>
+                <p style="color: #10b981;">Live Network</p>
                 <h3 id="liveEventCount">0 live events</h3>
-                <span>Discover and reserve your next experience.</span>
+                <span>Discover and reserve verified experiences nationwide.</span>
             </div>
         </aside>
 
@@ -567,7 +568,24 @@
             <!-- BOOKMYSHOW HEADING & CONTROLS -->
             <div class="bms-heading-container">
                 <div class="bms-announcement-strip">
-                    <div>⚡ <strong>SPECIAL OFFER:</strong> Get 20% off up to ₹150 with Axis Bank & Amazon Pay. Code: <span style="color:#ffb400; font-weight:700; cursor:pointer; text-decoration:underline;" title="Click to copy code" onclick="navigator.clipboard.writeText('BMSFEST26'); alert('Code BMSFEST26 copied! Apply it during ticket checkout.');">BMSFEST26 📋</span></div>
+                    <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                        <span><strong>FESTIVAL OFFER:</strong> Get 20% off up to ₹150 with Axis & Amazon Pay. Code: <span style="color:#ffb400; font-weight:700; cursor:pointer; text-decoration:underline;" title="Click to copy code" onclick="navigator.clipboard.writeText('BMSFEST26'); alert('Code BMSFEST26 copied! Apply it during ticket checkout.');">BMSFEST26</span></span>
+                        <span class="info-circle" title="Promo Terms">ⓘ
+                            <span class="info-tooltip">
+                                <strong>Festival Promo Terms</strong>
+                                Valid on all concert, sports, and theatre tickets above ₹499. Instant discount applied at checkout.
+                            </span>
+                        </span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="color:#10b981; font-weight:600; font-size:0.78rem;">Verified Buyer Protection</span>
+                        <span class="info-circle" title="Buyer Protection">ⓘ
+                            <span class="info-tooltip">
+                                <strong>EventPro Buyer Guarantee</strong>
+                                Direct integration with verified promoters. If an event is cancelled or rescheduled, receive an instant 100% refund.
+                            </span>
+                        </span>
+                    </div>
                 </div>
 
                 <div class="bms-heading-top-row">
@@ -604,7 +622,7 @@
                         </div>
 
                         <div class="user-pill" onclick="window.location.href='Account_settings.html'" style="cursor:pointer; background:#0c0e14; border:1px solid #282f3f; border-radius:24px; padding:4px 14px 4px 6px;">
-                            <span class="user-avatar" style="background: #f84464; width:30px; height:30px; font-size:0.8rem;">?</span>
+                            <span class="user-avatar" style="background: #10b981; width:30px; height:30px; font-size:0.8rem;">?</span>
                             <span style="font-size:0.85rem; font-weight:600;">Attendee</span>
                         </div>
                     </div>
@@ -627,17 +645,41 @@
             <!-- Summary Metrics Grid -->
             <section class="summary-grid">
                 <div class="summary-box accent-blue">
-                    <span>Popular Shows</span>
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span>Popular Shows</span>
+                        <span class="info-circle">ⓘ
+                            <span class="info-tooltip">
+                                <strong>City Curations</strong>
+                                Active verified shows and premier cinema listings matching your chosen location.
+                            </span>
+                        </span>
+                    </div>
                     <strong id="popularCount">0</strong>
                     <small>Events in selected city</small>
                 </div>
                 <div class="summary-box accent-purple">
-                    <span>My Bookings</span>
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span>My Bookings</span>
+                        <span class="info-circle">ⓘ
+                            <span class="info-tooltip">
+                                <strong>Active Reservations</strong>
+                                Dynamic M-Tickets and QR passes attached to your verified attendee email.
+                            </span>
+                        </span>
+                    </div>
                     <strong id="bookingCount">-</strong>
                     <small>Confirmed tickets</small>
                 </div>
                 <div class="summary-box accent-gold">
-                    <span>Shortlisted</span>
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span>Shortlisted</span>
+                        <span class="info-circle">ⓘ
+                            <span class="info-tooltip">
+                                <strong>Wishlist Items</strong>
+                                Events you have bookmarked for quick updates, seat releases, and reminders.
+                            </span>
+                        </span>
+                    </div>
                     <strong id="savedCount">-</strong>
                     <small>Events saved</small>
                 </div>
@@ -691,19 +733,19 @@
             </div>
 
             <!-- Important Cities Section -->
-            <div style="font-size: 0.76rem; text-transform: uppercase; letter-spacing: 1px; color: #f84464; font-weight: 800; margin-bottom: 10px;">★ Important Cities</div>
+            <div style="font-size: 0.76rem; text-transform: uppercase; letter-spacing: 1px; color: #f84464; font-weight: 800; margin-bottom: 10px;">Popular Cities</div>
             <div class="bms-city-grid" id="popularCitiesList">
-                <div class="bms-city-badge" data-city="All Cities" style="border-style:dashed;">🌐 All Cities</div>
-                <div class="bms-city-badge active" data-city="Delhi-NCR">🏛️ Delhi-NCR</div>
-                <div class="bms-city-badge" data-city="Mumbai">🏙️ Mumbai</div>
-                <div class="bms-city-badge" data-city="Bengaluru">💻 Bengaluru</div>
-                <div class="bms-city-badge" data-city="Hyderabad">🏰 Hyderabad</div>
-                <div class="bms-city-badge" data-city="Ahmedabad">🪁 Ahmedabad</div>
-                <div class="bms-city-badge" data-city="Chandigarh">🌳 Chandigarh</div>
-                <div class="bms-city-badge" data-city="Chennai">🏖️ Chennai</div>
-                <div class="bms-city-badge" data-city="Pune">🎓 Pune</div>
-                <div class="bms-city-badge" data-city="Kolkata">🌉 Kolkata</div>
-                <div class="bms-city-badge" data-city="Bhubaneswar">🛕 Bhubaneswar</div>
+                <div class="bms-city-badge" data-city="All Cities" style="border-style:dashed;">All Cities</div>
+                <div class="bms-city-badge active" data-city="Delhi-NCR">Delhi-NCR</div>
+                <div class="bms-city-badge" data-city="Mumbai">Mumbai</div>
+                <div class="bms-city-badge" data-city="Bengaluru">Bengaluru</div>
+                <div class="bms-city-badge" data-city="Hyderabad">Hyderabad</div>
+                <div class="bms-city-badge" data-city="Ahmedabad">Ahmedabad</div>
+                <div class="bms-city-badge" data-city="Chandigarh">Chandigarh</div>
+                <div class="bms-city-badge" data-city="Chennai">Chennai</div>
+                <div class="bms-city-badge" data-city="Pune">Pune</div>
+                <div class="bms-city-badge" data-city="Kolkata">Kolkata</div>
+                <div class="bms-city-badge" data-city="Bhubaneswar">Bhubaneswar</div>
             </div>
 
             <!-- Other Cities Section -->
@@ -734,7 +776,7 @@
                 <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(20,23,34,0.1) 0%, rgba(20,23,34,0.95) 100%);"></div>
                 <div style="position:absolute; top:16px; left:16px; display:flex; gap:8px;">
                     <span id="districtCategoryBadge" class="bms-category-badge" style="position:static;">LIVE CONCERT</span>
-                    <span id="districtVibePill" style="background:rgba(248,68,100,0.25); border:1px solid rgba(248,68,100,0.5); color:#fca5a5; font-size:0.7rem; font-weight:700; padding:3px 9px; border-radius:20px; display:inline-flex; align-items:center; gap:4px;">🔥 TRENDING</span>
+                    <span id="districtVibePill" style="background:rgba(248,68,100,0.25); border:1px solid rgba(248,68,100,0.5); color:#fca5a5; font-size:0.7rem; font-weight:700; padding:3px 9px; border-radius:20px; display:inline-flex; align-items:center; gap:4px;">TRENDING</span>
                 </div>
                 <div style="position:absolute; bottom:14px; left:20px; right:20px;">
                     <h2 id="districtEventTitle" style="font-size:1.55rem; font-weight:800; margin:0 0 4px; color:#fff; text-shadow:0 2px 10px rgba(0,0,0,0.7);">Event Title</h2>
@@ -748,14 +790,13 @@
                 <!-- Real-time Social Proof & Trust Strip (District Style) -->
                 <div style="background:linear-gradient(90deg, rgba(248,68,100,0.12), rgba(245,158,11,0.12)); border:1px solid rgba(248,68,100,0.25); border-radius:12px; padding:10px 16px; display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; flex-wrap:wrap; gap:10px;">
                     <div style="display:flex; align-items:center; gap:8px;">
-                        <span style="font-size:1.2rem;">🔥</span>
                         <div>
                             <strong id="districtBookingBuzz" style="font-size:0.85rem; color:#fff; display:block;">38 people booked in last 24h</strong>
-                            <small id="districtUrgencyText" style="color:#fca5a5; font-size:0.75rem;">⚡ Filling fast in your city</small>
+                            <small id="districtUrgencyText" style="color:#fca5a5; font-size:0.75rem;">Filling fast in your city</small>
                         </div>
                     </div>
                     <div style="display:flex; align-items:center; gap:6px; background:rgba(0,0,0,0.3); padding:4px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.08);">
-                        <span style="color:#fbbf24; font-weight:800; font-size:0.9rem;">★ <span id="districtRatingScore">4.9</span></span>
+                        <span style="color:#fbbf24; font-weight:800; font-size:0.9rem;">Rating: <span id="districtRatingScore">4.9</span></span>
                         <span style="color:#94a3b8; font-size:0.75rem;">(<span id="districtRatingCount">180+</span> reviews)</span>
                     </div>
                 </div>
@@ -763,7 +804,15 @@
                 <!-- Event Highlights Photo/Media Gallery (District Visuals Reel) -->
                 <div style="margin-bottom:20px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                        <h4 style="font-size:0.92rem; font-weight:700; color:#fff; text-transform:uppercase; letter-spacing:0.5px; margin:0;">📸 Event Atmosphere & Visuals</h4>
+                        <h4 style="font-size:0.92rem; font-weight:700; color:#fff; text-transform:uppercase; letter-spacing:0.5px; margin:0; display:flex; align-items:center; gap:6px;">
+                            <span>Event Atmosphere & Visuals</span>
+                            <span class="info-circle" title="Visuals Info">ⓘ
+                                <span class="info-tooltip">
+                                    <strong>Verified Stage & Crowd Media</strong>
+                                    Authentic venue atmosphere captures and stage production reels provided by the official host.
+                                </span>
+                            </span>
+                        </h4>
                         <span style="font-size:0.75rem; color:#94a3b8;">Verified Crowd & Stage Media</span>
                     </div>
                     <div id="districtGalleryGrid" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:10px;">
@@ -773,7 +822,15 @@
 
                 <!-- Vibe & Experience Tags -->
                 <div style="margin-bottom:20px;">
-                    <h4 style="font-size:0.85rem; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px; margin:0 0 10px;">⚡ The Vibe & Experience</h4>
+                    <h4 style="font-size:0.85rem; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px; margin:0 0 10px; display:flex; align-items:center; gap:6px;">
+                        <span>The Vibe & Experience</span>
+                        <span class="info-circle" title="Vibe Info">ⓘ
+                            <span class="info-tooltip">
+                                <strong>Vibe & Dress Code Tags</strong>
+                                Highlights sound styles, seating arrangements, and ambiance descriptors for this listing.
+                            </span>
+                        </span>
+                    </h4>
                     <div id="districtVibeTags" style="display:flex; flex-wrap:wrap; gap:8px;">
                         <!-- tags -->
                     </div>
@@ -781,30 +838,68 @@
 
                 <!-- Featured Artist Lineup Banner -->
                 <div id="districtLineupBanner" style="display:none; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px 16px; margin-bottom:18px;">
-                    <span style="color:#fb7185; font-size:0.75rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px;">🌟 Featured Performers & Lineup</span>
+                    <span style="color:#fb7185; font-size:0.75rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px;">Featured Performers & Lineup</span>
                     <p id="districtLineupText" style="margin:4px 0 0; color:#fff; font-weight:700; font-size:0.95rem;"></p>
                 </div>
 
                 <!-- What to Expect / Perks Grid -->
                 <div style="background:#0c0e14; border:1px solid #282f3f; border-radius:14px; padding:16px; margin-bottom:20px;">
                     <h4 style="font-size:0.85rem; font-weight:700; color:#cbd5e1; margin:0 0 12px; display:flex; align-items:center; gap:6px;">
-                        <span>📋 What to Expect & Venue Perks</span>
+                        <span>What to Expect & Venue Perks</span>
+                        <span class="info-circle" title="Perks Info">ⓘ
+                            <span class="info-tooltip">
+                                <strong>Event Logistics Guide</strong>
+                                Amenities and access policies verified by the production team.
+                            </span>
+                        </span>
                     </h4>
                     <div id="districtPerksGrid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:12px; font-size:0.8rem; color:#94a3b8;">
                         <div style="background:rgba(255,255,255,0.03); padding:8px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
-                            <span style="color:#fff; display:block; font-weight:600; margin-bottom:2px;">🛡️ 72h Cancellation</span>
+                            <span style="color:#fff; display:flex; align-items:center; justify-content:space-between; font-weight:600; margin-bottom:2px;">
+                                <span>72h Cancellation</span>
+                                <span class="info-circle" style="width:14px; height:14px; font-size:0.6rem;">ⓘ
+                                    <span class="info-tooltip">
+                                        <strong>72h Refund Protection</strong>
+                                        Full ticket refund minus nominal 2% payment gateway fee when cancelled up to 72 hours before start.
+                                    </span>
+                                </span>
+                            </span>
                             <span>2% fee • Instant refund</span>
                         </div>
                         <div style="background:rgba(255,255,255,0.03); padding:8px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
-                            <span style="color:#fff; display:block; font-weight:600; margin-bottom:2px;">🍸 Food & Bar</span>
+                            <span style="color:#fff; display:flex; align-items:center; justify-content:space-between; font-weight:600; margin-bottom:2px;">
+                                <span>Food & Bar</span>
+                                <span class="info-circle" style="width:14px; height:14px; font-size:0.6rem;">ⓘ
+                                    <span class="info-tooltip">
+                                        <strong>F&B Stalls</strong>
+                                        Curated culinary stalls and licensed beverage counters available inside the arena.
+                                    </span>
+                                </span>
+                            </span>
                             <span>Counters Available</span>
                         </div>
                         <div style="background:rgba(255,255,255,0.03); padding:8px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
-                            <span style="color:#fff; display:block; font-weight:600; margin-bottom:2px;">🅿️ Parking</span>
+                            <span style="color:#fff; display:flex; align-items:center; justify-content:space-between; font-weight:600; margin-bottom:2px;">
+                                <span>Parking</span>
+                                <span class="info-circle" style="width:14px; height:14px; font-size:0.6rem;">ⓘ
+                                    <span class="info-tooltip">
+                                        <strong>Venue Parking</strong>
+                                        Dedicated multi-level parking and valet counters located at Gates 2 & 4.
+                                    </span>
+                                </span>
+                            </span>
                             <span>Valet & Self-Park</span>
                         </div>
                         <div style="background:rgba(255,255,255,0.03); padding:8px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
-                            <span style="color:#fff; display:block; font-weight:600; margin-bottom:2px;">🔞 Entry Age</span>
+                            <span style="color:#fff; display:flex; align-items:center; justify-content:space-between; font-weight:600; margin-bottom:2px;">
+                                <span>Entry Age</span>
+                                <span class="info-circle" style="width:14px; height:14px; font-size:0.6rem;">ⓘ
+                                    <span class="info-tooltip">
+                                        <strong>Age Verification</strong>
+                                        Physical or digital DigiLocker government ID required for turnstile security scan.
+                                    </span>
+                                </span>
+                            </span>
                             <span>All Ages / 18+ VIP</span>
                         </div>
                     </div>
@@ -813,8 +908,8 @@
                 <!-- Verified Attendee Testimonials -->
                 <div style="margin-bottom:24px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                        <h4 style="font-size:0.85rem; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px; margin:0;">💬 Attendee Buzz & Reviews</h4>
-                        <span style="color:#10b981; font-size:0.75rem; font-weight:600;">✓ Verified Attendees</span>
+                        <h4 style="font-size:0.85rem; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px; margin:0;">Attendee Buzz & Reviews</h4>
+                        <span style="color:#10b981; font-size:0.75rem; font-weight:600;">Verified Attendees</span>
                     </div>
                     <div id="districtReviewsList" style="display:flex; flex-direction:column; gap:8px;">
                         <!-- Review items -->
@@ -829,7 +924,7 @@
                     </div>
                     <div style="display:flex; gap:10px; align-items:center;">
                         <button id="districtSaveBtn" type="button" style="background:#141722; border:1px solid #282f3f; color:#fff; border-radius:10px; width:44px; height:44px; font-size:1.1rem; cursor:pointer; display:flex; align-items:center; justify-content:center;">♡</button>
-                        <button id="districtPrimaryActionBtn" type="button" class="bms-btn-book" style="padding:12px 24px; font-size:0.95rem; font-weight:800; border-radius:10px; cursor:pointer;">Book Tickets ➔</button>
+                        <button id="districtPrimaryActionBtn" type="button" class="bms-btn-book" style="padding:12px 24px; font-size:0.95rem; font-weight:800; border-radius:10px; cursor:pointer;">Book Tickets</button>
                     </div>
                 </div>
             </div>
@@ -843,7 +938,7 @@
             
             <span id="checkoutCategoryBadge" class="bms-category-badge" style="position:static; margin-bottom:10px; display:inline-block;">EVENT</span>
             <h3 id="checkoutEventTitle" style="font-size: 1.3rem; font-weight:800; color:#fff; margin: 4px 0 6px;">Event Title</h3>
-            <p id="checkoutEventMeta" style="font-size:0.82rem; color:#94a3b8; margin: 0 0 18px;">📍 Venue • Date & Time</p>
+            <p id="checkoutEventMeta" style="font-size:0.82rem; color:#94a3b8; margin: 0 0 18px;">Venue • Date & Time</p>
 
             <!-- Ticket Quantity & Base Rate -->
             <div style="background:#0c0e14; border:1px solid #282f3f; border-radius:14px; padding:14px 18px; display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
@@ -861,7 +956,15 @@
             <!-- Apply Offers / Promo Code Section -->
             <div id="checkoutOffersContainer" style="background:#0c0e14; border:1px solid #282f3f; border-radius:14px; padding:16px 18px; margin-bottom:16px;">
                 <div style="font-size:0.85rem; font-weight:700; color:#fff; display:flex; align-items:center; justify-content:space-between;">
-                    <span>🏷️ Apply Offers & Promo Codes</span>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <span>Apply Offers & Promo Codes</span>
+                        <span class="info-circle" title="Promo Info">ⓘ
+                            <span class="info-tooltip">
+                                <strong>Promo Discounts</strong>
+                                Coupon codes apply automatically against ticket base fare before gateway surcharge.
+                            </span>
+                        </span>
+                    </div>
                     <span id="appliedBadgeChip" style="display:none; background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.4); padding:3px 8px; border-radius:6px; font-size:0.7rem; font-weight:700;">APPLIED</span>
                 </div>
 
@@ -876,9 +979,9 @@
                 <div style="margin-top:12px;">
                     <div style="font-size:0.72rem; color:#64748b; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; font-weight:700;">Trending Offers:</div>
                     <div style="display:flex; flex-wrap:wrap; gap:8px;">
-                        <span class="bms-offer-chip" data-code="BMSFEST26">⚡ <strong>BMSFEST26</strong> (20% off up to ₹150)</span>
-                        <span class="bms-offer-chip" data-code="EVENTPRO20">🎉 <strong>EVENTPRO20</strong> (20% off up to ₹200)</span>
-                        <span class="bms-offer-chip" data-code="WELCOME50">🎁 <strong>WELCOME50</strong> (Flat ₹50 off)</span>
+                        <span class="bms-offer-chip" data-code="BMSFEST26"><strong>BMSFEST26</strong> (20% off up to ₹150)</span>
+                        <span class="bms-offer-chip" data-code="EVENTPRO20"><strong>EVENTPRO20</strong> (20% off up to ₹200)</span>
+                        <span class="bms-offer-chip" data-code="WELCOME50"><strong>WELCOME50</strong> (Flat ₹50 off)</span>
                     </div>
                 </div>
             </div>
@@ -889,7 +992,15 @@
                     <input type="checkbox" id="splitBillToggle" style="accent-color: #3b82f6; width:18px; height:18px; margin-top:2px;">
                     <div style="flex:1;">
                         <div style="display:flex; align-items:center; justify-content:space-between;">
-                            <strong style="color:#93c5fd; font-size:0.9rem;">👥 Group Split Booking (Pay Your Share)</strong>
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <strong style="color:#93c5fd; font-size:0.9rem;">Group Split Booking (Pay Your Share)</strong>
+                                <span class="info-circle" title="Split Booking Info">ⓘ
+                                    <span class="info-tooltip">
+                                        <strong>15-Minute Seat Lock</strong>
+                                        Pay your portion now to lock all tickets. Your friends receive WhatsApp / SMS invite links to pay their share.
+                                    </span>
+                                </span>
+                            </div>
                             <span style="background:rgba(59,130,246,0.25); color:#60a5fa; font-size:0.7rem; font-weight:700; padding:2px 8px; border-radius:6px;">15-MIN SEAT LOCK</span>
                         </div>
                         <span style="font-size:0.78rem; color:#94a3b8; display:block; margin-top:3px; line-height:1.4;">
@@ -911,11 +1022,27 @@
                 </div>
                 <!-- Proof-of-Presence Smart Escrow Deposit Row -->
                 <div id="summaryDepositRow" style="display:none; justify-content:space-between; font-size:0.82rem; color:#10b981; margin-bottom:8px;">
-                    <span>🛡️ Refundable Pledge Deposit (Auto-refunded at venue gate)</span>
+                    <span style="display:flex; align-items:center; gap:4px;">
+                        <span>Refundable Gate Pledge</span>
+                        <span class="info-circle" title="Gate Deposit Info">ⓘ
+                            <span class="info-tooltip">
+                                <strong>Proof-of-Presence Escrow</strong>
+                                Held in RBI-compliant escrow to prevent bot reservations. Automatically credited back to your original payment method upon turnstile gate scan.
+                            </span>
+                        </span>
+                    </span>
                     <span id="summaryDepositAmount" style="font-weight:700;">+₹0</span>
                 </div>
-                <div style="display:flex; justify-content:space-between; font-size:0.82rem; color:#94a3b8; margin-bottom:12px;">
-                    <span>Convenience Fee & GST (1.5%)</span>
+                <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.82rem; color:#94a3b8; margin-bottom:12px;">
+                    <span style="display:flex; align-items:center; gap:4px;">
+                        <span>Convenience Fee & GST (1.5%)</span>
+                        <span class="info-circle" title="Convenience Fee Info">ⓘ
+                            <span class="info-tooltip">
+                                <strong>Platform & Processing Fee</strong>
+                                Covers 256-bit TLS encryption, dynamic rolling QR generation, and Razorpay UPI bank gateway costs.
+                            </span>
+                        </span>
+                    </span>
                     <span id="summaryFee" style="color:#fff; font-weight:600;">₹0</span>
                 </div>
                 <div id="summarySplitRow" style="display:none; justify-content:space-between; font-size:0.85rem; color:#60a5fa; margin-bottom:8px; padding-top:6px; border-top:1px dashed #282f3f;">
@@ -967,7 +1094,7 @@
 
             <!-- Email Receipt Notice -->
             <div style="background: rgba(59, 130, 246, 0.12); border: 1px solid rgba(59, 130, 246, 0.35); border-radius: 12px; padding: 14px 16px; margin-bottom: 22px; text-align: left; display: flex; align-items: flex-start; gap: 12px;">
-                <span style="font-size: 1.3rem; line-height: 1;">📩</span>
+                <svg width="22" height="22" fill="none" stroke="#60a5fa" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0; margin-top:2px;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
                 <div>
                     <div style="font-size: 0.85rem; font-weight: 700; color: #93c5fd; margin-bottom: 3px;">Ticket Receipt & QR Pass Sent!</div>
                     <div style="font-size: 0.78rem; color: #cbd5e1; line-height: 1.4;">A copy of your M-Ticket receipt has been emailed to <strong id="successEmailDisplay" style="color: #fff;">your email</strong>.</div>
@@ -984,8 +1111,8 @@
     <!-- Group Split Booking Hub Modal -->
     <div class="bms-modal-backdrop" id="groupSplitSuccessModal">
         <div class="bms-checkout-modal-box" style="text-align: center; max-width: 480px;">
-            <div style="width: 58px; height: 58px; border-radius: 50%; background: rgba(59, 130, 246, 0.15); display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; color: #3b82f6; font-size: 1.8rem;">
-                👥
+            <div style="width: 58px; height: 58px; border-radius: 50%; background: rgba(59, 130, 246, 0.15); display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; color: #3b82f6;">
+                <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
             </div>
             
             <h3 style="font-size: 1.35rem; font-weight: 800; color: #fff; margin-bottom: 4px;">Group Seats Reserved!</h3>
@@ -993,7 +1120,7 @@
 
             <!-- 15-Minute Countdown Timer Box -->
             <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 12px; padding: 10px 14px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-size: 0.8rem; color: #fca5a5; font-weight: 600;">⏳ Time left for friends to pay:</span>
+                <span style="font-size: 0.8rem; color: #fca5a5; font-weight: 600;">Time left for friends to pay:</span>
                 <span id="splitCountdownClock" style="font-family: monospace; font-size: 1.05rem; font-weight: 800; color: #ef4444;">14:59</span>
             </div>
 
@@ -1061,7 +1188,6 @@
                         if (list) {
                             list.innerHTML = `
                                 <div style="text-align: center; padding: 24px 12px; color: #94a3b8; font-size: 0.85rem;">
-                                    <span style="font-size: 1.8rem; display: block; margin-bottom: 6px;">✨</span>
                                     No event alerts or schedule updates at this time.
                                 </div>
                             `;
@@ -1072,13 +1198,13 @@
                     if (list) {
                         list.innerHTML = currentAlerts.map(a => {
                             const isUnread = !a.isRead;
-                            const icon = a.type === 'reminder' ? '⏰' : (a.priority === 'high' ? '🚨' : '📢');
+                            const badgeLabel = a.type === 'reminder' ? 'REMINDER' : (a.priority === 'high' ? 'ALERT' : 'NOTICE');
                             const borderColor = a.priority === 'high' ? '#ef4444' : (a.type === 'reminder' ? '#f59e0b' : '#3b82f6');
                             return `
                                 <div class="alert-item" data-id="${a.alertId}" style="padding: 10px 12px; margin-bottom: 8px; border-radius: 10px; background: ${isUnread ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.2)'}; border-left: 3px solid ${borderColor}; cursor: pointer; transition: background 0.2s;">
                                     <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 4px;">
                                         <strong style="font-size: 0.85rem; color: ${isUnread ? '#fff' : '#94a3b8'}; display: flex; align-items: center; gap: 6px;">
-                                            <span>${icon}</span> ${a.title}
+                                            <span style="font-size:0.65rem; font-weight:800; padding:2px 6px; border-radius:4px; background:rgba(255,255,255,0.1);">${badgeLabel}</span> ${a.title}
                                         </strong>
                                         ${isUnread ? '<span style="width: 6px; height: 6px; border-radius: 50%; background: #f84464; display: inline-block;"></span>' : ''}
                                     </div>
@@ -1318,7 +1444,6 @@
                 if (activeEvents.length === 0) {
                     grid.innerHTML = `
                         <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: #94a3b8;">
-                            <span style="font-size: 3rem; display: block; margin-bottom: 14px;">🎟️</span>
                             <h4 style="color: #fff; margin-bottom: 6px; font-size: 1.25rem;">No Events Currently Listed</h4>
                             <p style="font-size: 0.88rem; color: #94a3b8; max-width: 420px; margin: 0 auto;">There are no active public events published right now. Please check back later!</p>
                         </div>
@@ -1359,7 +1484,6 @@
                 if (filtered.length === 0) {
                     grid.innerHTML = `
                         <div style="grid-column: 1 / -1; text-align: center; padding: 48px 20px; color: #94a3b8;">
-                            <span style="font-size: 2.2rem; display: block; margin-bottom: 10px;">📍</span>
                             <h4 style="color: #fff; margin-bottom: 6px;">No shows currently listed in "${currentCity}"</h4>
                             <p style="font-size: 0.85rem; margin-bottom: 18px;">Try exploring all locations or choosing another city.</p>
                             <button id="viewAllCitiesBtn" style="background: #f84464; color: #fff; border: none; padding: 8px 18px; border-radius: 8px; font-weight: 700; cursor: pointer;">Explore All Cities</button>
@@ -1391,27 +1515,27 @@
                     if (ev.price > 0) {
                         priceHtml = `<small>Starting from</small>₹${ev.price}`;
                     } else if (hasDeposit) {
-                        priceHtml = `<small style="color:#10b981; font-weight:700;">Free Entry</small><span style="font-size:0.75rem; color:#6ee7b7; font-weight:700; display:block;">🛡️ ₹${depAmt} Gate Pledge</span>`;
+                        priceHtml = `<small style="color:#10b981; font-weight:700;">Free Entry</small><span style="font-size:0.75rem; color:#6ee7b7; font-weight:700; display:block;">₹${depAmt} Gate Pledge</span>`;
                     } else {
                         priceHtml = `<small>Admission</small>Free`;
                     }
 
-                    const depositBadgeMarkup = hasDeposit ? `<span class="bms-category-badge" style="background:rgba(16,185,129,0.9); color:#fff; top:36px; left:12px; font-size:0.65rem; padding:2px 7px;">🛡️ REFUNDABLE ESCROW</span>` : '';
+                    const depositBadgeMarkup = hasDeposit ? `<span class="bms-category-badge" style="background:rgba(16,185,129,0.92); color:#fff; top:36px; left:12px; font-size:0.65rem; padding:2px 7px; display:inline-flex; align-items:center;">REFUNDABLE ESCROW <span class="info-circle" style="width:14px; height:14px; font-size:0.58rem; margin-left:4px;" onclick="event.stopPropagation();">ⓘ<span class="info-tooltip"><strong>Proof-of-Presence Escrow</strong>₹${depAmt} refundable gate pledge returned upon venue entrance scan.</span></span></span>` : '';
 
                     const cap = parseInt(ev.totalCapacity, 10) || 0;
                     const sold = parseInt(ev.ticketsSold, 10) || 0;
                     const isSoldOut = (cap > 0 && sold >= cap);
                     const buzzNum = Math.max(14, ((sold * 7) % 65) + 18);
                     const vibePillMarkup = isSoldOut 
-                        ? `<span style="position:absolute; bottom:38px; left:12px; background:rgba(239,68,68,0.9); color:#fff; font-size:0.68rem; font-weight:800; padding:2px 8px; border-radius:12px; backdrop-filter:blur(4px); letter-spacing:0.3px;">⚡ HIGH DEMAND</span>`
-                        : `<span style="position:absolute; bottom:38px; left:12px; background:rgba(248,68,100,0.9); color:#fff; font-size:0.68rem; font-weight:800; padding:2px 8px; border-radius:12px; backdrop-filter:blur(4px); letter-spacing:0.3px;">🔥 ${buzzNum} BOOKED TODAY</span>`;
+                        ? `<span style="position:absolute; bottom:38px; left:12px; background:rgba(239,68,68,0.9); color:#fff; font-size:0.68rem; font-weight:800; padding:2px 8px; border-radius:12px; backdrop-filter:blur(4px); letter-spacing:0.3px;">HIGH DEMAND</span>`
+                        : `<span style="position:absolute; bottom:38px; left:12px; background:rgba(248,68,100,0.9); color:#fff; font-size:0.68rem; font-weight:800; padding:2px 8px; border-radius:12px; backdrop-filter:blur(4px); letter-spacing:0.3px;">${buzzNum} BOOKED TODAY</span>`;
 
                     const categoryBadgeMarkup = isSoldOut
-                        ? `<span class="bms-category-badge" style="background:#ef4444; color:#fff; top:12px; left:12px; font-weight:800; border:1px solid rgba(255,255,255,0.4); box-shadow:0 4px 12px rgba(239,68,68,0.4);">⚡ SOLD OUT • WAITLIST OPEN</span>`
+                        ? `<span class="bms-category-badge" style="background:#ef4444; color:#fff; top:12px; left:12px; font-weight:800; border:1px solid rgba(255,255,255,0.4); box-shadow:0 4px 12px rgba(239,68,68,0.4); display:inline-flex; align-items:center;">SOLD OUT • WAITLIST <span class="info-circle" style="width:14px; height:14px; font-size:0.58rem; margin-left:4px;" onclick="event.stopPropagation();">ⓘ<span class="info-tooltip"><strong>Priority Waitlist Queue</strong>If tickets are released or refunded, waitlist members get first access.</span></span></span>`
                         : `<span class="bms-category-badge ${ev.isLive ? 'live' : ''}">${ev.category ? ev.category.toUpperCase() : 'EVENT'}</span>`;
 
                     const actionBtnMarkup = isSoldOut
-                        ? `<button class="bms-btn-book waitlist-join-btn" data-id="${ev.eventId}" style="background:linear-gradient(135deg, #f59e0b, #d97706); color:#fff; font-weight:700;">Join Waitlist ⚡</button>`
+                        ? `<button class="bms-btn-book waitlist-join-btn" data-id="${ev.eventId}" style="background:linear-gradient(135deg, #f59e0b, #d97706); color:#fff; font-weight:700;">Join Waitlist</button>`
                         : `<button class="bms-btn-book book-ticket-btn" data-id="${ev.eventId}">Book Tickets</button>`;
 
                     const card = document.createElement('article');
@@ -1423,7 +1547,7 @@
                             ${depositBadgeMarkup}
                             ${vibePillMarkup}
                             <div class="bms-rating-bar">
-                                <span class="bms-rating-score"><span class="bms-star">★</span> ${ev.rating || '9.5'}/10</span>
+                                <span class="bms-rating-score">Rating: ${ev.rating || '9.5'}/10</span>
                                 <span class="bms-votes-sub">${ev.votes || '25K'} Votes</span>
                             </div>
                         </div>
@@ -1434,7 +1558,7 @@
                                     ${(ev.vibeTags && ev.vibeTags.length > 0) ? ev.vibeTags.slice(0, 2).join(' • ') : (ev.tags || 'Live Performance')}
                                 </p>
                                 <p class="bms-card-location" title="Click to view location on Google Maps" style="cursor: pointer; display: inline-flex; align-items: center; gap: 4px; z-index: 2; position: relative;">
-                                    <span style="color: #10b981;">📍</span>
+                                    <svg width="12" height="12" fill="none" stroke="#10b981" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
                                     <span style="text-decoration: underline; text-underline-offset: 3px; font-weight: 500;">
                                         ${ev.locality ? `${ev.locality}${ev.city ? ', ' + ev.city : ''}` : (ev.location || 'Venue TBA')}
                                     </span>
@@ -1520,13 +1644,13 @@
                     return;
                 }
                 
-                if (confirm(`🎟️ Join Priority Waitlist for "${ev.eventName}"?\n\nThis event is currently sold out. Under our 72h cancellation guarantee, the moment an attendee cancels, a spot will automatically be unlocked for you via email!`)) {
+                if (confirm(`Join Priority Waitlist for "${ev.eventName}"?\n\nThis event is currently sold out. Under our 72h cancellation guarantee, the moment an attendee cancels, a spot will automatically be unlocked for you via email!`)) {
                     window.AttendeeBackend.joinWaitlist(ev, (err, waitlistTicket) => {
                         if (err) {
                             alert("Could not join waitlist: " + (err.message || err));
                             return;
                         }
-                        alert(`🎉 You're on the Priority Waitlist!\n\nWaitlist ID: ${waitlistTicket.ticketId}\nWe have registered your position in the priority queue. Check My Bookings anytime to track your waitlist status.`);
+                        alert(`You are on the Priority Waitlist!\n\nWaitlist ID: ${waitlistTicket.ticketId}\nWe have registered your position in the priority queue. Check My Bookings anytime to track your waitlist status.`);
                     });
                 }
             }
@@ -1558,10 +1682,10 @@
                 document.getElementById('districtEventDate').textContent = `${ev.date || 'Upcoming'} at ${ev.time || 'TBD'}`;
                 
                 const locDetail = ev.locality ? `${ev.locality} • ${ev.location || 'Venue TBA'}` : (ev.location || 'Venue TBA');
-                document.getElementById('districtEventVenue').textContent = `📍 ${locDetail}${ev.city ? ' (' + ev.city + ')' : ''}`;
+                document.getElementById('districtEventVenue').textContent = `${locDetail}${ev.city ? ' (' + ev.city + ')' : ''}`;
                 
                 document.getElementById('districtBookingBuzz').textContent = `${buzzCount} people booked in last 24h`;
-                document.getElementById('districtUrgencyText').textContent = isSoldOut ? '⚡ 100% Sold Out • Priority Waitlist Open' : (cap > 0 ? `⚡ Filling fast • ${Math.max(1, cap - sold)} passes left` : `🔥 High demand in ${ev.city || 'your city'}`);
+                document.getElementById('districtUrgencyText').textContent = isSoldOut ? '100% Sold Out • Priority Waitlist Open' : (cap > 0 ? `Filling fast • ${Math.max(1, cap - sold)} passes left` : `High demand in ${ev.city || 'your city'}`);
                 document.getElementById('districtRatingScore').textContent = ev.rating || '4.9';
                 document.getElementById('districtRatingCount').textContent = ev.votes || '180+';
 
@@ -1606,12 +1730,12 @@
                 const vibes = (ev.vibeTags && Array.isArray(ev.vibeTags) && ev.vibeTags.length > 0)
                     ? ev.vibeTags
                     : [
-                        '🎵 Live Music & Audio',
-                        '⚡ High Energy Crowd',
-                        '🍸 Craft Drinks & Food',
-                        '📸 Instagrammable Aesthetic',
-                        '👥 Great for Groups',
-                        '🎟️ Instant Digital Pass'
+                        'Live Music & Audio',
+                        'High Energy Crowd',
+                        'Craft Drinks & Food',
+                        'Instagrammable Aesthetic',
+                        'Great for Groups',
+                        'Instant Digital Pass'
                     ];
                 vibeTagsContainer.innerHTML = vibes.map(v => `<span class="district-vibe-chip">${v}</span>`).join('');
 
@@ -1630,7 +1754,7 @@
                 if (perksGrid) {
                     const perksList = (ev.perks && Array.isArray(ev.perks) && ev.perks.length > 0)
                         ? ev.perks
-                        : ['🛡️ 72h Refund Protected', '🍸 Food & Bar Counters', '🅿️ Parking Available', `🔞 ${ev.ageLimit || 'All Ages'}`];
+                        : ['72h Refund Protected', 'Food & Bar Counters', 'Parking Available', `${ev.ageLimit || 'All Ages'}`];
 
                     perksGrid.innerHTML = perksList.map(p => `
                         <div style="background:rgba(255,255,255,0.03); padding:8px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
@@ -1645,14 +1769,14 @@
                 reviewsList.innerHTML = `
                     <div class="district-review-card">
                         <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-                            <strong style="color:#fff;">Rohan S. • <span style="color:#fbbf24;">★★★★★</span></strong>
+                            <strong style="color:#fff;">Rohan S. • <span style="color:#fbbf24;">5/5 Stars</span></strong>
                             <span style="color:#64748b; font-size:0.75rem;">3 days ago</span>
                         </div>
                         <p style="margin:0; color:#cbd5e1;">The ambiance and organization were top notch. Gate check-in took under 5 seconds with the live QR pass!</p>
                     </div>
                     <div class="district-review-card">
                         <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-                            <strong style="color:#fff;">Ananya K. • <span style="color:#fbbf24;">★★★★★</span></strong>
+                            <strong style="color:#fff;">Ananya K. • <span style="color:#fbbf24;">5/5 Stars</span></strong>
                             <span style="color:#64748b; font-size:0.75rem;">1 week ago</span>
                         </div>
                         <p style="margin:0; color:#cbd5e1;">Loved the vibe and music lineup. Also great to know cancellation was 72h protected just in case.</p>
@@ -1666,7 +1790,7 @@
                             reviewsList.innerHTML = dbReviews.slice(0, 3).map(r => `
                                 <div class="district-review-card">
                                     <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-                                        <strong style="color:#fff;">${r.userName || 'Attendee'} • <span style="color:#fbbf24;">${'★'.repeat(r.rating || 5)}</span></strong>
+                                        <strong style="color:#fff;">${r.userName || 'Attendee'} • <span style="color:#fbbf24;">${r.rating || 5}/5 Stars</span></strong>
                                         <span style="color:#64748b; font-size:0.75rem;">Verified Buyer</span>
                                     </div>
                                     <p style="margin:0; color:#cbd5e1;">${r.comment || 'Amazing experience!'}</p>
@@ -1703,14 +1827,14 @@
                 };
 
                 if (isSoldOut) {
-                    actionBtn.textContent = 'Join Priority Waitlist ⚡';
+                    actionBtn.textContent = 'Join Priority Waitlist';
                     actionBtn.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
                     actionBtn.onclick = () => {
                         modal.classList.remove('active');
                         handleJoinWaitlist(ev);
                     };
                 } else {
-                    actionBtn.textContent = 'Book Tickets ➔';
+                    actionBtn.textContent = 'Book Tickets';
                     actionBtn.style.background = '';
                     actionBtn.onclick = () => {
                         modal.classList.remove('active');
@@ -1869,7 +1993,7 @@
                 const modalMapUrl = ev.googleMapLink && ev.googleMapLink.trim() ? ev.googleMapLink.trim() : ('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(ev.location || ''));
                 document.getElementById('checkoutCategoryBadge').textContent = (ev.category || 'EVENT').toUpperCase();
                 document.getElementById('checkoutEventTitle').textContent = ev.eventName;
-                document.getElementById('checkoutEventMeta').innerHTML = `<a href="${modalMapUrl}" target="_blank" rel="noopener noreferrer" style="color:#f84464; text-decoration:underline; text-underline-offset:2px; font-weight:600; cursor:pointer;" title="Click to view on Google Maps">📍 ${ev.location} ↗</a> • ${ev.date} at ${ev.time}`;
+                document.getElementById('checkoutEventMeta').innerHTML = `<a href="${modalMapUrl}" target="_blank" rel="noopener noreferrer" style="color:#f84464; text-decoration:underline; text-underline-offset:2px; font-weight:600; cursor:pointer;" title="Click to view on Google Maps">${ev.location} ↗</a> • ${ev.date} at ${ev.time}`;
 
                 const unitPrice = ev.price || 0;
                 const depVal = parseFloat(ev.refundableDeposit) || 0;
@@ -2186,13 +2310,13 @@
                             <div>
                                 <strong style="color:#fff; display:block;">${m.name}</strong>
                                 <span style="font-size:0.75rem; color:${isPaid ? '#10b981' : '#f59e0b'};">
-                                    ${isPaid ? '✓ Paid ₹' + memberAmt : '⏳ Pending ₹' + memberAmt}
+                                    ${isPaid ? 'Paid ₹' + memberAmt : 'Pending ₹' + memberAmt}
                                 </span>
                             </div>
                             <div>
                                 ${isPaid ? 
                                     '<span style="background:rgba(16,185,129,0.15); color:#10b981; font-weight:700; padding:4px 8px; border-radius:6px; font-size:0.75rem;">PAID</span>' : 
-                                    `<button type="button" class="simulate-pay-btn" data-index="${idx}" style="background:rgba(59,130,246,0.2); color:#60a5fa; border:1px solid rgba(59,130,246,0.4); padding:4px 10px; border-radius:6px; font-size:0.72rem; font-weight:700; cursor:pointer;">⚡ Simulate Friend Pay</button>`
+                                    `<button type="button" class="simulate-pay-btn" data-index="${idx}" style="background:rgba(59,130,246,0.2); color:#60a5fa; border:1px solid rgba(59,130,246,0.4); padding:4px 10px; border-radius:6px; font-size:0.72rem; font-weight:700; cursor:pointer;">Simulate Friend Pay</button>`
                                 }
                             </div>
                         `;
@@ -2211,7 +2335,7 @@
                                     } else {
                                         alert('Could not update payment status.');
                                         this.disabled = false;
-                                        this.textContent = '⚡ Simulate Friend Pay';
+                                        this.textContent = 'Simulate Friend Pay';
                                     }
                                 });
                             }

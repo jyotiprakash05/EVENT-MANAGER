@@ -23,6 +23,7 @@
     <script src="../aws-config.js"></script>
     <script src="../dashboard-auth.js"></script>
     <script src="attendee-backend.js"></script>
+    <script src="../info-tooltip-manager.js"></script>
     <style>
         .custom-modal-backdrop {
             position: fixed;
@@ -156,7 +157,7 @@
 
             <!-- Email Receipt Notice -->
             <div style="background: rgba(59, 130, 246, 0.12); border: 1px solid rgba(59, 130, 246, 0.35); border-radius: 12px; padding: 14px 16px; margin-bottom: 22px; text-align: left; display: flex; align-items: flex-start; gap: 12px;">
-                <span style="font-size: 1.3rem; line-height: 1;">📩</span>
+                <svg width="20" height="20" fill="none" stroke="#60a5fa" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0; margin-top:2px;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
                 <div>
                     <div style="font-size: 0.85rem; font-weight: 700; color: #93c5fd; margin-bottom: 3px;">Ticket Receipt & QR Pass Sent!</div>
                     <div style="font-size: 0.78rem; color: #cbd5e1; line-height: 1.4;">A copy of your M-Ticket receipt has been emailed to <strong id="successEmailDisplay" style="color: #fff;">your email</strong>.</div>

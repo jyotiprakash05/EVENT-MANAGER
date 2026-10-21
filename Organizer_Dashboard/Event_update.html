@@ -12,6 +12,7 @@
     <script src="../aws-config.js"></script>
     <script src="../dashboard-auth.js"></script>
     <script src="organizer-backend.js"></script>
+    <script src="../info-tooltip-manager.js"></script>
 </head>
 <body class="organizer-dashboard" data-required-role="organizer">
     <div class="page-shell">
@@ -184,7 +185,7 @@
                             <input type="checkbox" id="hasDepositBond" style="accent-color: #10b981; width: 18px; height: 18px; margin-top: 2px;">
                             <div style="flex: 1;">
                                 <strong style="color: #6ee7b7; display: flex; align-items: center; gap: 8px; font-size: 0.95rem;">
-                                    <span>🛡️ Proof-of-Presence Smart Refund Engine</span>
+                                    <span>Proof-of-Presence Smart Refund Engine</span>
                                     <span style="background: rgba(16, 185, 129, 0.2); color: #10b981; font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; font-weight: 700;">Zero No-Show Guarantee</span>
                                 </strong>
                                 <span style="font-size: 0.82rem; color: var(--muted); display: block; margin-top: 4px; line-height: 1.4;">
@@ -206,23 +207,23 @@
                     <!-- Modern Vibe & Atmosphere Experience Picker (District Style) -->
                     <div class="form-group" style="background: rgba(18, 22, 34, 0.6); border: 1px solid var(--border); border-radius: 16px; padding: 18px;">
                         <label style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                            <span style="font-size: 0.95rem; font-weight: 700; color: #fff;">⚡ The Vibe & Atmosphere (Select all that apply)</span>
+                            <span style="font-size: 0.95rem; font-weight: 700; color: #fff;">The Vibe & Atmosphere (Select all that apply)</span>
                             <span style="font-size: 0.75rem; color: var(--primary); font-weight: 700;">Attendee Experience Tags</span>
                         </label>
                         <p style="color: var(--muted); font-size: 0.8rem; margin: 0 0 10px;">Select the mood and vibe badges displayed on the attendee cards and District experience modal:</p>
                         <div class="vibe-tag-picker" id="vibeTagPicker">
-                            <span class="vibe-choice-pill active" data-vibe="🎵 Live Music & Audio">🎵 Live Music & Audio</span>
-                            <span class="vibe-choice-pill active" data-vibe="⚡ High Energy Crowd">⚡ High Energy Crowd</span>
-                            <span class="vibe-choice-pill active" data-vibe="🍸 Craft Drinks & Food">🍸 Craft Drinks & Food</span>
-                            <span class="vibe-choice-pill active" data-vibe="📸 Instagrammable Aesthetic">📸 Instagrammable Aesthetic</span>
-                            <span class="vibe-choice-pill" data-vibe="👥 Great for Groups">👥 Great for Groups</span>
-                            <span class="vibe-choice-pill" data-vibe="🌙 Late Night Special">🌙 Late Night Special</span>
-                            <span class="vibe-choice-pill" data-vibe="🎧 EDM & DJ Set">🎧 EDM & DJ Set</span>
-                            <span class="vibe-choice-pill" data-vibe="🎙️ Standup Comedy">🎙️ Standup Comedy</span>
-                            <span class="vibe-choice-pill" data-vibe="🌿 Outdoor & Nature">🌿 Outdoor & Nature</span>
-                            <span class="vibe-choice-pill" data-vibe="🍷 Rooftop Sunset">🍷 Rooftop Sunset</span>
-                            <span class="vibe-choice-pill" data-vibe="🎭 Cultural & Theatre">🎭 Cultural & Theatre</span>
-                            <span class="vibe-choice-pill" data-vibe="👨‍👩‍👧 Family Friendly">👨‍👩‍👧 Family Friendly</span>
+                            <span class="vibe-choice-pill active" data-vibe="Live Music & Audio">Live Music & Audio</span>
+                            <span class="vibe-choice-pill active" data-vibe="High Energy Crowd">High Energy Crowd</span>
+                            <span class="vibe-choice-pill active" data-vibe="Craft Drinks & Food">Craft Drinks & Food</span>
+                            <span class="vibe-choice-pill active" data-vibe="Instagrammable Aesthetic">Instagrammable Aesthetic</span>
+                            <span class="vibe-choice-pill" data-vibe="Great for Groups">Great for Groups</span>
+                            <span class="vibe-choice-pill" data-vibe="Late Night Special">Late Night Special</span>
+                            <span class="vibe-choice-pill" data-vibe="EDM & DJ Set">EDM & DJ Set</span>
+                            <span class="vibe-choice-pill" data-vibe="Standup Comedy">Standup Comedy</span>
+                            <span class="vibe-choice-pill" data-vibe="Outdoor & Nature">Outdoor & Nature</span>
+                            <span class="vibe-choice-pill" data-vibe="Rooftop Sunset">Rooftop Sunset</span>
+                            <span class="vibe-choice-pill" data-vibe="Cultural & Theatre">Cultural & Theatre</span>
+                            <span class="vibe-choice-pill" data-vibe="Family Friendly">Family Friendly</span>
                         </div>
                         <div style="display: flex; gap: 8px; margin-top: 12px;">
                             <input type="text" id="customVibeInput" class="form-control" placeholder="Add custom vibe tag (e.g., Underground Techno, Acoustic Jam)..." style="max-width: 380px;">
@@ -233,74 +234,146 @@
                     <!-- Atmosphere Media Gallery (4 Visual Reel Photos) -->
                     <div class="form-group" style="background: rgba(18, 22, 34, 0.6); border: 1px solid var(--border); border-radius: 16px; padding: 18px; margin-top: 18px;">
                         <label style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                            <span style="font-size: 0.95rem; font-weight: 700; color: #fff;">📸 Atmosphere Photo Gallery (4 Visual Reel Tiles)</span>
+                            <span style="font-size: 0.95rem; font-weight: 700; color: #fff;">Atmosphere Photo Gallery (4 Visual Reel Tiles)</span>
                             <span style="font-size: 0.75rem; color: #60a5fa; font-weight: 600;">Displayed in Attendee Visuals Reel</span>
                         </label>
-                        <p style="color: var(--muted); font-size: 0.8rem; margin: 0 0 12px;">Provide 4 photo URLs or use defaults to show the crowd, stage, venue, and nightlife atmosphere:</p>
+                        <p style="color: var(--muted); font-size: 0.8rem; margin: 0 0 12px;">Upload photos directly from your device or provide URLs to showcase the stage, crowd, venue, and vibe:</p>
                         
                         <div class="gallery-upload-grid">
-                            <div class="gallery-thumb-slot" id="slotWrap0">
-                                <img id="galleryImg0" src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=600&q=80" alt="Tile 1">
-                                <span class="slot-label" style="position:relative; z-index:2; background:rgba(0,0,0,0.7); padding:2px 6px; border-radius:4px; color:#fff;">1. Stage & Lights</span>
+                            <!-- Tile 1 -->
+                            <div class="gallery-tile-card">
+                                <div class="gallery-thumb-slot" id="slotWrap0" title="Click or drop photo to upload">
+                                    <img id="galleryImg0" src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=600&q=80" alt="Tile 1">
+                                    <div class="gallery-slot-hover-mask">
+                                        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                                        <span class="gallery-slot-hover-text">Click / Drop File</span>
+                                    </div>
+                                    <span class="slot-label">1. Stage & Lights</span>
+                                </div>
+                                <input type="file" id="galleryFile0" accept="image/*" style="display: none;">
+                                <div class="gallery-tile-controls">
+                                    <button type="button" class="slot-upload-pill" id="uploadBtn0">
+                                        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                                        Upload Photo
+                                    </button>
+                                    <input type="url" id="galleryUrl0" class="form-control" placeholder="Or paste image URL" style="font-size:0.74rem; padding: 6px 8px;">
+                                    <div class="slot-status-tag">
+                                        <span id="galleryBadge0" style="color: #60a5fa;">Default Preset</span>
+                                        <button type="button" id="galleryReset0" style="background:none; border:none; color:#f87171; font-size:0.68rem; cursor:pointer; display:none;">Reset</button>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="gallery-thumb-slot" id="slotWrap1">
-                                <img id="galleryImg1" src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=600&q=80" alt="Tile 2">
-                                <span class="slot-label" style="position:relative; z-index:2; background:rgba(0,0,0,0.7); padding:2px 6px; border-radius:4px; color:#fff;">2. Crowd Vibe</span>
-                            </div>
-                            <div class="gallery-thumb-slot" id="slotWrap2">
-                                <img id="galleryImg2" src="https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=600&q=80" alt="Tile 3">
-                                <span class="slot-label" style="position:relative; z-index:2; background:rgba(0,0,0,0.7); padding:2px 6px; border-radius:4px; color:#fff;">3. Venue Ambience</span>
-                            </div>
-                            <div class="gallery-thumb-slot" id="slotWrap3">
-                                <img id="galleryImg3" src="https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=600&q=80" alt="Tile 4">
-                                <span class="slot-label" style="position:relative; z-index:2; background:rgba(0,0,0,0.7); padding:2px 6px; border-radius:4px; color:#fff;">4. Bar / Nightlife</span>
-                            </div>
-                        </div>
 
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px;">
-                            <input type="url" id="galleryUrl0" class="form-control" placeholder="Photo 1 URL (Stage / Visual)" style="font-size:0.8rem;">
-                            <input type="url" id="galleryUrl1" class="form-control" placeholder="Photo 2 URL (Crowd / Energy)" style="font-size:0.8rem;">
-                            <input type="url" id="galleryUrl2" class="form-control" placeholder="Photo 3 URL (Venue / Space)" style="font-size:0.8rem;">
-                            <input type="url" id="galleryUrl3" class="form-control" placeholder="Photo 4 URL (Drinks / Vibes)" style="font-size:0.8rem;">
+                            <!-- Tile 2 -->
+                            <div class="gallery-tile-card">
+                                <div class="gallery-thumb-slot" id="slotWrap1" title="Click or drop photo to upload">
+                                    <img id="galleryImg1" src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=600&q=80" alt="Tile 2">
+                                    <div class="gallery-slot-hover-mask">
+                                        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                                        <span class="gallery-slot-hover-text">Click / Drop File</span>
+                                    </div>
+                                    <span class="slot-label">2. Crowd Vibe</span>
+                                </div>
+                                <input type="file" id="galleryFile1" accept="image/*" style="display: none;">
+                                <div class="gallery-tile-controls">
+                                    <button type="button" class="slot-upload-pill" id="uploadBtn1">
+                                        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                                        Upload Photo
+                                    </button>
+                                    <input type="url" id="galleryUrl1" class="form-control" placeholder="Or paste image URL" style="font-size:0.74rem; padding: 6px 8px;">
+                                    <div class="slot-status-tag">
+                                        <span id="galleryBadge1" style="color: #60a5fa;">Default Preset</span>
+                                        <button type="button" id="galleryReset1" style="background:none; border:none; color:#f87171; font-size:0.68rem; cursor:pointer; display:none;">Reset</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Tile 3 -->
+                            <div class="gallery-tile-card">
+                                <div class="gallery-thumb-slot" id="slotWrap2" title="Click or drop photo to upload">
+                                    <img id="galleryImg2" src="https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=600&q=80" alt="Tile 3">
+                                    <div class="gallery-slot-hover-mask">
+                                        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                                        <span class="gallery-slot-hover-text">Click / Drop File</span>
+                                    </div>
+                                    <span class="slot-label">3. Venue Ambience</span>
+                                </div>
+                                <input type="file" id="galleryFile2" accept="image/*" style="display: none;">
+                                <div class="gallery-tile-controls">
+                                    <button type="button" class="slot-upload-pill" id="uploadBtn2">
+                                        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                                        Upload Photo
+                                    </button>
+                                    <input type="url" id="galleryUrl2" class="form-control" placeholder="Or paste image URL" style="font-size:0.74rem; padding: 6px 8px;">
+                                    <div class="slot-status-tag">
+                                        <span id="galleryBadge2" style="color: #60a5fa;">Default Preset</span>
+                                        <button type="button" id="galleryReset2" style="background:none; border:none; color:#f87171; font-size:0.68rem; cursor:pointer; display:none;">Reset</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Tile 4 -->
+                            <div class="gallery-tile-card">
+                                <div class="gallery-thumb-slot" id="slotWrap3" title="Click or drop photo to upload">
+                                    <img id="galleryImg3" src="https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=600&q=80" alt="Tile 4">
+                                    <div class="gallery-slot-hover-mask">
+                                        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                                        <span class="gallery-slot-hover-text">Click / Drop File</span>
+                                    </div>
+                                    <span class="slot-label">4. Bar / Nightlife</span>
+                                </div>
+                                <input type="file" id="galleryFile3" accept="image/*" style="display: none;">
+                                <div class="gallery-tile-controls">
+                                    <button type="button" class="slot-upload-pill" id="uploadBtn3">
+                                        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                                        Upload Photo
+                                    </button>
+                                    <input type="url" id="galleryUrl3" class="form-control" placeholder="Or paste image URL" style="font-size:0.74rem; padding: 6px 8px;">
+                                    <div class="slot-status-tag">
+                                        <span id="galleryBadge3" style="color: #60a5fa;">Default Preset</span>
+                                        <button type="button" id="galleryReset3" style="background:none; border:none; color:#f87171; font-size:0.68rem; cursor:pointer; display:none;">Reset</button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     <!-- Venue Perks & What to Expect -->
                     <div class="form-group" style="background: rgba(18, 22, 34, 0.6); border: 1px solid var(--border); border-radius: 16px; padding: 18px; margin-top: 18px;">
                         <label style="font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 6px; display: block;">
-                            📋 What to Expect & Venue Perks Checklist
+                            What to Expect & Venue Perks Checklist
                         </label>
                         <p style="color: var(--muted); font-size: 0.8rem; margin: 0 0 12px;">Highlights displayed in the attendee experience modal:</p>
                         
                         <div class="perks-checklist-grid">
                             <label class="perk-choice-box">
                                 <input type="checkbox" id="perkCancel" checked disabled>
-                                <span>🛡️ 72h Refund Protected (Auto)</span>
+                                <span>72h Refund Protected (Auto)</span>
                             </label>
                             <label class="perk-choice-box">
                                 <input type="checkbox" id="perkBar" checked>
-                                <span>🍸 Food & Bar Counters</span>
+                                <span>Food & Bar Counters</span>
                             </label>
                             <label class="perk-choice-box">
                                 <input type="checkbox" id="perkParking" checked>
-                                <span>🅿️ Parking Available</span>
+                                <span>Parking Available</span>
                             </label>
                             <label class="perk-choice-box">
                                 <input type="checkbox" id="perkAC">
-                                <span>❄️ Air Conditioned Indoor</span>
+                                <span>Air Conditioned Indoor</span>
                             </label>
                             <label class="perk-choice-box">
                                 <input type="checkbox" id="perkOutdoor">
-                                <span>🌿 Open Air / Outdoor Arena</span>
+                                <span>Open Air / Outdoor Arena</span>
                             </label>
                             <label class="perk-choice-box">
                                 <input type="checkbox" id="perkWheelchair" checked>
-                                <span>♿ Wheelchair Accessible</span>
+                                <span>Wheelchair Accessible</span>
                             </label>
                         </div>
 
                         <div style="margin-top: 14px; max-width: 260px;">
-                            <label style="font-size: 0.82rem; color: #cbd5e1; font-weight: 600;">🔞 Age Requirement</label>
+                            <label style="font-size: 0.82rem; color: #cbd5e1; font-weight: 600;">Age Requirement</label>
                             <select id="eventAgeLimit" class="form-control" style="margin-top: 4px;">
                                 <option value="All Ages" selected>All Ages Welcome</option>
                                 <option value="16+">16+ with ID</option>
@@ -310,12 +383,66 @@
                         </div>
                     </div>
 
-                    <div class="form-group" style="margin-top: 20px;">
-                        <label>Main Event Cover Poster</label>
-                        <div class="image-upload-zone" onclick="document.getElementById('eventImage').click()" style="cursor: pointer;">
-                            <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                            <p id="imageNameDisplay">Click to browse or upload main poster image</p>
-                            <input type="file" id="eventImage" accept="image/*" style="display: none;">
+                    <!-- Main Event Cover Poster with Dual Source (Upload File & Web Link) -->
+                    <div class="form-group" style="margin-top: 20px; background: rgba(18, 22, 34, 0.6); border: 1px solid var(--border); border-radius: 16px; padding: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+                            <div>
+                                <label style="font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 2px; display: block;">
+                                    Main Event Cover Poster
+                                </label>
+                                <span style="font-size: 0.78rem; color: var(--muted);">Upload an image file directly from your device, or provide an image URL link</span>
+                            </div>
+                            
+                            <!-- Source Switcher Tabs -->
+                            <div class="image-source-toggle">
+                                <button type="button" class="image-source-btn active" id="tabUploadPoster">
+                                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                                    Upload File
+                                </button>
+                                <button type="button" class="image-source-btn" id="tabUrlPoster">
+                                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                                    Image URL Link
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Upload File Zone -->
+                        <div id="posterUploadPanel">
+                            <div class="image-upload-zone" id="posterDropZone">
+                                <svg width="38" height="38" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                                <p id="imageNameDisplay" style="font-weight: 600; color: #fff; margin-bottom: 4px; font-size: 0.95rem;">Click to browse files or drag & drop image here</p>
+                                <span style="font-size: 0.78rem; color: var(--muted); display: block;">Supports JPG, PNG, WEBP, GIF (High resolution recommended)</span>
+                                <input type="file" id="eventImage" accept="image/*" style="display: none;">
+                            </div>
+                        </div>
+
+                        <!-- URL Input Panel -->
+                        <div id="posterUrlPanel" style="display: none;">
+                            <div style="display: flex; gap: 8px;">
+                                <input type="url" id="eventImageUrlInput" class="form-control" placeholder="https://images.unsplash.com/photo-... or any valid image link">
+                                <button type="button" class="btn-secondary" id="applyPosterUrlBtn" style="padding: 0 16px; white-space: nowrap;">Preview Link</button>
+                            </div>
+                        </div>
+
+                        <!-- Live Visual Preview Container -->
+                        <div class="poster-preview-card" id="posterPreviewCard" style="display: none;">
+                            <img id="posterPreviewImg" class="poster-preview-img" src="" alt="Cover Poster Preview">
+                            <div class="poster-preview-overlay">
+                                <div class="poster-preview-info">
+                                    <span class="poster-filename" id="posterPreviewName">poster.jpg</span>
+                                    <span class="poster-meta" id="posterPreviewMeta">Ready to upload • Click Replace to change</span>
+                                </div>
+                                <div class="poster-preview-actions">
+                                    <button type="button" class="poster-action-btn" id="replacePosterBtn">
+                                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                                        Replace
+                                    </button>
+                                    <button type="button" class="poster-action-btn btn-remove" id="removePosterBtn">
+                                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                        Remove
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -324,7 +451,7 @@
                         <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; color: var(--text);">
                             <input type="checkbox" id="broadcastUpdateAlert" checked style="accent-color: var(--primary); width: 18px; height: 18px; margin-top: 2px;">
                             <div>
-                                <strong style="color: #93c5fd; display: block; font-size: 0.95rem;">📢 Auto-Broadcast Schedule / Venue Change Alert</strong>
+                                <strong style="color: #93c5fd; display: block; font-size: 0.95rem;">Auto-Broadcast Schedule / Venue Change Alert</strong>
                                 <span style="font-size: 0.85rem; color: var(--muted);">Automatically notify all registered attendees via in-app alert & email about updates to date, time, or venue.</span>
                             </div>
                         </label>
@@ -366,8 +493,13 @@
             ]
         };
 
+        let selectedPosterFile = null;
+        let customPosterUrl = "";
+        let galleryFiles = [null, null, null, null];
+
         document.addEventListener('DOMContentLoaded', () => {
             initVibeTagInteractivity();
+            initPosterUploadControls();
             initGalleryInputs();
 
             if (eventId) {
@@ -388,6 +520,124 @@
                 }
             }
         });
+
+        // Main Poster Controls & Interactivity
+        function initPosterUploadControls() {
+            const tabUpload = document.getElementById('tabUploadPoster');
+            const tabUrl = document.getElementById('tabUrlPoster');
+            const uploadPanel = document.getElementById('posterUploadPanel');
+            const urlPanel = document.getElementById('posterUrlPanel');
+            const dropZone = document.getElementById('posterDropZone');
+            const fileInput = document.getElementById('eventImage');
+            const urlInput = document.getElementById('eventImageUrlInput');
+            const applyUrlBtn = document.getElementById('applyPosterUrlBtn');
+            const previewCard = document.getElementById('posterPreviewCard');
+            const previewImg = document.getElementById('posterPreviewImg');
+            const previewName = document.getElementById('posterPreviewName');
+            const previewMeta = document.getElementById('posterPreviewMeta');
+            const replaceBtn = document.getElementById('replacePosterBtn');
+            const removeBtn = document.getElementById('removePosterBtn');
+
+            // Tab Switching
+            tabUpload.addEventListener('click', () => {
+                tabUpload.classList.add('active');
+                tabUrl.classList.remove('active');
+                uploadPanel.style.display = 'block';
+                urlPanel.style.display = 'none';
+            });
+
+            tabUrl.addEventListener('click', () => {
+                tabUrl.classList.add('active');
+                tabUpload.classList.remove('active');
+                uploadPanel.style.display = 'none';
+                urlPanel.style.display = 'block';
+            });
+
+            // File selection
+            fileInput.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    handlePosterFileSelected(this.files[0]);
+                }
+            });
+
+            // Drag and drop for Main Poster
+            dropZone.addEventListener('click', () => fileInput.click());
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('dragover');
+            });
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('dragover');
+            });
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+                if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                    fileInput.files = e.dataTransfer.files;
+                    handlePosterFileSelected(e.dataTransfer.files[0]);
+                }
+            });
+
+            function handlePosterFileSelected(file) {
+                if (!file.type.startsWith('image/')) {
+                    alert("Please select a valid image file (JPG, PNG, WEBP, GIF).");
+                    return;
+                }
+                selectedPosterFile = file;
+                customPosterUrl = "";
+                urlInput.value = "";
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    previewImg.src = e.target.result;
+                    previewName.textContent = file.name;
+                    previewMeta.textContent = `${(file.size / 1024).toFixed(1)} KB • Local file ready for upload`;
+                    previewCard.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+
+            // Preview URL
+            function applyUrlPreview() {
+                const url = urlInput.value.trim();
+                if (!url) return;
+                customPosterUrl = url;
+                selectedPosterFile = null;
+                fileInput.value = "";
+
+                previewImg.src = url;
+                previewName.textContent = "Web Image Link";
+                previewMeta.textContent = "External image URL • Ready";
+                previewCard.style.display = 'block';
+            }
+
+            applyUrlBtn.addEventListener('click', applyUrlPreview);
+            urlInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    applyUrlPreview();
+                }
+            });
+            urlInput.addEventListener('blur', applyUrlPreview);
+
+            // Replace & Remove
+            replaceBtn.addEventListener('click', () => {
+                if (tabUpload.classList.contains('active')) {
+                    fileInput.click();
+                } else {
+                    urlInput.focus();
+                }
+            });
+
+            removeBtn.addEventListener('click', () => {
+                selectedPosterFile = null;
+                customPosterUrl = "";
+                fileInput.value = "";
+                urlInput.value = "";
+                previewCard.style.display = 'none';
+                previewImg.src = "";
+            });
+        }
 
         function initVibeTagInteractivity() {
             const picker = document.getElementById('vibeTagPicker');
@@ -427,17 +677,117 @@
             });
         }
 
+        // Atmosphere Photo Gallery 4-slot file & URL handler
         function initGalleryInputs() {
             for (let i = 0; i < 4; i++) {
-                const input = document.getElementById(`galleryUrl${i}`);
+                const slotWrap = document.getElementById(`slotWrap${i}`);
+                const fileInput = document.getElementById(`galleryFile${i}`);
+                const uploadBtn = document.getElementById(`uploadBtn${i}`);
+                const urlInput = document.getElementById(`galleryUrl${i}`);
                 const img = document.getElementById(`galleryImg${i}`);
-                if (input && img) {
-                    input.addEventListener('input', function() {
+                const badge = document.getElementById(`galleryBadge${i}`);
+                const resetBtn = document.getElementById(`galleryReset${i}`);
+
+                // Click slot or upload button to open file chooser
+                if (slotWrap && fileInput) {
+                    slotWrap.addEventListener('click', (e) => {
+                        fileInput.click();
+                    });
+                }
+                if (uploadBtn && fileInput) {
+                    uploadBtn.addEventListener('click', () => {
+                        fileInput.click();
+                    });
+                }
+
+                // File selected handler
+                if (fileInput) {
+                    fileInput.addEventListener('change', function() {
+                        if (this.files && this.files[0]) {
+                            handleGalleryFile(i, this.files[0]);
+                        }
+                    });
+                }
+
+                // Drag and drop onto tile slot
+                if (slotWrap) {
+                    slotWrap.addEventListener('dragover', (e) => {
+                        e.preventDefault();
+                        slotWrap.classList.add('dragover');
+                    });
+                    slotWrap.addEventListener('dragleave', () => {
+                        slotWrap.classList.remove('dragover');
+                    });
+                    slotWrap.addEventListener('drop', (e) => {
+                        e.preventDefault();
+                        slotWrap.classList.remove('dragover');
+                        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                            fileInput.files = e.dataTransfer.files;
+                            handleGalleryFile(i, e.dataTransfer.files[0]);
+                        }
+                    });
+                }
+
+                // URL change handler
+                if (urlInput) {
+                    urlInput.addEventListener('input', function() {
                         const val = this.value.trim();
-                        if (val) img.src = val;
+                        if (val) {
+                            galleryFiles[i] = null;
+                            if (fileInput) fileInput.value = "";
+                            if (img) img.src = val;
+                            if (badge) {
+                                badge.textContent = "Link set";
+                                badge.style.color = "#38bdf8";
+                            }
+                            if (resetBtn) resetBtn.style.display = "inline";
+                        }
+                    });
+                }
+
+                // Reset button handler
+                if (resetBtn) {
+                    resetBtn.addEventListener('click', () => {
+                        galleryFiles[i] = null;
+                        if (fileInput) fileInput.value = "";
+                        const category = document.getElementById('eventCategory')?.value || 'concert';
+                        const presets = defaultGalleryPresets[category] || defaultGalleryPresets.concert;
+                        const defaultUrl = presets[i];
+                        if (urlInput) urlInput.value = defaultUrl;
+                        if (img) img.src = defaultUrl;
+                        if (badge) {
+                            badge.textContent = "Default Preset";
+                            badge.style.color = "#60a5fa";
+                        }
+                        resetBtn.style.display = "none";
                     });
                 }
             }
+        }
+
+        function handleGalleryFile(index, file) {
+            if (!file.type.startsWith('image/')) {
+                alert("Please select a valid image file.");
+                return;
+            }
+            galleryFiles[index] = file;
+            const img = document.getElementById(`galleryImg${index}`);
+            const badge = document.getElementById(`galleryBadge${index}`);
+            const resetBtn = document.getElementById(`galleryReset${index}`);
+            const urlInput = document.getElementById(`galleryUrl${index}`);
+
+            if (urlInput) urlInput.value = ""; // Clear URL since local file is active
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                if (img) img.src = e.target.result;
+                if (badge) {
+                    badge.textContent = `${(file.size / 1024).toFixed(0)}KB ready`;
+                    badge.style.color = "#34d399";
+                }
+                if (resetBtn) resetBtn.style.display = "inline";
+            };
+            reader.readAsDataURL(file);
         }
 
         function loadExistingEvent() {
@@ -495,8 +845,22 @@
                         document.getElementById('depositAmount').value = event.refundableDeposit || 50;
                     }
                     document.getElementById('eventDescription').value = event.description || "";
+                    
+                    // Load Existing Main Poster Image Preview
                     if (event.imageUrl) {
-                        document.getElementById('imageNameDisplay').textContent = "Image already uploaded (Click to change)";
+                        const previewImg = document.getElementById('posterPreviewImg');
+                        const previewCard = document.getElementById('posterPreviewCard');
+                        const previewName = document.getElementById('posterPreviewName');
+                        const previewMeta = document.getElementById('posterPreviewMeta');
+                        const urlInput = document.getElementById('eventImageUrlInput');
+
+                        if (previewImg && previewCard) {
+                            previewImg.src = event.imageUrl;
+                            previewCard.style.display = 'block';
+                            if (previewName) previewName.textContent = "Saved Poster Image";
+                            if (previewMeta) previewMeta.textContent = "Current active event cover • Click Replace to change";
+                            if (urlInput) urlInput.value = event.imageUrl;
+                        }
                     }
 
                     // Vibe Tags
@@ -530,19 +894,27 @@
                             if (idx < 4) {
                                 const urlInput = document.getElementById(`galleryUrl${idx}`);
                                 const img = document.getElementById(`galleryImg${idx}`);
+                                const badge = document.getElementById(`galleryBadge${idx}`);
+                                const resetBtn = document.getElementById(`galleryReset${idx}`);
+                                
                                 if (urlInput) urlInput.value = imgUrl;
                                 if (img && imgUrl) img.src = imgUrl;
+                                if (badge && imgUrl) {
+                                    badge.textContent = "Active saved photo";
+                                    badge.style.color = "#34d399";
+                                }
+                                if (resetBtn) resetBtn.style.display = "inline";
                             }
                         });
                     }
 
                     // Perks
                     if (event.perks && Array.isArray(event.perks)) {
-                        document.getElementById('perkBar').checked = event.perks.includes('🍸 Food & Bar Counters');
-                        document.getElementById('perkParking').checked = event.perks.includes('🅿️ Parking Available');
-                        document.getElementById('perkAC').checked = event.perks.includes('❄️ Air Conditioned Indoor');
-                        document.getElementById('perkOutdoor').checked = event.perks.includes('🌿 Open Air / Outdoor Arena');
-                        document.getElementById('perkWheelchair').checked = event.perks.includes('♿ Wheelchair Accessible');
+                        document.getElementById('perkBar').checked = event.perks.includes('Food & Bar Counters');
+                        document.getElementById('perkParking').checked = event.perks.includes('Parking Available');
+                        document.getElementById('perkAC').checked = event.perks.includes('Air Conditioned Indoor');
+                        document.getElementById('perkOutdoor').checked = event.perks.includes('Open Air / Outdoor Arena');
+                        document.getElementById('perkWheelchair').checked = event.perks.includes('Wheelchair Accessible');
                     }
 
                     if (event.ageLimit) {
@@ -568,153 +940,163 @@
             });
         }
 
-        document.getElementById('eventImage').addEventListener('change', function(e) {
-            if (this.files && this.files[0]) {
-                document.getElementById('imageNameDisplay').textContent = this.files[0].name;
-            }
-        });
-
+        // Event Form Submit with Async Image Uploads
         document.getElementById('eventForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const btn = document.getElementById('saveEventBtn');
             btn.textContent = eventId ? "Updating..." : "Saving...";
             btn.disabled = true;
 
-            const fileInput = document.getElementById('eventImage');
-            let uploadedImageUrl = existingEventData ? existingEventData.imageUrl : "";
-
             if (!window.OrganizerBackend) {
-                alert("Backend not loaded.");
+                alert("Backend service not loaded.");
                 btn.disabled = false;
                 btn.textContent = eventId ? "Update Event" : "Save Event";
                 return;
             }
 
+            let uploadedImageUrl = existingEventData ? existingEventData.imageUrl : "";
+
             try {
-                if (fileInput.files && fileInput.files.length > 0) {
-                    btn.textContent = "Uploading Poster Image...";
+                // 1. Upload Main Poster Image if a local file was selected
+                if (selectedPosterFile) {
+                    btn.textContent = "Uploading Main Poster Image...";
                     uploadedImageUrl = await new Promise((resolve, reject) => {
-                        window.OrganizerBackend.uploadImage(fileInput.files[0], (err, url) => {
+                        window.OrganizerBackend.uploadImage(selectedPosterFile, (err, url) => {
                             if (err) reject(err);
                             else resolve(url);
                         });
                     });
-                }
-            } catch (err) {
-                alert("Image upload failed: " + err.message);
-                btn.disabled = false;
-                btn.textContent = eventId ? "Update Event" : "Save Event";
-                return;
-            }
-
-            btn.textContent = eventId ? "Updating Event..." : "Saving Event...";
-            const newDate = document.getElementById('eventDate').value;
-            const newTime = document.getElementById('eventTime').value + ' ' + document.getElementById('eventAmPm').value;
-            const newLocation = document.getElementById('eventLocation').value;
-            const newEventName = document.getElementById('eventName').value;
-            const newCategory = document.getElementById('eventCategory').value;
-            const newCity = document.getElementById('eventCity').value;
-            const newLocality = document.getElementById('eventLocality').value.trim();
-            const newLineup = document.getElementById('eventLineup').value.trim();
-
-            const dlDate = document.getElementById('salesDeadlineDate').value;
-            const dlTime = document.getElementById('salesDeadlineTime').value + ' ' + document.getElementById('salesDeadlineAmPm').value;
-            const combinedSalesDeadline = dlDate ? `${dlDate} ${dlTime}` : '';
-
-            // Collect selected Vibe tags
-            const activeVibePills = document.querySelectorAll('#vibeTagPicker .vibe-choice-pill.active');
-            const vibeTags = Array.from(activeVibePills).map(p => p.getAttribute('data-vibe'));
-
-            // Collect 4 gallery URLs
-            const galleryImages = [];
-            const presets = defaultGalleryPresets[newCategory] || defaultGalleryPresets.concert;
-            for (let i = 0; i < 4; i++) {
-                const val = document.getElementById(`galleryUrl${i}`)?.value.trim();
-                galleryImages.push(val || presets[i]);
-            }
-
-            // Collect Venue Perks
-            const perks = ['🛡️ 72h Refund Protected'];
-            if (document.getElementById('perkBar')?.checked) perks.push('🍸 Food & Bar Counters');
-            if (document.getElementById('perkParking')?.checked) perks.push('🅿️ Parking Available');
-            if (document.getElementById('perkAC')?.checked) perks.push('❄️ Air Conditioned Indoor');
-            if (document.getElementById('perkOutdoor')?.checked) perks.push('🌿 Open Air / Outdoor Arena');
-            if (document.getElementById('perkWheelchair')?.checked) perks.push('♿ Wheelchair Accessible');
-
-            const ageLimit = document.getElementById('eventAgeLimit')?.value || 'All Ages';
-
-            // Check if schedule or venue changed
-            const isScheduleChanged = existingEventData && (
-                existingEventData.date !== newDate ||
-                existingEventData.time !== newTime ||
-                existingEventData.location !== newLocation
-            );
-
-            const hasDepositChecked = document.getElementById('hasDepositBond').checked;
-            const depositVal = hasDepositChecked ? (parseFloat(document.getElementById('depositAmount').value) || 50) : 0;
-
-            const eventData = {
-                eventId: eventId,
-                eventName: newEventName,
-                category: newCategory,
-                city: newCity,
-                locality: newLocality,
-                lineup: newLineup,
-                date: newDate,
-                time: newTime,
-                location: newLocation,
-                googleMapLink: document.getElementById('googleMapLink').value,
-                salesDeadline: combinedSalesDeadline,
-                salesDeadlineDate: dlDate,
-                salesDeadlineTime: dlTime,
-                capacity: parseInt(document.getElementById('eventCapacity').value),
-                price: parseFloat(document.getElementById('eventPrice').value),
-                hasDepositBond: hasDepositChecked,
-                refundableDeposit: depositVal,
-                description: document.getElementById('eventDescription').value,
-                imageUrl: uploadedImageUrl || (presets[0] || 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?auto=format&fit=crop&w=800&q=80'),
-                vibeTags: vibeTags,
-                galleryImages: galleryImages,
-                perks: perks,
-                ageLimit: ageLimit,
-                status: existingEventData ? existingEventData.status : "Active",
-                ticketsSold: existingEventData ? existingEventData.ticketsSold : 0,
-                revenue: existingEventData ? existingEventData.revenue : 0,
-                createdAt: existingEventData ? existingEventData.createdAt : new Date().toISOString()
-            };
-
-            window.OrganizerBackend.saveEvent(eventData, function(err, savedItem) {
-                btn.disabled = false;
-                btn.textContent = eventId ? "Update Event" : "Save Event";
-                if (err) {
-                    alert("Error saving event: " + err.message);
-                    return;
+                } else if (customPosterUrl) {
+                    uploadedImageUrl = customPosterUrl;
                 }
 
-                // If schedule changed and organizer opted into broadcast alert
-                const shouldBroadcast = document.getElementById('broadcastUpdateAlert') && document.getElementById('broadcastUpdateAlert').checked;
-                if (eventId && isScheduleChanged && shouldBroadcast) {
-                    const changeDetails = [];
-                    if (existingEventData.date !== newDate) changeDetails.push(`New Date: ${newDate}`);
-                    if (existingEventData.time !== newTime) changeDetails.push(`New Time: ${newTime}`);
-                    if (existingEventData.location !== newLocation) changeDetails.push(`New Venue: ${newLocation}`);
+                // 2. Upload any Gallery Photos where local files were selected
+                const newCategory = document.getElementById('eventCategory').value;
+                const presets = defaultGalleryPresets[newCategory] || defaultGalleryPresets.concert;
+                const galleryImages = [];
 
-                    window.OrganizerBackend.broadcastEventAlert({
-                        eventId: eventId,
-                        eventName: newEventName,
-                        title: `Schedule Update: ${newEventName}`,
-                        message: `The organizer updated the event details. ${changeDetails.join(" | ")}. Please check your updated booking pass.`,
-                        priority: "high",
-                        sendEmail: true
-                    }, function(alertErr, alertRes) {
-                        alert(`Event updated and alert broadcast to ${alertRes?.recipientCount || 0} registered attendee(s)!`);
+                for (let i = 0; i < 4; i++) {
+                    if (galleryFiles[i]) {
+                        btn.textContent = `Uploading Gallery Photo ${i + 1}/4...`;
+                        const uploadedTileUrl = await new Promise((resolve, reject) => {
+                            window.OrganizerBackend.uploadImage(galleryFiles[i], (err, url) => {
+                                if (err) reject(err);
+                                else resolve(url);
+                            });
+                        });
+                        galleryImages.push(uploadedTileUrl);
+                    } else {
+                        const val = document.getElementById(`galleryUrl${i}`)?.value.trim();
+                        galleryImages.push(val || presets[i]);
+                    }
+                }
+
+                btn.textContent = eventId ? "Updating Event Details..." : "Saving Event Details...";
+                const newDate = document.getElementById('eventDate').value;
+                const newTime = document.getElementById('eventTime').value + ' ' + document.getElementById('eventAmPm').value;
+                const newLocation = document.getElementById('eventLocation').value;
+                const newEventName = document.getElementById('eventName').value;
+                const newCity = document.getElementById('eventCity').value;
+                const newLocality = document.getElementById('eventLocality').value.trim();
+                const newLineup = document.getElementById('eventLineup').value.trim();
+
+                const dlDate = document.getElementById('salesDeadlineDate').value;
+                const dlTime = document.getElementById('salesDeadlineTime').value + ' ' + document.getElementById('salesDeadlineAmPm').value;
+                const combinedSalesDeadline = dlDate ? `${dlDate} ${dlTime}` : '';
+
+                // Collect selected Vibe tags
+                const activeVibePills = document.querySelectorAll('#vibeTagPicker .vibe-choice-pill.active');
+                const vibeTags = Array.from(activeVibePills).map(p => p.getAttribute('data-vibe'));
+
+                // Collect Venue Perks
+                const perks = ['72h Refund Protected'];
+                if (document.getElementById('perkBar')?.checked) perks.push('Food & Bar Counters');
+                if (document.getElementById('perkParking')?.checked) perks.push('Parking Available');
+                if (document.getElementById('perkAC')?.checked) perks.push('Air Conditioned Indoor');
+                if (document.getElementById('perkOutdoor')?.checked) perks.push('Open Air / Outdoor Arena');
+                if (document.getElementById('perkWheelchair')?.checked) perks.push('Wheelchair Accessible');
+
+                const ageLimit = document.getElementById('eventAgeLimit')?.value || 'All Ages';
+
+                // Check if schedule or venue changed
+                const isScheduleChanged = existingEventData && (
+                    existingEventData.date !== newDate ||
+                    existingEventData.time !== newTime ||
+                    existingEventData.location !== newLocation
+                );
+
+                const hasDepositChecked = document.getElementById('hasDepositBond').checked;
+                const depositVal = hasDepositChecked ? (parseFloat(document.getElementById('depositAmount').value) || 50) : 0;
+
+                const eventData = {
+                    eventId: eventId,
+                    eventName: newEventName,
+                    category: newCategory,
+                    city: newCity,
+                    locality: newLocality,
+                    lineup: newLineup,
+                    date: newDate,
+                    time: newTime,
+                    location: newLocation,
+                    googleMapLink: document.getElementById('googleMapLink').value,
+                    salesDeadline: combinedSalesDeadline,
+                    salesDeadlineDate: dlDate,
+                    salesDeadlineTime: dlTime,
+                    capacity: parseInt(document.getElementById('eventCapacity').value),
+                    price: parseFloat(document.getElementById('eventPrice').value),
+                    hasDepositBond: hasDepositChecked,
+                    refundableDeposit: depositVal,
+                    description: document.getElementById('eventDescription').value,
+                    imageUrl: uploadedImageUrl || (presets[0] || 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?auto=format&fit=crop&w=800&q=80'),
+                    vibeTags: vibeTags,
+                    galleryImages: galleryImages,
+                    perks: perks,
+                    ageLimit: ageLimit,
+                    status: existingEventData ? existingEventData.status : "Active",
+                    ticketsSold: existingEventData ? existingEventData.ticketsSold : 0,
+                    revenue: existingEventData ? existingEventData.revenue : 0,
+                    createdAt: existingEventData ? existingEventData.createdAt : new Date().toISOString()
+                };
+
+                window.OrganizerBackend.saveEvent(eventData, function(err, savedItem) {
+                    btn.disabled = false;
+                    btn.textContent = eventId ? "Update Event" : "Save Event";
+                    if (err) {
+                        alert("Error saving event: " + err.message);
+                        return;
+                    }
+
+                    // If schedule changed and organizer opted into broadcast alert
+                    const shouldBroadcast = document.getElementById('broadcastUpdateAlert') && document.getElementById('broadcastUpdateAlert').checked;
+                    if (eventId && isScheduleChanged && shouldBroadcast) {
+                        const changeDetails = [];
+                        if (existingEventData.date !== newDate) changeDetails.push(`New Date: ${newDate}`);
+                        if (existingEventData.time !== newTime) changeDetails.push(`New Time: ${newTime}`);
+                        if (existingEventData.location !== newLocation) changeDetails.push(`New Venue: ${newLocation}`);
+
+                        window.OrganizerBackend.broadcastEventAlert({
+                            eventId: eventId,
+                            eventName: newEventName,
+                            title: `Schedule Update: ${newEventName}`,
+                            message: `The organizer updated the event details. ${changeDetails.join(" | ")}. Please check your updated booking pass.`,
+                            priority: "high",
+                            sendEmail: true
+                        }, function(alertErr, alertRes) {
+                            alert(`Event updated and alert broadcast to ${alertRes?.recipientCount || 0} registered attendee(s)!`);
+                            window.location.href = "Event_list_organizer.html";
+                        });
+                    } else {
+                        alert(eventId ? "Event updated successfully with uploaded images!" : "Event created successfully with uploaded images!");
                         window.location.href = "Event_list_organizer.html";
-                    });
-                } else {
-                    alert(eventId ? "Event updated successfully with modern District features!" : "Event created successfully with modern District features!");
-                    window.location.href = "Event_list_organizer.html";
-                }
-            });
+                    }
+                });
+
+            } catch (err) {
+                console.error("Image processing error:", err);
+                alert("Image processing failed: " + err.message);
+                btn.disabled = false;
+                btn.textContent = eventId ? "Update Event" : "Save Event";
+            }
         });
     </script>
 </body>

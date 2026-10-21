@@ -595,7 +595,9 @@
 
             <!-- Error View -->
             <div id="errorState" style="display: none;">
-                <div style="font-size: 2.5rem; margin-bottom: 12px;">⚠️</div>
+                <div style="width: 48px; height: 48px; margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; color: #f59e0b;">
+                    <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                </div>
                 <h3 style="color: #fff; margin-bottom: 8px;">Split Link Unavailable</h3>
                 <p id="errorMessage" style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 20px;">Could not load split reservation. The booking may have expired or is invalid.</p>
                 <a href="Event_List.html" class="btn-view-bookings" style="display: inline-block; width: auto; padding: 10px 24px;">Browse Events</a>
@@ -603,8 +605,8 @@
 
             <!-- Ticket Already Used / Deactivated View -->
             <div id="ticketUsedState" style="display: none; text-align: center; padding: 24px 10px;">
-                <div style="width: 68px; height: 68px; background: rgba(239, 68, 68, 0.15); border: 2px solid rgba(239, 68, 68, 0.4); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 2rem;">
-                    🚫
+                <div style="width: 68px; height: 68px; background: rgba(239, 68, 68, 0.15); border: 2px solid rgba(239, 68, 68, 0.4); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                    <svg width="32" height="32" fill="none" stroke="#ef4444" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
                 </div>
                 <div style="display: inline-block; background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.35); padding: 4px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.06em; margin-bottom: 12px;">
                     ADMISSION PASS USED
@@ -722,7 +724,7 @@
                         <span>LIVE CRYPTOGRAPHIC PASS</span>
                     </span>
                     <p style="margin: 0; font-size: 0.76rem; color: #94a3b8; max-width: 340px; text-align: center;">
-                        🛡️ Protected by <strong>Zero-Scalp Rolling Protocol</strong>. This QR updates every 20 seconds. Screenshots are rejected at the gate.
+                        Protected by <strong>Zero-Scalp Rolling Protocol</strong>. This QR updates every 20 seconds. Screenshots are rejected at the gate.
                     </p>
                 </div>
 
@@ -756,7 +758,7 @@
                         <div id="countdownBar" class="countdown-fill" style="width: 100%;"></div>
                     </div>
                     <div style="font-size: 0.7rem; color: #94a3b8; text-align: center;">
-                        ⚡ Auto-rolling cryptographic token to prevent ticket duplication.
+                        Auto-rolling cryptographic token to prevent ticket duplication.
                     </div>
                 </div>
 
@@ -971,7 +973,7 @@
                     if (isUsed) {
                         statusLabel = 'USED';
                         statusColor = '#ef4444';
-                        subText = '⛔ Admission Used at Gate';
+                        subText = 'Admission Used at Gate';
                         subColor = '#ef4444';
                     } else if (isPaid) {
                         statusLabel = 'SETTLED';
@@ -1038,7 +1040,7 @@
                     // All members paid and none pending
                     const subId = `${ticket.ticketId}-M1`;
                     showRollingPass(subId, ticket.eventId, (members[0] && members[0].name) || 'Group Attendee', ticket, 0);
-                    document.getElementById('successTitle').textContent = 'Group Fully Settled! 🎉';
+                    document.getElementById('successTitle').textContent = 'Group Fully Settled!';
                     document.getElementById('successSubText').textContent = 'All tickets in this group booking have been successfully paid!';
                 }
             }

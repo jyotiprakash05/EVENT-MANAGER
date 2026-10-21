@@ -408,7 +408,7 @@
                             .then(res => res.json())
                             .then(data => {
                                 if (data && data.success) {
-                                    console.log('✅ Ticket email delivered via AWS SES (no-reply@eventpro24.online):', data);
+                                    console.log('Ticket email delivered via AWS SES (no-reply@eventpro24.online):', data);
                                 } else {
                                     throw new Error(data && data.error ? data.error : 'SES response not successful');
                                 }
@@ -949,7 +949,7 @@
                                     alertId: "ALT-" + Date.now() + "-" + Math.floor(Math.random() * 1000),
                                     userId: nextInLine.userId,
                                     eventId: eventId,
-                                    title: `🎉 Spot Unlocked: ${eventName || 'Event'}!`,
+                                    title: `Spot Unlocked: ${eventName || 'Event'}!`,
                                     message: `A ticket opened up via cancellation under our 72h policy! Your spot is reserved for 24 hours. Open My Bookings to claim your ticket.`,
                                     priority: "high",
                                     type: "waitlist_unlocked",
