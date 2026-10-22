@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy - EventPro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-page: #0a0c10;
+            --bg-frame: #11141a;
+            --bg-card: rgba(22, 26, 34, 0.7);
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --text-primary: #ffffff;
+            --text-secondary: #9aa3b2;
+            --text-muted: #647082;
+            --accent-crimson: #992338;
+            --accent-warm: #f59e0b;
+            --radius-card: 16px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-page);
+            color: var(--text-primary);
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.7;
+            padding: 32px 20px;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            background: var(--bg-frame);
+            border: 1px solid var(--border-subtle);
+            border-radius: 24px;
+            padding: 48px;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+            background-image: radial-gradient(circle at 90% 10%, rgba(65, 120, 95, 0.15) 0%, transparent 60%);
+        }
+
+        .header-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .brand-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: var(--text-primary);
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .back-btn {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.95rem;
+            padding: 8px 18px;
+            border: 1px solid var(--border-subtle);
+            border-radius: 9999px;
+            transition: all 0.2s ease;
+        }
+
+        .back-btn:hover {
+            color: #fff;
+            border-color: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        h1 {
+            font-size: 2.25rem;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .effective-date {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 32px;
+        }
+
+        .section-block {
+            margin-bottom: 32px;
+        }
+
+        h2 {
+            font-size: 1.35rem;
+            color: var(--accent-warm);
+            margin-bottom: 12px;
+            letter-spacing: -0.2px;
+        }
+
+        p,
+        ul {
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+
+        ul {
+            padding-left: 24px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        .contact-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-card);
+            padding: 24px;
+            margin-top: 36px;
+        }
+
+        .contact-box h3 {
+            color: #fff;
+            margin-bottom: 8px;
+        }
+
+        a {
+            color: var(--accent-warm);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 24px;
+            }
+
+            h1 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header-nav">
+            <a href="HOME.html" class="brand-link">
+                <span>EventPro</span>
+            </a>
+            <a href="HOME.html" class="back-btn">&larr; Back to Home</a>
+        </div>
+
+        <h1>Privacy Policy</h1>
+        <p class="effective-date">Last Updated: October 2026</p>
+
+        <div class="section-block">
+            <h2>1. Information We Collect</h2>
+            <p>At EventPro Technologies ("EventPro"), we value your privacy. We collect the following types of
+                information when you interact with our platform:</p>
+            <ul>
+                <li><strong>Personal Identification Details:</strong> Name, email address, phone number, and account
+                    passwords created via AWS Cognito.</li>
+                <li><strong>Transaction Details:</strong> Payment order IDs, payment status, amount paid, and ticket
+                    references. Note that sensitive card credentials or bank passwords are securely processed by PCI-DSS
+                    compliant payment gateways (Razorpay) and are never stored on our servers.</li>
+                <li><strong>Technical & Usage Data:</strong> IP address, device browser type, operating system, and
+                    interaction logs.</li>
+            </ul>
+        </div>
+
+        <div class="section-block">
+            <h2>2. How We Use Your Information</h2>
+            <p>We use the collected information for purposes including:</p>
+            <ul>
+                <li>Processing ticket purchases and delivering QR verification passes.</li>
+                <li>Verifying user accounts and maintaining platform security.</li>
+                <li>Sending transactional notifications, receipts, and event-related updates.</li>
+                <li>Providing customer support and resolving inquiries.</li>
+                <li>Preventing unauthorized activities, fraud, and system abuse.</li>
+            </ul>
+        </div>
+
+        <div class="section-block">
+            <h2>3. Payment Security & Third Parties</h2>
+            <p>All online financial transactions are processed securely through certified payment gateways such as
+                Razorpay. Razorpay complies with the Payment Card Industry Data Security Standard (PCI-DSS). We do not
+                sell, rent, or lease your personal information to third parties.</p>
+        </div>
+
+        <div class="section-block">
+            <h2>4. Data Storage & Protection</h2>
+            <p>Your data is securely stored within Amazon Web Services (AWS) infrastructure utilizing industry-standard
+                encryption protocols (TLS/HTTPS in transit and AES-256 at rest) to safeguard against unauthorized
+                access.</p>
+        </div>
+
+        <div class="section-block">
+            <h2>5. Cookies & Local Storage</h2>
+            <p>We use session tokens and browser local storage to maintain your authenticated login session and
+                preferences. You can configure your browser to reject cookies, though some platform features may be
+                restricted.</p>
+        </div>
+
+        <div class="section-block">
+            <h2>6. Your Rights</h2>
+            <p>You have the right to access, update, or request the deletion of your personal account data at any time
+                by contacting our support team.</p>
+        </div>
+
+        <div class="contact-box">
+            <h3>Grievance & Contact Information</h3>
+            <p>If you have questions about this Privacy Policy or your data, please contact our grievance officer:</p>
+            <p><strong>EventPro Technologies</strong><br>
+                Hanuman Chowk, Jatni, Khordha, Odisha, India - 752050<br>
+                Email: <a href="mailto:support@eventpro24.online">support@eventpro24.online</a><br>
+                Phone: <a href="tel:+917853888722">+91 7853888722</a></p>
+        </div>
+    </div>
+</body>
+
+</html>
