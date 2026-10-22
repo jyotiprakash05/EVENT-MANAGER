@@ -1,3 +1,14 @@
+// Automatically upgrade to HTTPS in production/mobile browsers for WebRTC camera & crypto security
+(function enforceSecureContext() {
+    if (typeof window !== 'undefined' && window.location.protocol === 'http:' && !['localhost', '127.0.0.1'].includes(window.location.hostname)) {
+        let secureUrl = window.location.href.replace(/^http:/, 'https:');
+        if (secureUrl.includes('.s3-website.')) {
+            secureUrl = secureUrl.replace('.s3-website.', '.s3.');
+        }
+        window.location.replace(secureUrl);
+    }
+})();
+
 window.EVENTPRO_AWS_CONFIG = {
     region: "ap-south-1",
     userPoolId: "ap-south-1_jpmIIWg5V",
