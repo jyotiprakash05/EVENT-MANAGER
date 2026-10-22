@@ -23,7 +23,7 @@ window.EVENTPRO_AWS_CONFIG = {
     alertsTableName: "EventProAlerts",
     s3BucketName: "eventpro-images", // Replace with your actual S3 bucket name
     apiGatewayUrl: "https://s3eg7kdaja.execute-api.ap-south-1.amazonaws.com/prod",
-    razorpayKeyId: "rzp_test_TqtUI1QNc8wS3m",
+    razorpayKeyId: "rzp_live_TqawwTSUz6rvuH",
     senderEmail: "no-reply@eventpro24.online",
     supportEmail: "support@eventpro24.online"
 };

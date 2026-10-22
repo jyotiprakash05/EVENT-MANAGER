@@ -7,8 +7,8 @@ function getRazorpay() {
         try {
             const Razorpay = require('razorpay');
             razorpayInstance = new Razorpay({
-                key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_TqtUI1QNc8wS3m',
-                key_secret: process.env.RAZORPAY_KEY_SECRET || 'BZJrebtT9kXDv3Tckg7Yo6Wg',
+                key_id: process.env.RAZORPAY_KEY_ID || 'rzp_live_TqawwTSUz6rvuH',
+                key_secret: process.env.RAZORPAY_KEY_SECRET || 'UaISwuAoNfWtfvc3v4YKdGck',
             });
         } catch (e) {
             console.warn('Razorpay package not bundled:', e.message);
