@@ -109,3 +109,47 @@ body {
 	color: #212529;
 	font-weight: 600;
 }
+
+/* Accessibility & Mobile Responsiveness */
+.sign-in-form .form-control:focus-visible,
+.sign-in-button:focus-visible,
+.role-option:focus-within {
+	outline: 2px solid #212529;
+	outline-offset: 2px;
+}
+
+@media (max-width: 480px) {
+	.sign-in-page {
+		padding: 16px;
+	}
+
+	.sign-in-card {
+		padding: 28px 20px;
+		border-radius: 16px;
+	}
+
+	.sign-in-card h1 {
+		font-size: 1.65rem;
+	}
+
+	.role-options {
+		grid-template-columns: 1fr;
+		gap: 8px;
+	}
+
+	.role-option {
+		padding: 14px 16px;
+		min-height: 48px;
+	}
+
+	.sign-in-button {
+		min-height: 48px;
+		padding: 12px;
+		font-size: 1rem;
+	}
+
+	.sign-in-form .form-control {
+		font-size: 16px; /* Prevents auto-zoom on iOS Safari */
+		height: 48px;
+	}
+}

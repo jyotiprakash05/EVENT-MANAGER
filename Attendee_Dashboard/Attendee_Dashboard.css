@@ -1106,3 +1106,214 @@ button, input, select, textarea { font: inherit; }
     transform: scale(1);
 }
 
+/* ==========================================================================
+   HIGH-ACCESSIBILITY & MOBILE RESPONSIVE ENGINE (WCAG 2.1 AA)
+   ========================================================================== */
+
+/* Universal Accessible Focus Rings */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible,
+.info-circle:focus-visible {
+    outline: 2px solid var(--primary) !important;
+    outline-offset: 2px !important;
+}
+
+/* Tablet & Mobile Breakpoint (<= 992px) */
+@media (max-width: 992px) {
+    .page-shell {
+        grid-template-columns: 1fr;
+        padding: 12px;
+        gap: 16px;
+        min-width: 0;
+    }
+
+    /* Mobile Header & Responsive Sidebar */
+    .sidebar {
+        border-radius: 18px;
+        padding: 14px 16px;
+        position: relative;
+    }
+
+    .brand-wrap {
+        padding: 0 0 10px;
+        border-bottom: 1px solid var(--border);
+        justify-content: space-between;
+        width: 100%;
+    }
+
+    /* Horizontal Native-App App Navigation Bar */
+    .side-nav {
+        display: flex;
+        flex-direction: row;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        gap: 8px;
+        margin-top: 10px;
+        padding-bottom: 4px;
+        scrollbar-width: none;
+    }
+
+    .side-nav::-webkit-scrollbar {
+        display: none;
+    }
+
+    .side-nav a {
+        white-space: nowrap;
+        flex-shrink: 0;
+        padding: 10px 16px;
+        font-size: 0.88rem;
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .sidebar-card {
+        display: none; /* Hide decorative promo card to prioritize user content on mobile */
+    }
+
+    /* Main Workspace */
+    .main-panel {
+        padding-right: 0;
+        width: 100%;
+        min-width: 0;
+        gap: 20px;
+    }
+
+    .topbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 14px;
+        margin-top: 0;
+    }
+
+    .topbar h1 {
+        font-size: clamp(1.6rem, 5vw, 2.2rem);
+    }
+
+    .topbar-actions {
+        width: 100%;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .summary-grid {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 14px;
+    }
+
+    /* BookMyShow Heading & Controls on Mobile */
+    .bms-heading-container {
+        padding: 14px 14px 12px;
+        border-radius: 16px;
+    }
+
+    .bms-announcement-strip {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+        font-size: 0.78rem;
+    }
+
+    .bms-heading-top-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .bms-search-box {
+        max-width: 100%;
+        width: 100%;
+        min-height: 44px;
+    }
+
+    .bms-city-btn {
+        min-height: 44px;
+        justify-content: center;
+    }
+
+    .bms-category-ribbon {
+        gap: 8px;
+        padding-bottom: 6px;
+    }
+
+    .bms-cat-pill {
+        min-height: 38px;
+        padding: 6px 12px;
+    }
+
+    /* Mobile Poster Grids */
+    .event-grid,
+    .events-grid {
+        grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)) !important;
+        gap: 14px !important;
+    }
+
+    /* Form Inputs on Mobile (16px to stop iOS Safari Auto-Zoom) */
+    input.form-control,
+    select.form-control,
+    textarea.form-control,
+    .bms-search-input {
+        font-size: 16px !important;
+        min-height: 44px;
+    }
+
+    /* Buttons minimum touch target (WCAG 2.5.5) */
+    .btn-primary,
+    .btn-secondary {
+        min-height: 44px;
+        padding: 10px 18px;
+    }
+
+    /* Responsive Modals */
+    .custom-modal-box {
+        width: 95vw !important;
+        max-width: 480px !important;
+        max-height: 90vh;
+        overflow-y: auto;
+        padding: 20px 16px !important;
+        border-radius: 16px;
+    }
+}
+
+/* Small Smartphone Viewport (<= 540px) */
+@media (max-width: 540px) {
+    .page-shell {
+        padding: 8px;
+        gap: 12px;
+    }
+
+    .event-grid,
+    .events-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 10px !important;
+    }
+
+    .bms-poster-card h3 {
+        font-size: 0.88rem !important;
+        line-height: 1.3;
+    }
+
+    .bms-poster-card p {
+        font-size: 0.75rem !important;
+    }
+
+    .summary-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .stat-card {
+        padding: 14px;
+    }
+
+    .stat-card strong {
+        font-size: 1.45rem;
+    }
+}
+
+

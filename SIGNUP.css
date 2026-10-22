@@ -115,13 +115,50 @@ body {
 	font-weight: 600;
 }
 
+/* Accessibility & Focus Indicators */
+.sign-up-form .form-control:focus-visible,
+.sign-up-button:focus-visible,
+.role-option:focus-within {
+	outline: 2px solid #212529;
+	outline-offset: 2px;
+}
+
 @media (max-width: 576px) {
+	.sign-up-page {
+		padding: 16px;
+	}
+
 	.sign-up-card {
-		padding: 28px 22px;
+		padding: 28px 18px;
+		border-radius: 16px;
+	}
+
+	.sign-up-card h1 {
+		font-size: 1.65rem;
+	}
+
+	.role-options {
+		grid-template-columns: 1fr;
+		gap: 8px;
+	}
+
+	.role-option {
+		min-height: 48px;
+		padding: 12px 14px;
 	}
 
 	.name-fields {
 		grid-template-columns: 1fr;
 		gap: 0;
+	}
+
+	.sign-up-button {
+		min-height: 48px;
+		font-size: 1rem;
+	}
+
+	.sign-up-form .form-control {
+		font-size: 16px; /* Prevents auto-zoom on iOS Safari */
+		height: 48px;
 	}
 }
