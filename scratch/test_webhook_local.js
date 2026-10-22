@@ -19,7 +19,7 @@ async function testWebhookHandler() {
     if (badRes.statusCode !== 400) throw new Error('Expected 400 on bad signature');
 
     console.log('\n--- 2. Testing Webhook with Valid Signature (payment.captured) ---');
-    const secret = 'FRah4GpXGOZW3X5pNqs7Lr10';
+    const secret = process.env.RAZORPAY_KEY_SECRET || 'BZJrebtT9kXDv3Tckg7Yo6Wg';
     const payloadObj = {
         event: 'payment.captured',
         payload: {

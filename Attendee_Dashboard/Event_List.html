@@ -2170,7 +2170,7 @@
                             ((unitPrice === 0 && totalDeposit > 0) ? `${ev.eventName} (Refundable Gate Pledge ₹${payAmount})` : `${ev.eventName} (${currentQty} Ticket${currentQty > 1 ? 's' : ''})`);
 
                         const options = {
-                            key: 'rzp_test_TfToXPA1e0mdDo',
+                            key: (window.EVENTPRO_AWS_CONFIG && window.EVENTPRO_AWS_CONFIG.razorpayKeyId) || 'rzp_test_TqtUI1QNc8wS3m',
                             amount: payAmount * 100,
                             currency: 'INR',
                             name: 'EventPro',

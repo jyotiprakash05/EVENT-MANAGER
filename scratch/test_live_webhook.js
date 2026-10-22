@@ -33,7 +33,7 @@ async function verifyLiveWebhook() {
     console.log('Live bad signature response:', badRes.statusCode, badRes.body);
 
     console.log('\n--- 2. Testing Live Webhook: Valid Signature ---');
-    const secret = 'FRah4GpXGOZW3X5pNqs7Lr10';
+    const secret = process.env.RAZORPAY_KEY_SECRET || 'BZJrebtT9kXDv3Tckg7Yo6Wg';
     const mockPaymentId = 'pay_live_test_' + Date.now();
     const payload = {
         event: 'payment.captured',

@@ -1229,7 +1229,7 @@
                     const data = await response.json();
 
                     const options = {
-                        key: 'rzp_test_TfToXPA1e0mdDo',
+                        key: (window.EVENTPRO_AWS_CONFIG && window.EVENTPRO_AWS_CONFIG.razorpayKeyId) || 'rzp_test_TqtUI1QNc8wS3m',
                         amount: shareAmount * 100,
                         currency: 'INR',
                         name: 'EventPro',

@@ -7,8 +7,8 @@ function getRazorpay() {
         try {
             const Razorpay = require('razorpay');
             razorpayInstance = new Razorpay({
-                key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_TfToXPA1e0mdDo',
-                key_secret: process.env.RAZORPAY_KEY_SECRET || 'FRah4GpXGOZW3X5pNqs7Lr10',
+                key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_TqtUI1QNc8wS3m',
+                key_secret: process.env.RAZORPAY_KEY_SECRET || 'BZJrebtT9kXDv3Tckg7Yo6Wg',
             });
         } catch (e) {
             console.warn('Razorpay package not bundled:', e.message);
@@ -661,7 +661,7 @@ exports.handler = async (event) => {
             
             const sign = razorpay_order_id + "|" + razorpay_payment_id;
             const expectedSign = crypto
-                .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET || 'rzp_test_dummy_key_secret')
+                .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET || 'BZJrebtT9kXDv3Tckg7Yo6Wg')
                 .update(sign.toString())
                 .digest("hex");
             
@@ -844,7 +844,7 @@ exports.handler = async (event) => {
         if (path && path.endsWith('/api/payment/webhook') && httpMethod === 'POST') {
             const reqHeaders = event.headers || {};
             const webhookSignature = reqHeaders['x-razorpay-signature'] || reqHeaders['X-Razorpay-Signature'];
-            const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || process.env.RAZORPAY_KEY_SECRET || 'FRah4GpXGOZW3X5pNqs7Lr10';
+            const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || process.env.RAZORPAY_KEY_SECRET || 'BZJrebtT9kXDv3Tckg7Yo6Wg';
             
             const rawBody = event.isBase64Encoded ? Buffer.from(event.body || '', 'base64').toString('utf-8') : (event.body || '');
             
