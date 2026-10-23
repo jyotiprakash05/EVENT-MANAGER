@@ -312,6 +312,142 @@ window.AdminBackend = (function() {
                 if (err) callback(err);
                 else callback(null);
             });
+        },
+
+        // ==========================================
+        // HOST SETTLEMENTS & PAYOUT MANAGEMENT (OPTION B)
+        // ==========================================
+        getPayoutRequests: function(callback) {
+            if (!docClient && !init()) return callback(new Error("AWS not initialized"));
+            const config = window.EVENTPRO_AWS_CONFIG || {};
+
+            const paymentsTable = config.paymentsTableName || "EventProPayments";
+            docClient.scan({ TableName: paymentsTable }, function(err, data) {
+                let payouts = [];
+                if (!err && data && Array.isArray(data.Items)) {
+                    payouts = data.Items.filter(p => p.type === "ORGANIZER_PAYOUT" || (p.paymentId && p.paymentId.startsWith("PO-")) || (p.payoutId && p.payoutId.startsWith("PO-")));
+                }
+
+                // Also check users table for payoutHistory / withdrawalDetails
+                const usersTable = config.dynamoDBTableName || "EventProUsers";
+                docClient.scan({ TableName: usersTable }, function(uErr, uData) {
+                    if (!uErr && uData && Array.isArray(uData.Items)) {
+                        const existingIds = new Set(payouts.map(p => p.payoutId || p.paymentId));
+                        uData.Items.forEach(u => {
+                            if (Array.isArray(u.payoutHistory)) {
+                                u.payoutHistory.forEach(ph => {
+                                    const id = ph.payoutId || ph.paymentId;
+                                    if (id && !existingIds.has(id)) {
+                                        payouts.push(ph);
+                                        existingIds.add(id);
+                                    }
+                                });
+                            } else if (parseFloat(u.withdrawnAmount) > 0 && u.withdrawalDetails && !existingIds.has("LEGACY-" + u.userId)) {
+                                payouts.push({
+                                    payoutId: "LEGACY-" + u.userId.slice(-6),
+                                    paymentId: "LEGACY-" + u.userId.slice(-6),
+                                    type: "ORGANIZER_PAYOUT",
+                                    userId: u.userId,
+                                    organizerName: ((u.firstName || '') + ' ' + (u.lastName || '')).trim() || u.name || "Organizer",
+                                    organizerEmail: u.email || "organizer@example.com",
+                                    amount: parseFloat(u.withdrawnAmount) || 0,
+                                    status: "Pending",
+                                    method: u.withdrawalDetails.bankAccount ? "bank" : "upi",
+                                    bankName: u.withdrawalDetails.bankName || u.withdrawalDetails.beneficiaryName || "",
+                                    bankAccount: u.withdrawalDetails.bankAccount || "",
+                                    bankIFSC: u.withdrawalDetails.bankIFSC || u.withdrawalDetails.bankIfsc || "",
+                                    upiId: u.withdrawalDetails.upiId || "",
+                                    requestedAt: u.withdrawalDetails.requestedAt || u.updatedAt || new Date().toISOString()
+                                });
+                            }
+                        });
+                    }
+
+                    payouts.sort((a, b) => (b.requestedAt || '').localeCompare(a.requestedAt || ''));
+                    callback(null, payouts);
+                });
+            });
+        },
+
+        settlePayout: function(payoutId, utrNumber, callback) {
+            if (!docClient && !init()) return callback(new Error("AWS not initialized"));
+            const config = window.EVENTPRO_AWS_CONFIG || {};
+            const apiBase = (config.apiGatewayUrl || 'https://s3eg7kdaja.execute-api.ap-south-1.amazonaws.com/prod').replace(/\/+$/, '');
+            const now = new Date().toISOString();
+
+            this.getPayoutRequests((err, list) => {
+                if (err) return callback(err);
+                const payout = (list || []).find(p => (p.payoutId === payoutId || p.paymentId === payoutId));
+                if (!payout) return callback(new Error("Payout request not found: " + payoutId));
+
+                const paymentsTable = config.paymentsTableName || "EventProPayments";
+                const pKey = payout.paymentId || payout.payoutId;
+
+                const putRecord = {
+                    ...payout,
+                    paymentId: pKey,
+                    payoutId: pKey,
+                    status: "Settled",
+                    bankUTR: utrNumber,
+                    settledAt: now,
+                    settledBy: "Platform Admin"
+                };
+
+                docClient.put({
+                    TableName: paymentsTable,
+                    Item: putRecord
+                }, function(upErr) {
+                    if (upErr) console.warn("Notice: could not save settled record to payments table:", upErr);
+
+                    // Update User's payoutHistory in EventProUsers
+                    if (payout.userId) {
+                        const usersTable = config.dynamoDBTableName || "EventProUsers";
+                        docClient.get({ TableName: usersTable, Key: { userId: payout.userId } }, function(uErr, uData) {
+                            if (!uErr && uData && uData.Item) {
+                                const history = Array.isArray(uData.Item.payoutHistory) ? uData.Item.payoutHistory : [];
+                                const updatedHistory = history.map(item => {
+                                    if (item.payoutId === payoutId || item.paymentId === payoutId) {
+                                        return { ...item, status: "Settled", bankUTR: utrNumber, settledAt: now };
+                                    }
+                                    return item;
+                                });
+                                if (!updatedHistory.some(item => item.payoutId === payoutId || item.paymentId === payoutId)) {
+                                    updatedHistory.unshift(putRecord);
+                                }
+                                docClient.update({
+                                    TableName: usersTable,
+                                    Key: { userId: payout.userId },
+                                    UpdateExpression: "SET payoutHistory = :h",
+                                    ExpressionAttributeValues: { ":h": updatedHistory }
+                                }, () => {});
+                            }
+                        });
+                    }
+
+                    // Dispatch transactional confirmation email to organizer
+                    if (payout.organizerEmail) {
+                        const destText = payout.bankAccount ? 
+                            `${payout.bankName ? payout.bankName + ' • ' : ''}A/C: ••••${payout.bankAccount.slice(-4)} (IFSC: ${payout.bankIFSC})` :
+                            `UPI ID: ${payout.upiId}`;
+
+                        fetch(`${apiBase}/api/send-email`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                type: 'alert',
+                                to_email: payout.organizerEmail,
+                                to_name: payout.organizerName || 'Organizer',
+                                subject: `💸 Payout Settled: ₹${payout.amount} Transferred via NEFT/IMPS`,
+                                alert_title: 'Host Settlement Disbursed',
+                                alert_message: `Good news! Your withdrawal request of ₹${payout.amount} has been disbursed and settled by the EventPro finance desk.\n\nDestination: ${destText}\nBank Transaction / UTR Ref: ${utrNumber}\nSettled On: ${new Date().toLocaleDateString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}\n\nFunds should reflect in your account according to your bank's clearing cycle. Thank you for partnering with EventPro!`,
+                                priority: 'high'
+                            })
+                        }).catch(e => console.warn("Payout email dispatch notice:", e));
+                    }
+
+                    callback(null, { success: true, payoutId: payoutId, bankUTR: utrNumber });
+                });
+            });
         }
     };
 })();

@@ -154,6 +154,13 @@
                         <span>Escrow & Refunds</span>
                     </a>
                 </li>
+                <li>
+                    <a href="#payouts" class="nav-tab" data-tab="payouts">
+                        <span>💰</span>
+                        <span>Host Settlements</span>
+                        <span class="nav-badge" id="nav-badge-payouts" style="background:#f59e0b; color:#000;">0</span>
+                    </a>
+                </li>
             </ul>
 
             <div class="sidebar-footer">
@@ -432,7 +439,123 @@
                     </div>
                 </div>
             </section>
+
+            <!-- 5. HOST SETTLEMENTS & DISBURSALS TAB (OPTION B) -->
+            <section id="tab-payouts" class="view-section">
+                <!-- KPI Stats Grid -->
+                <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-bottom: 24px;">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">⏳</div>
+                        <h3>Pending Payouts</h3>
+                        <div class="stat-value" id="stat-payouts-pending-amount" style="color: #fbbf24;">₹0.00</div>
+                        <div class="stat-trend" id="stat-payouts-pending-count" style="color: #fde68a;">0 requests awaiting NEFT transfer</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">✓</div>
+                        <h3>Total Disbursed</h3>
+                        <div class="stat-value" id="stat-payouts-settled-amount" style="color: #34d399;">₹0.00</div>
+                        <div class="stat-trend" id="stat-payouts-settled-count" style="color: #6ee7b7;">0 settlements completed</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: rgba(99, 102, 241, 0.15); color: #818cf8;">🏦</div>
+                        <h3>Disbursal Method</h3>
+                        <div class="stat-value" style="font-size: 1.3rem; color: #fff;">Direct NEFT / IMPS</div>
+                        <div class="stat-trend" style="color: var(--text-dim);">Option B: Admin NetBanking Settlement</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: rgba(236, 72, 153, 0.15); color: #f472b6;">📜</div>
+                        <h3>Platform Commission</h3>
+                        <div class="stat-value" style="font-size: 1.3rem; color: #fff;">3% Flat Retained</div>
+                        <div class="stat-trend" style="color: var(--text-dim);">Deducted before net payout</div>
+                    </div>
+                </div>
+
+                <!-- Control Bar & Filters -->
+                <div class="panel-card" style="margin-bottom: 24px;">
+                    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px;">
+                        <div class="filter-pills" style="display: flex; gap: 8px;">
+                            <button type="button" class="filter-btn active" id="payoutFilterAll" onclick="filterPayouts('all', this)">All Requests</button>
+                            <button type="button" class="filter-btn" id="payoutFilterPending" onclick="filterPayouts('pending', this)">Pending (<span id="filterCountPending">0</span>)</button>
+                            <button type="button" class="filter-btn" id="payoutFilterSettled" onclick="filterPayouts('settled', this)">Settled (<span id="filterCountSettled">0</span>)</button>
+                        </div>
+                        <div class="search-input-box" style="flex: 1; max-width: 360px;">
+                            <input type="text" id="payoutSearchInput" placeholder="Search by organizer, email, or UTR..." oninput="renderPayoutsTable()">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payouts Table -->
+                <div class="panel-card" style="padding: 0; overflow: hidden;">
+                    <div class="table-responsive">
+                        <table class="data-table" style="width: 100%;">
+                            <thead>
+                                <tr>
+                                    <th>Request Info</th>
+                                    <th>Organizer</th>
+                                    <th>Amount</th>
+                                    <th>Beneficiary & Bank Details</th>
+                                    <th>Status</th>
+                                    <th>Bank UTR Ref</th>
+                                    <th style="text-align: right;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="payoutsListBody">
+                                <tr><td colspan="7" style="text-align: center; padding: 32px; color: var(--text-dim);">Loading settlement requests...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
         </main>
+    </div>
+
+    <!-- Admin NEFT Settlement Confirmation Modal -->
+    <div id="settlementModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 10000; justify-content: center; align-items: center; padding: 20px;">
+        <div style="background: #151a27; border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; width: 100%; max-width: 520px; padding: 24px; position: relative; box-shadow: 0 20px 40px rgba(0,0,0,0.6);">
+            <button type="button" onclick="closeSettlementModal()" style="position: absolute; top: 16px; right: 16px; background: transparent; border: none; color: #94a3b8; font-size: 1.4rem; cursor: pointer;">✕</button>
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+                <span style="font-size: 1.6rem;">🏦</span>
+                <div>
+                    <h3 style="margin: 0; color: #fff; font-size: 1.25rem;">Record NEFT / IMPS Settlement</h3>
+                    <small style="color: var(--text-dim);">Transfer funds via your netbanking, then record the UTR reference.</small>
+                </div>
+            </div>
+
+            <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px 16px; margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: var(--text-dim); font-size: 0.82rem;">Organizer</span>
+                    <strong style="color: #fff; font-size: 0.85rem;" id="modalOrgName">-</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: var(--text-dim); font-size: 0.82rem;">Amount to Transfer</span>
+                    <strong style="color: #10b981; font-size: 1.1rem;" id="modalAmount">₹0.00</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: var(--text-dim); font-size: 0.82rem;">Bank Account / UPI</span>
+                    <strong style="color: #fff; font-family: monospace; font-size: 0.85rem;" id="modalAccount">-</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: var(--text-dim); font-size: 0.82rem;">IFSC Code</span>
+                    <strong style="color: #38bdf8; font-family: monospace; font-size: 0.85rem;" id="modalIFSC">-</strong>
+                </div>
+            </div>
+
+            <form id="settlementForm" onsubmit="confirmSettlement(event)">
+                <input type="hidden" id="modalPayoutId">
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #e2e8f0; margin-bottom: 8px;">
+                        Bank Transaction Ref / UTR Number <span style="color: #ef4444;">*</span>
+                    </label>
+                    <input type="text" id="modalUTR" placeholder="e.g. HDFC26102398412 or 868509690511" required style="width: 100%; padding: 12px 14px; background: #0b0f19; border: 1px solid rgba(255,255,255,0.18); border-radius: 10px; color: #fff; font-size: 0.95rem; font-family: monospace;">
+                    <small style="color: var(--text-dim); font-size: 0.75rem; margin-top: 6px; display: block;">This UTR will be recorded in the ledger and emailed to the host.</small>
+                </div>
+
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" onclick="closeSettlementModal()" style="padding: 10px 18px; background: rgba(255,255,255,0.08); color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">Cancel</button>
+                    <button type="submit" id="modalSubmitBtn" style="padding: 10px 22px; background: #10b981; color: #000; border: none; border-radius: 8px; cursor: pointer; font-weight: 700;">✓ Confirm Settlement</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <!-- Application Script Logic -->
@@ -488,7 +611,8 @@
                 'overview': { title: 'Platform Overview', subtitle: 'Real-time health, users, events, and smart escrow activity.' },
                 'users': { title: 'Users & Roles Directory', subtitle: 'Identify organizers, attendees, and administrator accounts.' },
                 'events': { title: 'Events Moderation Hub', subtitle: 'Control public visibility, feature top experiences, or remove spam.' },
-                'escrow': { title: 'Smart Escrow & Refunds', subtitle: 'Proof-of-Presence gate verification and group split analytics.' }
+                'escrow': { title: 'Smart Escrow & Refunds', subtitle: 'Proof-of-Presence gate verification and group split analytics.' },
+                'payouts': { title: 'Host Settlements & Disbursals', subtitle: 'Review withdrawal requests, execute NEFT/IMPS transfers, and record bank UTR references.' }
             };
 
             const meta = titles[tabId] || titles['overview'];
@@ -707,6 +831,7 @@
                 renderOverviewEvents();
                 renderUsersTable();
                 renderEventsTable();
+                loadPayoutsData();
             });
         }
 
@@ -969,6 +1094,220 @@
                     <td>${isUnlisted ? '<span class="status-badge unlisted">Unlisted</span>' : '<span class="status-badge live">Live</span>'}</td>
                 `;
                 tbody.appendChild(tr);
+            });
+        }
+
+        // ==========================================
+        // HOST SETTLEMENTS & PAYOUTS LOGIC (OPTION B)
+        // ==========================================
+        let allPayouts = [];
+        let activePayoutFilter = 'all';
+
+        function loadPayoutsData() {
+            if (!window.AdminBackend || typeof window.AdminBackend.getPayoutRequests !== 'function') return;
+
+            window.AdminBackend.getPayoutRequests(function(err, payouts) {
+                if (err) {
+                    console.error("Payout data load error:", err);
+                    const tbody = document.getElementById('payoutsListBody');
+                    if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--danger); padding: 24px;">Failed to load payouts: ${err.message}</td></tr>`;
+                    return;
+                }
+
+                allPayouts = payouts || [];
+
+                let pendingAmount = 0;
+                let pendingCount = 0;
+                let settledAmount = 0;
+                let settledCount = 0;
+
+                allPayouts.forEach(p => {
+                    const amt = parseFloat(p.amount) || 0;
+                    if (p.status === 'Settled') {
+                        settledAmount += amt;
+                        settledCount++;
+                    } else {
+                        pendingAmount += amt;
+                        pendingCount++;
+                    }
+                });
+
+                // Update KPIs
+                const penAmtEl = document.getElementById('stat-payouts-pending-amount');
+                const penCntEl = document.getElementById('stat-payouts-pending-count');
+                const setAmtEl = document.getElementById('stat-payouts-settled-amount');
+                const setCntEl = document.getElementById('stat-payouts-settled-count');
+
+                if (penAmtEl) penAmtEl.textContent = '₹' + pendingAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                if (penCntEl) penCntEl.textContent = `${pendingCount} request${pendingCount === 1 ? '' : 's'} awaiting NEFT transfer`;
+                if (setAmtEl) setAmtEl.textContent = '₹' + settledAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                if (setCntEl) setCntEl.textContent = `${settledCount} settlement${settledCount === 1 ? '' : 's'} completed`;
+
+                // Badges
+                const navBadge = document.getElementById('nav-badge-payouts');
+                if (navBadge) {
+                    navBadge.textContent = pendingCount;
+                    navBadge.style.display = pendingCount > 0 ? 'inline-block' : 'none';
+                }
+
+                const fcPending = document.getElementById('filterCountPending');
+                const fcSettled = document.getElementById('filterCountSettled');
+                if (fcPending) fcPending.textContent = pendingCount;
+                if (fcSettled) fcSettled.textContent = settledCount;
+
+                renderPayoutsTable();
+            });
+        }
+
+        function filterPayouts(filterType, btn) {
+            activePayoutFilter = filterType;
+            document.querySelectorAll('#tab-payouts .filter-btn').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            renderPayoutsTable();
+        }
+
+        function renderPayoutsTable() {
+            const tbody = document.getElementById('payoutsListBody');
+            if (!tbody) return;
+
+            const query = (document.getElementById('payoutSearchInput').value || '').toLowerCase().trim();
+            let payouts = allPayouts.slice();
+
+            // Filter by status
+            if (activePayoutFilter === 'pending') {
+                payouts = payouts.filter(p => p.status !== 'Settled');
+            } else if (activePayoutFilter === 'settled') {
+                payouts = payouts.filter(p => p.status === 'Settled');
+            }
+
+            // Search query
+            if (query) {
+                payouts = payouts.filter(p => {
+                    const name = (p.organizerName || '').toLowerCase();
+                    const email = (p.organizerEmail || '').toLowerCase();
+                    const utr = (p.bankUTR || '').toLowerCase();
+                    const acc = (p.bankAccount || p.upiId || '').toLowerCase();
+                    const id = (p.payoutId || p.paymentId || '').toLowerCase();
+                    return name.includes(query) || email.includes(query) || utr.includes(query) || acc.includes(query) || id.includes(query);
+                });
+            }
+
+            if (payouts.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 32px; color: var(--text-dim);">No settlement requests match the current filter.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = '';
+            payouts.forEach(p => {
+                const tr = document.createElement('tr');
+                const isSettled = p.status === 'Settled';
+                const pId = p.payoutId || p.paymentId || 'PO-REQ';
+                const dStr = p.requestedAt ? new Date(p.requestedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Recent';
+                const amt = parseFloat(p.amount) || 0;
+
+                let bankMarkup = '';
+                if (p.bankAccount) {
+                    bankMarkup = `
+                        <div style="font-weight: 600; color: #fff;">${p.bankName || 'Beneficiary Bank'}</div>
+                        <div style="font-size: 0.8rem; color: var(--text-dim); display:flex; align-items:center; gap:6px;">
+                            <span>A/C: <strong style="font-family:monospace; color:#38bdf8;">${p.bankAccount}</strong></span>
+                            <button type="button" onclick="navigator.clipboard.writeText('${p.bankAccount}'); alert('Account number copied: ${p.bankAccount}');" style="background:none; border:none; cursor:pointer; font-size:0.75rem; color:#818cf8;" title="Copy Account">📋</button>
+                        </div>
+                        <div style="font-size: 0.75rem; color: var(--text-dim); display:flex; align-items:center; gap:6px;">
+                            <span>IFSC: <strong style="font-family:monospace; color:#fbbf24;">${p.bankIFSC || 'N/A'}</strong></span>
+                            ${p.bankIFSC ? `<button type="button" onclick="navigator.clipboard.writeText('${p.bankIFSC}'); alert('IFSC copied: ${p.bankIFSC}');" style="background:none; border:none; cursor:pointer; font-size:0.75rem; color:#818cf8;" title="Copy IFSC">📋</button>` : ''}
+                        </div>
+                    `;
+                } else if (p.upiId) {
+                    bankMarkup = `
+                        <div style="font-weight: 600; color: #fff;">UPI Transfer</div>
+                        <div style="font-size: 0.8rem; color: var(--text-dim); display:flex; align-items:center; gap:6px;">
+                            <span>VPA: <strong style="font-family:monospace; color:#38bdf8;">${p.upiId}</strong></span>
+                            <button type="button" onclick="navigator.clipboard.writeText('${p.upiId}'); alert('UPI ID copied: ${p.upiId}');" style="background:none; border:none; cursor:pointer; font-size:0.75rem; color:#818cf8;" title="Copy UPI">📋</button>
+                        </div>
+                    `;
+                } else {
+                    bankMarkup = `<span style="color: var(--text-dim);">No bank details provided</span>`;
+                }
+
+                const statusBadge = isSettled ?
+                    `<span style="background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.3); padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700;">✓ Settled</span>` :
+                    `<span style="background: rgba(245,158,11,0.15); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700;">⏳ Pending Review</span>`;
+
+                const utrCell = isSettled ?
+                    `<span style="font-family: monospace; color: #38bdf8; font-weight: 700; font-size: 0.82rem;">${p.bankUTR || 'Recorded'}</span>` :
+                    `<span style="color: var(--text-dim); font-size: 0.78rem;">Pending NetBanking</span>`;
+
+                const actionBtn = isSettled ?
+                    `<span style="color: #10b981; font-size: 0.82rem; font-weight: 600;">✓ Disbursed</span>` :
+                    `<button type="button" class="btn-action btn-success" style="padding: 6px 14px; font-size: 0.8rem; font-weight: 700;" onclick="openSettlementModal('${pId}')">
+                        🏦 Settle via NEFT
+                    </button>`;
+
+                tr.innerHTML = `
+                    <td>
+                        <strong style="color: #fff; font-family: monospace; font-size: 0.82rem; display: block;">${pId}</strong>
+                        <small style="color: var(--text-dim); font-size: 0.72rem;">${dStr}</small>
+                    </td>
+                    <td>
+                        <strong style="color: #fff; font-size: 0.9rem; display: block;">${p.organizerName || 'Organizer'}</strong>
+                        <small style="color: var(--text-dim); font-size: 0.75rem;">${p.organizerEmail || '-'}</small>
+                    </td>
+                    <td>
+                        <div style="font-size: 1.1rem; font-weight: 800; color: #10b981;">₹${amt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                        <small style="color: var(--text-dim); font-size: 0.7rem;">Net Withdrawable</small>
+                    </td>
+                    <td>${bankMarkup}</td>
+                    <td>${statusBadge}</td>
+                    <td>${utrCell}</td>
+                    <td style="text-align: right;">${actionBtn}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function openSettlementModal(payoutId) {
+            const payout = allPayouts.find(p => (p.payoutId === payoutId || p.paymentId === payoutId));
+            if (!payout) return alert("Payout record not found");
+
+            document.getElementById('modalPayoutId').value = payoutId;
+            document.getElementById('modalOrgName').textContent = `${payout.organizerName || 'Host'} (${payout.organizerEmail || ''})`;
+            document.getElementById('modalAmount').textContent = '₹' + (parseFloat(payout.amount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 });
+            document.getElementById('modalAccount').textContent = payout.bankAccount ? `A/C: ${payout.bankAccount}` : (payout.upiId ? `UPI: ${payout.upiId}` : 'Bank');
+            document.getElementById('modalIFSC').textContent = payout.bankIFSC || (payout.bankName || 'UPI VPA');
+            document.getElementById('modalUTR').value = '';
+
+            document.getElementById('settlementModal').style.display = 'flex';
+        }
+
+        function closeSettlementModal() {
+            document.getElementById('settlementModal').style.display = 'none';
+        }
+
+        function confirmSettlement(e) {
+            e.preventDefault();
+            const payoutId = document.getElementById('modalPayoutId').value;
+            const utr = document.getElementById('modalUTR').value.trim();
+            const btn = document.getElementById('modalSubmitBtn');
+
+            if (!utr) {
+                alert("Please enter the Bank UTR / Transaction Reference Number.");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = "Recording & Notifying Host...";
+
+            window.AdminBackend.settlePayout(payoutId, utr, function(err, result) {
+                btn.disabled = false;
+                btn.textContent = "✓ Confirm Settlement";
+                if (err) {
+                    alert("Settlement error: " + err.message);
+                } else {
+                    alert(`Payout successfully settled!\nBank UTR: ${utr}\nConfirmation email has been dispatched to the host.`);
+                    closeSettlementModal();
+                    loadPayoutsData();
+                }
             });
         }
     </script>

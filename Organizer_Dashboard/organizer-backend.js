@@ -412,14 +412,81 @@
                                     });
                                 }
 
-                                callback(null, {
-                                    success: true,
-                                    message: `Ticket verified! Welcome, ${ticket.attendeeName || 'Attendee'}.`,
-                                    ticket: updatedTicket,
-                                    checkin: checkinItem,
-                                    depositRefunded: hasDeposit,
-                                    depositAmount: depositAmt
-                                });
+                                const apiBase = (config.apiGatewayUrl || 'https://s3eg7kdaja.execute-api.ap-south-1.amazonaws.com/prod').replace(/\/+$/, '');
+                                const paymentId = ticket.paymentId || (ticket.paymentDetails && ticket.paymentDetails.paymentId);
+
+                                const finishCheckin = (gatewayRefundResult) => {
+                                    if (ticket.attendeeEmail && hasDeposit && depositAmt > 0) {
+                                        const refIdTxt = (gatewayRefundResult && gatewayRefundResult.refundId) ? ` (Razorpay Ref: ${gatewayRefundResult.refundId})` : '';
+                                        fetch(`${apiBase}/api/send-email`, {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({
+                                                type: 'alert',
+                                                to_email: ticket.attendeeEmail,
+                                                to_name: ticket.attendeeName || 'Attendee',
+                                                subject: `💰 Gate Pledge Deposit Refunded: ${ticket.eventName || 'Your Event'}`,
+                                                alert_title: 'Gate Deposit Refund Processed',
+                                                alert_message: `Proof-of-Presence verified at venue entrance! Your refundable pledge deposit of ₹${depositAmt} has been released back to your original payment method${refIdTxt}. Welcome to the event!`,
+                                                priority: 'normal'
+                                            })
+                                        }).catch(mailErr => console.warn("Gate refund email notice:", mailErr));
+                                    }
+
+                                    callback(null, {
+                                        success: true,
+                                        message: `Ticket verified! Welcome, ${ticket.attendeeName || 'Attendee'}.`,
+                                        ticket: { ...updatedTicket, razorpayRefundId: gatewayRefundResult && gatewayRefundResult.refundId },
+                                        checkin: checkinItem,
+                                        depositRefunded: hasDeposit,
+                                        depositAmount: depositAmt,
+                                        refundGatewayResult: gatewayRefundResult
+                                    });
+                                };
+
+                                // If this ticket has an active refundable deposit and a valid Razorpay payment ID, execute automated refund
+                                if (hasDeposit && depositAmt > 0 && paymentId) {
+                                    fetch(`${apiBase}/api/payment/refund`, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                            payment_id: paymentId,
+                                            amount: depositAmt,
+                                            notes: {
+                                                ticketId: ticketId,
+                                                eventId: ticket.eventId,
+                                                type: 'gate_deposit_smart_refund',
+                                                reason: 'Proof-of-Presence Gate Verification Refund'
+                                            }
+                                        })
+                                    })
+                                    .then(res => res.json())
+                                    .then(refRes => {
+                                        console.log("Gate deposit Razorpay refund executed:", refRes);
+                                        if (refRes && refRes.refundId) {
+                                            checkinItem.razorpayRefundId = refRes.refundId;
+                                            checkinItem.refundGatewayStatus = refRes.status || "processed";
+                                            docClient.update({
+                                                TableName: config.ticketsTableName,
+                                                Key: { ticketId: ticketId },
+                                                UpdateExpression: "SET razorpayRefundId = :rid, refundGatewayStatus = :rgs",
+                                                ExpressionAttributeValues: {
+                                                    ":rid": refRes.refundId,
+                                                    ":rgs": refRes.status || "processed"
+                                                }
+                                            }, (uErr) => {
+                                                if (uErr) console.warn("Notice: could not record razorpayRefundId to ticket:", uErr);
+                                            });
+                                        }
+                                        finishCheckin(refRes);
+                                    })
+                                    .catch(refErr => {
+                                        console.warn("Gate deposit Razorpay refund network notice:", refErr);
+                                        finishCheckin(null);
+                                    });
+                                } else {
+                                    finishCheckin(null);
+                                }
                             });
                         });
                     });
@@ -784,23 +851,72 @@
                 window.OrganizerBackend.getUserProfile((err, profile) => {
                     if (err) return callback(err);
                     
-                    const currentWithdrawn = profile.withdrawnAmount || 0;
+                    const currentWithdrawn = parseFloat(profile.withdrawnAmount || 0);
                     const newWithdrawn = currentWithdrawn + amount;
-                    
-                    const updateParams = {
-                        TableName: config.dynamoDBTableName,
-                        Key: { userId: currentUserSub },
-                        UpdateExpression: "set withdrawnAmount = :w, withdrawalDetails = :d",
-                        ExpressionAttributeValues: {
-                            ":w": newWithdrawn,
-                            ":d": details
-                        }
+                    const payoutId = "PO-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
+                    const now = new Date().toISOString();
+
+                    const orgName = ((profile.firstName || '') + ' ' + (profile.lastName || '')).trim() || profile.name || "Organizer";
+                    const orgEmail = profile.email || currentUserEmail || "organizer@example.com";
+
+                    const payoutRecord = {
+                        payoutId: payoutId,
+                        paymentId: payoutId,
+                        type: "ORGANIZER_PAYOUT",
+                        userId: currentUserSub,
+                        organizerName: orgName,
+                        organizerEmail: orgEmail,
+                        amount: amount,
+                        status: "Pending", // "Pending" | "Settled"
+                        method: details.method || (details.bankAccount ? "bank" : "upi"),
+                        bankName: details.bankName || details.beneficiaryName || "",
+                        bankAccount: details.bankAccount || "",
+                        bankIFSC: details.bankIFSC || details.bankIfsc || "",
+                        upiId: details.upiId || "",
+                        requestedAt: now,
+                        timestamp: now
                     };
-                    
-                    docClient.update(updateParams, function(updateErr) {
-                        if (updateErr) callback(updateErr);
-                        else callback(null);
+
+                    // 1. Log payout record in EventProPayments table
+                    const paymentParams = {
+                        TableName: config.paymentsTableName,
+                        Item: payoutRecord
+                    };
+
+                    docClient.put(paymentParams, function(payErr) {
+                        if (payErr) console.warn("Notice: could not put into payments table (non-fatal):", payErr);
+
+                        // 2. Update EventProUsers with new withdrawnAmount, current details, and append to payoutHistory
+                        const existingHistory = Array.isArray(profile.payoutHistory) ? profile.payoutHistory : [];
+                        const updatedHistory = [payoutRecord, ...existingHistory];
+
+                        const updateParams = {
+                            TableName: config.dynamoDBTableName,
+                            Key: { userId: currentUserSub },
+                            UpdateExpression: "SET withdrawnAmount = :w, withdrawalDetails = :d, payoutHistory = :h",
+                            ExpressionAttributeValues: {
+                                ":w": newWithdrawn,
+                                ":d": details,
+                                ":h": updatedHistory
+                            }
+                        };
+                        
+                        docClient.update(updateParams, function(updateErr) {
+                            if (updateErr) callback(updateErr);
+                            else callback(null, payoutRecord);
+                        });
                     });
+                });
+            });
+        },
+
+        getPayoutHistory: function(callback) {
+            initAWS((err) => {
+                if (err) return callback(err);
+                window.OrganizerBackend.getUserProfile((err, profile) => {
+                    if (err) return callback(err);
+                    const history = Array.isArray(profile.payoutHistory) ? profile.payoutHistory : [];
+                    callback(null, history);
                 });
             });
         }

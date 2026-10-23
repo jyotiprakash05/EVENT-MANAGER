@@ -254,6 +254,30 @@
                             <button type="submit" id="withdrawBtn" class="btn-primary">Disburse Payout</button>
                         </div>
                     </form>
+
+                    <!-- Payout & Settlement History Table -->
+                    <div style="margin-top: 36px; padding-top: 24px; border-top: 1px solid var(--border);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                            <h4 style="margin: 0; font-size:1.05rem; color:#fff;">Payout & Settlement History</h4>
+                            <span style="font-size:0.75rem; color:var(--muted);">Disbursed via Direct NEFT/IMPS</span>
+                        </div>
+                        <div style="overflow-x: auto; background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 10px;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 0.84rem;">
+                                <thead>
+                                    <tr style="border-bottom: 1px solid var(--border); text-align: left; background: rgba(255,255,255,0.02); color: var(--muted);">
+                                        <th style="padding: 12px 14px;">Requested Date</th>
+                                        <th style="padding: 12px 14px;">Amount</th>
+                                        <th style="padding: 12px 14px;">Destination</th>
+                                        <th style="padding: 12px 14px;">Status</th>
+                                        <th style="padding: 12px 14px;">Bank UTR Ref</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="payoutHistoryBody">
+                                    <tr><td colspan="5" style="text-align:center; padding:20px; color:var(--muted);">No payout requests recorded yet.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- SECTION 3: DEDICATED ORGANIZER SUPPORT DESK -->
@@ -563,6 +587,43 @@
                             if (payoutAvailEl) payoutAvailEl.textContent = '₹' + currentAvailableBalance.toFixed(2);
                         }
                     });
+
+                    // Load Payout History
+                    if (typeof window.OrganizerBackend.getPayoutHistory === 'function') {
+                        window.OrganizerBackend.getPayoutHistory(function(err, history) {
+                            const tbody = document.getElementById('payoutHistoryBody');
+                            if (!tbody) return;
+                            if (err || !history || history.length === 0) {
+                                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--muted);">No payout requests recorded yet.</td></tr>';
+                                return;
+                            }
+                            tbody.innerHTML = '';
+                            history.forEach(item => {
+                                const tr = document.createElement('tr');
+                                tr.style.borderBottom = '1px solid rgba(255,255,255,0.06)';
+                                const isSettled = item.status === 'Settled';
+                                const dStr = item.requestedAt ? new Date(item.requestedAt).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) : 'Recent';
+                                const dest = item.bankAccount ? 
+                                    `${item.bankName ? item.bankName + ' • ' : ''}A/C: ••••${item.bankAccount.slice(-4)} (${item.bankIFSC || ''})` :
+                                    (item.upiId ? `UPI: ${item.upiId}` : 'Bank Wire');
+
+                                tr.innerHTML = `
+                                    <td style="padding: 12px 14px; color:#fff;">${dStr}</td>
+                                    <td style="padding: 12px 14px; font-weight:700; color:#10b981;">₹${(item.amount || 0).toLocaleString()}</td>
+                                    <td style="padding: 12px 14px; color:var(--text);">${dest}</td>
+                                    <td style="padding: 12px 14px;">
+                                        <span style="display:inline-block; padding:3px 10px; border-radius:12px; font-size:0.75rem; font-weight:700; background:${isSettled ? 'rgba(16,185,129,0.15)' : 'rgba(245,158,11,0.15)'}; color:${isSettled ? '#10b981' : '#f59e0b'}; border:1px solid ${isSettled ? 'rgba(16,185,129,0.3)' : 'rgba(245,158,11,0.3)'};">
+                                            ${isSettled ? '✓ Settled' : '⏳ Pending Review'}
+                                        </span>
+                                    </td>
+                                    <td style="padding: 12px 14px; font-family:monospace; color:${isSettled ? '#38bdf8' : 'var(--muted)'};">
+                                        ${item.bankUTR || 'Awaiting Bank Processing'}
+                                    </td>
+                                `;
+                                tbody.appendChild(tr);
+                            });
+                        });
+                    }
                 }
             }
 

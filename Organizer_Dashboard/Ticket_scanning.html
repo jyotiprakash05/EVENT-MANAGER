@@ -540,6 +540,7 @@
                 const isLiveDynamic = cryptoResult && cryptoResult.isDynamic && cryptoResult.verifiedLive;
                 const isDepositRefunded = (fullResult && fullResult.depositRefunded) || ticket.hasDeposit || ticket.depositAmount > 0;
                 const refundAmt = (fullResult && fullResult.depositAmount) || ticket.depositAmount || 50;
+                const rzpRefId = (fullResult && fullResult.refundGatewayResult && fullResult.refundGatewayResult.refundId) || ticket.razorpayRefundId || '';
 
                 const livenessBadge = isLiveDynamic ? `
                     <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #6ee7b7; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; margin-bottom: 8px;">
@@ -558,6 +559,7 @@
                         <div>
                             <div style="color: #6ee7b7; font-weight: 800; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.05em;">SMART REFUND ESCROW RELEASED</div>
                             <div style="color: #e2e8f0; font-size: 0.78rem;">Proof-of-Presence verified. <strong>₹${refundAmt}</strong> deposit automatically credited to attendee!</div>
+                            ${rzpRefId ? `<div style="color: #6ee7b7; font-size: 0.72rem; font-family: monospace; margin-top: 3px;">Razorpay Ref: <strong>${rzpRefId}</strong></div>` : ''}
                         </div>
                     </div>
                 ` : '';
@@ -576,7 +578,7 @@
                         <div><strong style="color:var(--muted); display:block; font-size:0.75rem;">TICKET ID</strong><span style="font-family:monospace; color:#34d399;">${ticket.ticketId.substring(0, 14)}...</span></div>
                         <div><strong style="color:var(--muted); display:block; font-size:0.75rem;">STATUS</strong><span style="color:#10b981; font-weight:700;">Verified Admitted</span></div>
                         <div><strong style="color:var(--muted); display:block; font-size:0.75rem;">SECURITY TYPE</strong><span style="color:${isLiveDynamic ? '#34d399' : '#f59e0b'}; font-weight:600;">${isLiveDynamic ? 'Dynamic Anti-Screenshot' : 'Static Legacy'}</span></div>
-                        <div><strong style="color:var(--muted); display:block; font-size:0.75rem;">ESCROW STATUS</strong><span style="color:${isDepositRefunded ? '#10b981' : '#94a3b8'}; font-weight:600;">${isDepositRefunded ? `₹${refundAmt} Refunded` : 'No Deposit'}</span></div>
+                        <div><strong style="color:var(--muted); display:block; font-size:0.75rem;">ESCROW STATUS</strong><span style="color:${isDepositRefunded ? '#10b981' : '#94a3b8'}; font-weight:600;">${isDepositRefunded ? `₹${refundAmt} Refunded${rzpRefId ? ' (Razorpay)' : ''}` : 'No Deposit'}</span></div>
                     </div>
                 `;
             }
