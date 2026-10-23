@@ -132,7 +132,7 @@ window.AdminBackend = (function() {
                             const uEmail = (u.email || '').toLowerCase().trim();
                             const uRole = (u.role || u.userType || u.user_type || u.accountType || '').toLowerCase().trim();
 
-                            const isMasterAdmin = uEmail === 'admin@eventpro.com' || uRole === 'admin';
+                            const isMasterAdmin = uEmail === 'admin@eventpro24.online' || uEmail === 'admin@eventpro.com' || uRole === 'admin';
                             const hasEvents = (u.userId && organizerIdSet.has(u.userId)) || (uEmail && organizerEmailSet.has(uEmail));
                             const isExplicitOrg = uRole === 'organizer' || uRole.includes('org');
 

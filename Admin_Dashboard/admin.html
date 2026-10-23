@@ -100,7 +100,7 @@
             <form id="adminLoginForm">
                 <div class="form-group">
                     <label>Admin Email</label>
-                    <input type="email" id="adminEmail" placeholder="admin@eventpro.com" required>
+                    <input type="email" id="adminEmail" placeholder="admin@eventpro24.online" required>
                 </div>
                 <div class="form-group">
                     <label>Password</label>
@@ -168,7 +168,7 @@
                     <div class="admin-avatar">AD</div>
                     <div style="overflow: hidden;">
                         <div id="adminNameDisplay" style="font-size: 0.85rem; font-weight: 700; color: #fff; white-space: nowrap; text-overflow: ellipsis;">Master Admin</div>
-                        <div id="adminEmailDisplay" style="font-size: 0.72rem; color: var(--text-dim); white-space: nowrap; text-overflow: ellipsis;">admin@eventpro.com</div>
+                        <div id="adminEmailDisplay" style="font-size: 0.72rem; color: var(--text-dim); white-space: nowrap; text-overflow: ellipsis;">admin@eventpro24.online</div>
                     </div>
                 </div>
                 <a href="#" id="logoutBtn" class="logout-btn">
@@ -586,6 +586,20 @@
                 const userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
                 const cognitoUser = userPool.getCurrentUser();
                 if (cognitoUser) cognitoUser.signOut();
+
+                // Clear cached AWS credentials and stale Identity IDs
+                if (window.AWS && AWS.config && AWS.config.credentials) {
+                    if (typeof AWS.config.credentials.clearCachedId === 'function') {
+                        AWS.config.credentials.clearCachedId();
+                    }
+                    AWS.config.credentials = null;
+                }
+                for (let i = localStorage.length - 1; i >= 0; i--) {
+                    const k = localStorage.key(i);
+                    if (k && (k.includes('aws.cognito.identity') || k.includes('CognitoIdentity'))) {
+                        localStorage.removeItem(k);
+                    }
+                }
                 showLogin();
             });
 
@@ -621,7 +635,7 @@
         }
 
         function quickFillAdmin() {
-            document.getElementById('adminEmail').value = 'admin@eventpro.com';
+            document.getElementById('adminEmail').value = 'admin@eventpro24.online';
             document.getElementById('adminPassword').value = 'Admin@1234';
         }
 
@@ -698,12 +712,35 @@
                 logins[`cognito-idp.${window.EVENTPRO_AWS_CONFIG.region}.amazonaws.com/${window.EVENTPRO_AWS_CONFIG.userPoolId}`] = idToken;
                 
                 AWS.config.region = window.EVENTPRO_AWS_CONFIG.region;
-                AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-                    IdentityPoolId: window.EVENTPRO_AWS_CONFIG.identityPoolId,
-                    Logins: logins
-                });
 
-                AWS.config.credentials.get(function(credErr) {
+                function obtainAwsCredentials(forceFresh, callback) {
+                    if (forceFresh) {
+                        if (AWS.config.credentials && typeof AWS.config.credentials.clearCachedId === 'function') {
+                            AWS.config.credentials.clearCachedId();
+                        }
+                        for (let i = localStorage.length - 1; i >= 0; i--) {
+                            const k = localStorage.key(i);
+                            if (k && (k.includes('aws.cognito.identity') || k.includes('CognitoIdentity'))) {
+                                localStorage.removeItem(k);
+                            }
+                        }
+                    }
+
+                    AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+                        IdentityPoolId: window.EVENTPRO_AWS_CONFIG.identityPoolId,
+                        Logins: logins
+                    });
+
+                    AWS.config.credentials.get(function(credErr) {
+                        if (credErr && !forceFresh && credErr.message && credErr.message.includes("Logins don't match")) {
+                            console.warn("Stale identity cache detected, purging and retrying with fresh credentials...");
+                            return obtainAwsCredentials(true, callback);
+                        }
+                        callback(credErr);
+                    });
+                }
+
+                obtainAwsCredentials(false, function(credErr) {
                     if (credErr) {
                         showLogin("AWS Identity credentials could not be obtained: " + credErr.message);
                         return;
@@ -718,7 +755,12 @@
                     if (adminNameEl) adminNameEl.textContent = payload.given_name ? `${payload.given_name} (Admin)` : 'Super Admin';
 
                     // Master admin bypass
-                    if (tokenEmail === 'admin@eventpro.com') {
+                    if (tokenEmail === 'admin@eventpro24.online' || tokenEmail === 'admin@eventpro.com') {
+                        const btn = document.getElementById('adminLoginBtn');
+                        if (btn) {
+                            btn.textContent = 'Sign In to Admin Panel';
+                            btn.disabled = false;
+                        }
                         document.getElementById('admin-login-container').style.display = 'none';
                         document.getElementById('dashboard-layout').style.display = 'flex';
                         loadDashboard();
