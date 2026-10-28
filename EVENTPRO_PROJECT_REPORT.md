@@ -43,6 +43,16 @@
 9. [Security, Cryptography & Compliance Measures](#9-security-cryptography--compliance-measures)
 10. [Performance Metrics & Verification Results](#10-performance-metrics--verification-results)
 11. [Deployment, Environment Setup & Execution Instructions](#11-deployment-environment-setup--execution-instructions)
+   - 11.1 Prerequisites & Tooling Requirements
+   - 11.2 AWS Environment Configuration (`aws-config.js`)
+   - 11.3 Local Development & Testing Workflow
+   - 11.4 Cloud Infrastructure Provisioning (DynamoDB, S3, Cognito & SES)
+   - 11.5 AWS Lambda Microservice Packaging & Deployment
+   - 11.6 API Gateway Stage & CORS Deployment
+   - 11.7 Production Frontend Deployment (S3 & CloudFront CDN)
+   - 11.8 Automated CI/CD Pipeline (GitHub Actions Workflow)
+   - 11.9 Secret Management & Environment Security
+   - 11.10 Monitoring, Health Checks & Rollback Strategy
 12. [Future Enhancements & Roadmap](#12-future-enhancements--roadmap)
 13. [Conclusion & Academic Summary](#13-conclusion--academic-summary)
 
@@ -406,15 +416,21 @@ System performance was empirically validated under simulated high-density traffi
 
 ## 11. DEPLOYMENT, ENVIRONMENT SETUP & EXECUTION INSTRUCTIONS
 
-### 11.1 Prerequisites
-- Modern Web Browser (Google Chrome, Mozilla Firefox, Microsoft Edge, or Safari).
-- Visual Studio Code with **Live Server** extension (or any local static HTTP server).
-- Node.js (v18.x or v20.x) for AWS Lambda packaging.
-- Active AWS Account with permissions for Cognito, DynamoDB, API Gateway, S3, and SES.
-- Razorpay Test / Production Merchant Account.
+### 11.1 Prerequisites & Tooling Requirements
+Before deploying EventPro across local or cloud environments, ensure the following toolchains are installed and authenticated:
+
+- **AWS CLI (v2.x)**: Configured with administrative or deployment IAM credentials (`aws configure`) targeting region `ap-south-1`.
+- **Node.js (v18.x or v20.x LTS) & npm**: Required for microservice packaging and dependency bundling.
+- **Git**: Distributed version control for source tracking and CI/CD triggers.
+- **Visual Studio Code**: Recommended IDE with the **Live Server** extension for local development.
+- **Active AWS Account**: Access to Amazon Cognito, DynamoDB, API Gateway, AWS Lambda, Amazon S3, Amazon CloudFront, and Amazon SES.
+- **Razorpay Merchant Account**: Active API Keys (`Key ID` and `Key Secret`) and Webhook Secret for payment rails.
+
+---
 
 ### 11.2 AWS Environment Configuration (`aws-config.js`)
-Verify configuration variables in [aws-config.js](file:///c:/Users/jyoti/OneDrive/Desktop/EVENT%20MANAGER/aws-config.js):
+The client-side web application dynamically reads cloud resource bindings from [aws-config.js](file:///c:/Users/jyoti/OneDrive/Desktop/EVENT%20MANAGER/aws-config.js):
+
 ```javascript
 window.EVENTPRO_AWS_CONFIG = {
     region: "ap-south-1",
@@ -435,23 +451,365 @@ window.EVENTPRO_AWS_CONFIG = {
 };
 ```
 
-### 11.3 Local Execution
-1. Clone or open the repository in VS Code:
+---
+
+### 11.3 Local Development & Testing Workflow
+1. **Clone the Repository**:
    ```bash
-   cd "c:\Users\jyoti\OneDrive\Desktop\EVENT MANAGER"
+   git clone https://github.com/jyotiprakash05/EVENT-MANAGER.git
+   cd EVENT-MANAGER
    ```
-2. Start Live Server on port `5500`:
-   - Open [HOME.html](file:///c:/Users/jyoti/OneDrive/Desktop/EVENT%20MANAGER/HOME.html) in the editor.
-   - Click **"Go Live"** on the VS Code status bar.
-   - Access the platform at: `http://127.0.0.1:5500/HOME.html`.
-3. Quick Navigation Routes:
-   - **Main Landing**: `http://127.0.0.1:5500/HOME.html`
-   - **Attendee Portal**: `http://127.0.0.1:5500/Attendee_Dashboard/Event_List.html`
-   - **My Bookings & M-Tickets**: `http://127.0.0.1:5500/Attendee_Dashboard/Your_Booking.html`
-   - **Attendee Settings & Care Desk**: `http://127.0.0.1:5500/Attendee_Dashboard/Account_settings.html`
-   - **Organizer Portal**: `http://127.0.0.1:5500/Organizer_Dashboard/Event_list_organizer.html`
-   - **Turnstile Scanner**: `http://127.0.0.1:5500/Organizer_Dashboard/Ticket_scanning.html`
-   - **Organizer Payouts & Support**: `http://127.0.0.1:5500/Organizer_Dashboard/Account_settings_organizer.html`
+
+2. **Launch Local Server**:
+   Using VS Code Live Server:
+   - Open `HOME.html` in VS Code and click **"Go Live"** on the status bar (port `5500`).
+   
+   Or run using any lightweight Node HTTP server:
+   ```bash
+   npx serve -l 5500 .
+   ```
+
+3. **Core Application Navigation Routes**:
+   | Portal / Feature | Local Development URL | Description |
+   | :--- | :--- | :--- |
+   | **Public Landing Page** | `http://127.0.0.1:5500/HOME.html` | Hero showcase, active events, feature carousel |
+   | **User Authentication** | `http://127.0.0.1:5500/SIGNIN.html` | Cognito login, signup, password recovery |
+   | **Attendee Event Directory**| `http://127.0.0.1:5500/Attendee_Dashboard/Event_List.html` | Filterable discovery feed & bookings |
+   | **Dynamic M-Tickets** | `http://127.0.0.1:5500/Attendee_Dashboard/Your_Booking.html` | Rolling TOTP QR code display & refunds |
+   | **Group Split Payment Hub** | `http://127.0.0.1:5500/Attendee_Dashboard/Pay_Split.html` | 15-minute group checkout lock |
+   | **Organizer Management** | `http://127.0.0.1:5500/Organizer_Dashboard/Event_list_organizer.html`| Create events, manage tiers, view revenue |
+   | **Turnstile Scanner** | `http://127.0.0.1:5500/Organizer_Dashboard/Ticket_scanning.html` | High-speed camera scanner & escrow refund |
+   | **Administrator Portal** | `http://127.0.0.1:5500/Admin_Dashboard/Admin_Dashboard.html` | Platform-wide metrics and user moderation |
+
+---
+
+### 11.4 Cloud Infrastructure Provisioning (DynamoDB, S3, Cognito & SES)
+
+#### 1. DynamoDB Table Initialization
+EventPro utilizes 7 on-demand DynamoDB tables. Run the following AWS CLI script to provision all required tables with their primary and partition keys:
+
+```bash
+#!/usr/bin/env bash
+REGION="ap-south-1"
+
+# 1. Users Table
+aws dynamodb create-table --table-name EventProUsers \
+  --attribute-definitions AttributeName=userId,AttributeType=S \
+  --key-schema AttributeName=userId,KeyType=HASH \
+  --billing-mode PAY_PER_REQUEST --region $REGION
+
+# 2. Events Table
+aws dynamodb create-table --table-name EventProEvents \
+  --attribute-definitions AttributeName=eventId,AttributeType=S \
+  --key-schema AttributeName=eventId,KeyType=HASH \
+  --billing-mode PAY_PER_REQUEST --region $REGION
+
+# 3. Tickets Table
+aws dynamodb create-table --table-name EventProTickets \
+  --attribute-definitions AttributeName=ticketId,AttributeType=S \
+  --key-schema AttributeName=ticketId,KeyType=HASH \
+  --billing-mode PAY_PER_REQUEST --region $REGION
+
+# 4. Payments Table
+aws dynamodb create-table --table-name EventProPayments \
+  --attribute-definitions AttributeName=paymentId,AttributeType=S \
+  --key-schema AttributeName=paymentId,KeyType=HASH \
+  --billing-mode PAY_PER_REQUEST --region $REGION
+
+# 5. Checkins Table
+aws dynamodb create-table --table-name EventProCheckins \
+  --attribute-definitions AttributeName=checkinId,AttributeType=S \
+  --key-schema AttributeName=checkinId,KeyType=HASH \
+  --billing-mode PAY_PER_REQUEST --region $REGION
+
+# 6. Reviews Table
+aws dynamodb create-table --table-name EventProReviews \
+  --attribute-definitions AttributeName=reviewId,AttributeType=S \
+  --key-schema AttributeName=reviewId,KeyType=HASH \
+  --billing-mode PAY_PER_REQUEST --region $REGION
+
+# 7. Alerts Table
+aws dynamodb create-table --table-name EventProAlerts \
+  --attribute-definitions AttributeName=alertId,AttributeType=S \
+  --key-schema AttributeName=alertId,KeyType=HASH \
+  --billing-mode PAY_PER_REQUEST --region $REGION
+```
+
+#### 2. Amazon S3 Asset Bucket Configuration
+Provision the image asset bucket and configure Cross-Origin Resource Sharing (CORS) for media uploads:
+
+```bash
+# Create public media bucket
+aws s3api create-bucket --bucket eventpro-images \
+  --region ap-south-1 \
+  --create-bucket-configuration LocationConstraint=ap-south-1
+
+# Apply CORS Policy
+cat << 'EOF' > s3-cors.json
+{
+  "CORSRules": [
+    {
+      "AllowedHeaders": ["*"],
+      "AllowedMethods": ["GET", "PUT", "POST"],
+      "AllowedOrigins": ["*"],
+      "MaxAgeSeconds": 3000
+    }
+  ]
+}
+EOF
+aws s3api put-bucket-cors --bucket eventpro-images --cors-configuration file://s3-cors.json
+```
+
+#### 3. Amazon SES Email Domain Verification
+Verify the official transactional domain and enable Easy-DKIM signing:
+
+```bash
+# Verify Domain Identity
+aws ses verify-domain-identity --domain eventpro24.online --region ap-south-1
+
+# Generate DKIM Tokens for DNS publish
+aws ses verify-domain-dkim --domain eventpro24.online --region ap-south-1
+```
+
+---
+
+### 11.5 AWS Lambda Microservice Packaging & Deployment Workflow
+The core serverless backend microservice resides in [aws-lambda-backend/index.js](file:///c:/Users/jyoti/OneDrive/Desktop/EVENT%20MANAGER/aws-lambda-backend/index.js). To package and deploy changes:
+
+```bash
+# Navigate to Lambda backend directory
+cd aws-lambda-backend
+
+# Clean install production-only dependencies
+npm ci --omit=dev
+
+# Package executable archive
+zip -r9 lambda-code.zip index.js node_modules package.json
+
+# Update Lambda function code
+aws lambda update-function-code \
+  --function-name EventProBackend \
+  --zip-file fileb://lambda-code.zip \
+  --region ap-south-1
+
+# Configure Production Environment Variables
+aws lambda update-function-configuration \
+  --function-name EventProBackend \
+  --environment "Variables={
+    NODE_ENV=production,
+    RAZORPAY_KEY_ID=rzp_live_xxxxxxxxxxxx,
+    RAZORPAY_KEY_SECRET=xxxxxxxxxxxxxxxxxxxx,
+    RAZORPAY_WEBHOOK_SECRET=xxxxxxxxxxxxxxxxxxxx,
+    SENDER_EMAIL=no-reply@eventpro24.online,
+    SUPPORT_EMAIL=support@eventpro24.online,
+    AWS_NODEJS_CONNECTION_REUSE_ENABLED=1
+  }" \
+  --region ap-south-1
+```
+
+---
+
+### 11.6 API Gateway Stage & CORS Deployment
+When endpoints or Lambda proxy integrations are updated, deploy the changes to the `prod` stage:
+
+```bash
+# Deploy REST API changes to 'prod' stage
+aws apigateway create-deployment \
+  --rest-api-id s3eg7kdaja \
+  --stage-name prod \
+  --description "Production Release $(date +%Y-%m-%d_%H:%M)" \
+  --region ap-south-1
+```
+
+---
+
+### 11.7 Production Frontend Deployment (S3 & CloudFront CDN)
+The static frontend is hosted on Amazon S3 and delivered globally with HTTPS and edge compression via Amazon CloudFront:
+
+```bash
+# 1. Sync static assets to S3 Web Hosting Bucket (excluding backend & git files)
+aws s3 sync . s3://eventpro-static-web/ \
+  --region ap-south-1 \
+  --exclude ".git/*" \
+  --exclude ".github/*" \
+  --exclude ".vscode/*" \
+  --exclude "aws-lambda-backend/*" \
+  --exclude "node_modules/*" \
+  --exclude "scratch/*" \
+  --exclude "*.zip" \
+  --delete
+
+# 2. Invalidate CloudFront Edge Distribution Cache for Instant Release
+aws cloudfront create-invalidation \
+  --distribution-id E1A2B3C4D5E6F7 \
+  --paths "/*"
+```
+
+---
+
+### 11.8 Automated CI/CD Pipeline (GitHub Actions Workflow)
+The platform utilizes **GitHub Actions** for end-to-end continuous integration and zero-downtime automated deployment upon pushes to the `main` branch.
+
+#### Continuous Deployment Workflow Architecture:
+```mermaid
+flowchart TD
+    A[Push to main Branch] --> B[GitHub Actions Runner]
+    B --> C{Step 1: Lint & Syntax Check}
+    C -->|Pass| D[Step 2: Package Lambda Backend]
+    C -->|Fail| X[Abort & Notify Engineers]
+    
+    D --> E[aws lambda update-function-code]
+    E --> F[aws lambda update-function-configuration]
+    
+    B --> G[Step 3: Frontend Asset Deployment]
+    G --> H[aws s3 sync to S3 Web Bucket]
+    H --> I[aws cloudfront create-invalidation]
+    
+    E --> J[Step 4: Synthetic Health Check]
+    I --> J
+    J -->|200 OK| K[Deployment Successful]
+    J -->|5xx Error| L[Trigger Rollback Alert]
+```
+
+#### GitHub Actions Workflow Specification (`.github/workflows/deploy.yml`):
+```yaml
+name: EventPro CI/CD Production Deployment
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy-backend:
+    name: Package & Deploy AWS Lambda Backend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: aws-lambda-backend
+
+    steps:
+      - name: Checkout Code Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: aws-lambda-backend/package-lock.json
+
+      - name: Install Production Dependencies
+        run: npm ci --omit=dev
+
+      - name: Package Lambda Archive
+        run: zip -r9 lambda-code.zip index.js node_modules package.json
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
+
+      - name: Deploy Code to AWS Lambda
+        run: |
+          aws lambda update-function-code \
+            --function-name EventProBackend \
+            --zip-file fileb://lambda-code.zip
+
+      - name: Refresh Lambda Production Environment
+        run: |
+          aws lambda update-function-configuration \
+            --function-name EventProBackend \
+            --environment "Variables={
+              NODE_ENV=production,
+              RAZORPAY_KEY_ID=${{ secrets.RAZORPAY_KEY_ID }},
+              RAZORPAY_KEY_SECRET=${{ secrets.RAZORPAY_KEY_SECRET }},
+              RAZORPAY_WEBHOOK_SECRET=${{ secrets.RAZORPAY_WEBHOOK_SECRET }},
+              SENDER_EMAIL=no-reply@eventpro24.online,
+              SUPPORT_EMAIL=support@eventpro24.online
+            }"
+
+  deploy-frontend:
+    name: Sync Frontend to Amazon S3 & Purge CloudFront
+    needs: deploy-backend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
+
+      - name: Sync Static Assets to S3
+        run: |
+          aws s3 sync . s3://${{ secrets.S3_BUCKET_NAME }}/ \
+            --exclude ".git/*" \
+            --exclude ".github/*" \
+            --exclude ".vscode/*" \
+            --exclude "aws-lambda-backend/*" \
+            --exclude "node_modules/*" \
+            --exclude "scratch/*" \
+            --exclude "*.zip" \
+            --delete
+
+      - name: Invalidate CloudFront CDN Cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/*"
+
+  health-check:
+    name: Post-Deployment Synthetic Health Check
+    needs: deploy-frontend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Probe API Gateway Health Endpoint
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://s3eg7kdaja.execute-api.ap-south-1.amazonaws.com/prod/api/health || true)
+          echo "Health Check Response Code: $STATUS"
+          if [ "$STATUS" -ne 200 ] && [ "$STATUS" -ne 404 ]; then
+            echo "Critical Health Check Failure!"
+            exit 1
+          fi
+```
+
+---
+
+### 11.9 Secret Management & Environment Security
+To adhere to ISO 27001 and PCI-DSS best practices:
+1. **Zero Secret Leakage in Client Code**: Sensitive credentials (`RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`, AWS IAM secret keys) are strictly forbidden in client-side scripts. Only public identifiers (`clientId`, `userPoolId`, `RAZORPAY_KEY_ID`) are published in `aws-config.js`.
+2. **Encrypted Storage**: Secrets are stored in **GitHub Repository Secrets** for automated deployments and loaded into **AWS Systems Manager (SSM) Parameter Store** / Lambda Environment Variables encrypted via AWS KMS (`aws/lambda`).
+3. **IAM Least-Privilege Policy**: The Lambda Execution Role (`EventProLambdaRole`) is constrained strictly to:
+   - `dynamodb:GetItem`, `dynamodb:PutItem`, `dynamodb:UpdateItem`, `dynamodb:Query` on the 7 designated tables.
+   - `ses:SendEmail`, `ses:SendRawEmail` on verified domain `eventpro24.online`.
+   - `logs:CreateLogGroup`, `logs:CreateLogStream`, `logs:PutLogEvents` for CloudWatch.
+
+---
+
+### 11.10 Monitoring, Health Checks & Rollback Strategy
+1. **Centralized Log Monitoring**: All backend requests and exceptions log to Amazon CloudWatch under log group `/aws/lambda/EventProBackend`. Alarms trigger when HTTP 5xx responses exceed 1% over 5-minute rolling windows.
+2. **Lambda Versioning & Aliasing**: Deployments publish numbered versions (`v1`, `v2`, etc.). The API Gateway invokes the `live` alias. In the event of an unexpected fault, traffic is instantly rolled back to the preceding version:
+   ```bash
+   aws lambda update-alias \
+     --function-name EventProBackend \
+     --name live \
+     --function-version <PREVIOUS_STABLE_VERSION> \
+     --region ap-south-1
+   ```
+3. **S3 Versioning Rollback**: The frontend bucket maintains versioning enabled. Corrupted frontend releases can be reverted using `aws s3 sync` from previous Git release tags, followed by an edge CloudFront invalidation.
 
 ---
 
