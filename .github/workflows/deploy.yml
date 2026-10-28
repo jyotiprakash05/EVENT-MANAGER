@@ -1,0 +1,122 @@
+name: EventPro CI/CD Production Deployment
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy-backend:
+    name: Package & Deploy AWS Lambda Backend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: aws-lambda-backend
+
+    steps:
+      - name: Checkout Code Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: aws-lambda-backend/package-lock.json
+
+      - name: Install Production Dependencies
+        run: npm ci --omit=dev
+
+      - name: Package Lambda Archive
+        run: zip -r9 lambda-code.zip index.js node_modules package.json
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
+
+      - name: Deploy Code to AWS Lambda
+        run: |
+          aws lambda update-function-code \
+            --function-name EventProBackend \
+            --zip-file fileb://lambda-code.zip
+
+      - name: Refresh Lambda Production Environment
+        run: |
+          aws lambda update-function-configuration \
+            --function-name EventProBackend \
+            --environment "Variables={
+              NODE_ENV=production,
+              RAZORPAY_KEY_ID=${{ secrets.RAZORPAY_KEY_ID }},
+              RAZORPAY_KEY_SECRET=${{ secrets.RAZORPAY_KEY_SECRET }},
+              RAZORPAY_WEBHOOK_SECRET=${{ secrets.RAZORPAY_WEBHOOK_SECRET }},
+              SENDER_EMAIL=no-reply@eventpro24.online,
+              SUPPORT_EMAIL=support@eventpro24.online
+            }"
+
+  deploy-frontend:
+    name: Sync Frontend to Amazon S3 & Purge CloudFront
+    needs: deploy-backend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
+
+      - name: Sync Static Assets to S3
+        run: |
+          aws s3 sync . s3://${{ secrets.S3_BUCKET_NAME }}/ \
+            --exclude ".git/*" \
+            --exclude ".github/*" \
+            --exclude ".vscode/*" \
+            --exclude "aws-lambda-backend/*" \
+            --exclude "node_modules/*" \
+            --exclude "scratch/*" \
+            --exclude "*.zip" \
+            --delete
+
+      - name: Invalidate CloudFront CDN Cache (Optional)
+        if: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID != '' }}
+        continue-on-error: true
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/*" || true
+
+      - name: Purge Cloudflare CDN Cache (Optional)
+        if: ${{ secrets.CLOUDFLARE_ZONE_ID != '' && secrets.CLOUDFLARE_API_TOKEN != '' }}
+        continue-on-error: true
+        run: |
+          curl -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/purge_cache" \
+            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            --data '{"purge_everything":true}' || true
+
+  health-check:
+    name: Post-Deployment Synthetic Health Check
+    needs: deploy-frontend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Probe API Gateway Health Endpoint
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://s3eg7kdaja.execute-api.ap-south-1.amazonaws.com/prod/api/health || true)
+          echo "Health Check Response Code: $STATUS"
+          if [ "$STATUS" -ne 200 ] && [ "$STATUS" -ne 404 ]; then
+            echo "Critical Health Check Failure!"
+            exit 1
+          fi
