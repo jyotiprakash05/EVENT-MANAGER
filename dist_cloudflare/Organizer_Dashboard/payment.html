@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventPro | Free Organizer Access</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="Organizer_Dashboard.css">
+    <!-- AWS SDK & Auth Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/amazon-cognito-identity-js@6.3.12/dist/amazon-cognito-identity.min.js"></script>
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1408.0.min.js"></script>
+    <script src="../aws-config.js"></script>
+    <script src="../dashboard-auth.js"></script>
+    <script src="organizer-backend.js"></script>
+    <style>
+        .free-container {
+            max-width: 600px;
+            margin: 80px auto;
+            text-align: center;
+            padding: 40px;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        }
+        .free-badge {
+            display: inline-block;
+            background: #ecfdf5;
+            color: #059669;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            border: 1px solid #a7f3d0;
+        }
+    </style>
+</head>
+<body class="organizer-dashboard" data-required-role="organizer">
+    <div class="free-container">
+        <div class="free-badge">100% Free Organizer Account</div>
+        <h1 style="margin-bottom: 12px;">No Fees Required</h1>
+        <p style="color: var(--muted); margin-bottom: 28px; line-height: 1.6;">
+            Joining and managing events with EventPro is completely free of charge. You have unlimited access to create events, duplicate-proof QR scanning, and live analytics.
+        </p>
+        <a href="Event_list_organizer.html" class="primary-btn" style="display: inline-block; padding: 14px 32px; font-size: 1rem; text-decoration: none; border-radius: 8px;">
+            Go to Organizer Dashboard →
+        </a>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Ensure subscriptionActive is set in DynamoDB for lifetime free access
+            function autoActivate() {
+                if (window.OrganizerBackend) {
+                    window.OrganizerBackend.activateSubscription(3650, function() {
+                        setTimeout(function() {
+                            window.location.replace("Event_list_organizer.html");
+                        }, 1200);
+                    });
+                } else {
+                    setTimeout(autoActivate, 300);
+                }
+            }
+            autoActivate();
+        });
+    </script>
+</body>
+</html>

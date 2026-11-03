@@ -125,7 +125,7 @@ async function handleWebhookEvent(webhookPayload, docClient) {
         const order = payload.order ? payload.order.entity : null;
         const payment = payload.payment ? payload.payment.entity : null;
         const paymentId = payment ? payment.id : (order ? `order_${order.id}` : `pay_${Date.now()}`);
-        
+
         try {
             await docClient.send(new PutCommand({
                 TableName: 'EventProPayments',
@@ -615,7 +615,7 @@ exports.handler = async (event) => {
         // 1. Endpoint to create a Razorpay order
         if (path && path.endsWith('/api/payment/create-order') && httpMethod === 'POST') {
             const { amount, currency = 'INR', receipt } = body;
-            
+
             const amountInPaise = amount * 100;
             if (amountInPaise < 100) {
                 return {
@@ -624,13 +624,13 @@ exports.handler = async (event) => {
                     body: JSON.stringify({ success: false, error: 'Amount must be at least ₹1.00 (100 paise)' })
                 };
             }
-            
+
             const options = {
                 amount: amountInPaise,
                 currency,
                 receipt: receipt || `receipt_${Date.now()}`
             };
-            
+
             const rzp = getRazorpay();
             if (!rzp) {
                 return {
@@ -650,7 +650,7 @@ exports.handler = async (event) => {
         // 2. Endpoint to verify Razorpay payment signature
         if (path && path.endsWith('/api/payment/verify') && httpMethod === 'POST') {
             const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = body;
-            
+
             if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
                 return {
                     statusCode: 400,
@@ -658,13 +658,13 @@ exports.handler = async (event) => {
                     body: JSON.stringify({ success: false, message: "Missing required fields for verification" })
                 };
             }
-            
+
             const sign = razorpay_order_id + "|" + razorpay_payment_id;
             const expectedSign = crypto
                 .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET || 'BZJrebtT9kXDv3Tckg7Yo6Wg')
                 .update(sign.toString())
                 .digest("hex");
-            
+
             if (razorpay_signature === expectedSign) {
                 return {
                     statusCode: 200,
@@ -683,7 +683,7 @@ exports.handler = async (event) => {
         // 3. Endpoint to refund a Razorpay payment
         if (path && path.endsWith('/api/payment/refund') && httpMethod === 'POST') {
             const { payment_id, amount, notes } = body;
-            
+
             if (!payment_id) {
                 return {
                     statusCode: 200,
@@ -845,9 +845,9 @@ exports.handler = async (event) => {
             const reqHeaders = event.headers || {};
             const webhookSignature = reqHeaders['x-razorpay-signature'] || reqHeaders['X-Razorpay-Signature'];
             const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || process.env.RAZORPAY_KEY_SECRET || 'BZJrebtT9kXDv3Tckg7Yo6Wg';
-            
+
             const rawBody = event.isBase64Encoded ? Buffer.from(event.body || '', 'base64').toString('utf-8') : (event.body || '');
-            
+
             if (webhookSignature) {
                 const expectedSignature = crypto
                     .createHmac('sha256', webhookSecret)
@@ -898,7 +898,152 @@ exports.handler = async (event) => {
             };
         }
 
-        // 6. Fallback for undefined routes
+        // 6. Public GET endpoint: fetch a single ticket by ID (used by Pay_Split page — no auth required)
+        if (path && path.includes('/api/ticket') && httpMethod === 'GET') {
+            const queryParams = event.queryStringParameters || {};
+            const ticketId = queryParams.ticketId || queryParams.id;
+            if (!ticketId) {
+                return {
+                    statusCode: 400,
+                    headers,
+                    body: JSON.stringify({ success: false, error: 'ticketId query parameter is required' })
+                };
+            }
+            const docClient = getDocClient();
+            if (!docClient) {
+                return {
+                    statusCode: 500,
+                    headers,
+                    body: JSON.stringify({ success: false, error: 'DynamoDB client unavailable' })
+                };
+            }
+            const { GetCommand } = require('@aws-sdk/lib-dynamodb');
+            const result = await docClient.send(new GetCommand({
+                TableName: 'EventProTickets',
+                Key: { ticketId: ticketId }
+            }));
+            if (!result.Item) {
+                return {
+                    statusCode: 404,
+                    headers,
+                    body: JSON.stringify({ success: false, error: 'Ticket record not found' })
+                };
+            }
+            return {
+                statusCode: 200,
+                headers,
+                body: JSON.stringify({ success: true, ticket: result.Item })
+            };
+        }
+
+        // 7. Public POST endpoint: update a split member payment (used by Pay_Split page — no auth required)
+        if (path && path.includes('/api/ticket/split-pay') && httpMethod === 'POST') {
+            const { ticketId, memberIndex, payerName, payerEmail } = body;
+            if (!ticketId || memberIndex === undefined || memberIndex === null) {
+                return {
+                    statusCode: 400,
+                    headers,
+                    body: JSON.stringify({ success: false, error: 'ticketId and memberIndex are required' })
+                };
+            }
+            const docClient = getDocClient();
+            if (!docClient) {
+                return {
+                    statusCode: 500,
+                    headers,
+                    body: JSON.stringify({ success: false, error: 'DynamoDB client unavailable' })
+                };
+            }
+            const { GetCommand, PutCommand, UpdateCommand } = require('@aws-sdk/lib-dynamodb');
+
+            // Get the parent ticket
+            const getResult = await docClient.send(new GetCommand({
+                TableName: 'EventProTickets',
+                Key: { ticketId: ticketId }
+            }));
+            if (!getResult.Item) {
+                return {
+                    statusCode: 404,
+                    headers,
+                    body: JSON.stringify({ success: false, error: 'Ticket record not found' })
+                };
+            }
+            const t = getResult.Item;
+            const idx = parseInt(memberIndex, 10);
+            if (!t.splitMembers || !t.splitMembers[idx]) {
+                return {
+                    statusCode: 400,
+                    headers,
+                    body: JSON.stringify({ success: false, error: 'Split member not found at index ' + idx })
+                };
+            }
+
+            // Update member
+            t.splitMembers[idx].status = 'Paid';
+            t.splitMembers[idx].paidAt = new Date().toISOString();
+            if (payerName) t.splitMembers[idx].name = payerName;
+            if (payerEmail) t.splitMembers[idx].email = payerEmail;
+
+            const memberTicketId = `${ticketId}-M${idx + 1}`;
+            t.splitMembers[idx].memberTicketId = memberTicketId;
+
+            const paidCount = t.splitMembers.filter(m => m.status === 'Paid').length;
+            t.paidMembers = paidCount;
+            if (paidCount >= (t.totalSplitMembers || t.splitMembers.length)) {
+                t.status = 'Valid';
+                t.splitStatus = 'Fully Settled';
+            }
+
+            // Save the individual member sub-ticket
+            const subTicketItem = {
+                ticketId: memberTicketId,
+                parentTicketId: ticketId,
+                eventId: t.eventId,
+                eventName: t.eventName,
+                attendeeName: payerName || `Friend #${idx + 1}`,
+                attendeeEmail: payerEmail || null,
+                status: 'Valid',
+                date: t.date,
+                time: t.time,
+                location: t.location,
+                quantity: 1,
+                price: t.perPersonAmount || Math.round((t.price || 0) / (t.totalSplitMembers || t.splitMembers.length)),
+                purchasedAt: new Date().toISOString(),
+                isGroupSplitMember: true,
+                memberIndex: idx
+            };
+            try {
+                await docClient.send(new PutCommand({ TableName: 'EventProTickets', Item: subTicketItem }));
+            } catch (subErr) {
+                console.warn('Could not save member sub-ticket:', subErr.message);
+            }
+
+            // Update the parent ticket in DynamoDB
+            await docClient.send(new UpdateCommand({
+                TableName: 'EventProTickets',
+                Key: { ticketId: ticketId },
+                UpdateExpression: 'SET splitMembers = :sm, paidMembers = :pm, #st = :s, splitStatus = :ss',
+                ExpressionAttributeNames: { '#st': 'status' },
+                ExpressionAttributeValues: {
+                    ':sm': t.splitMembers,
+                    ':pm': paidCount,
+                    ':s': t.status,
+                    ':ss': t.splitStatus || 'Pending Friends'
+                }
+            }));
+
+            return {
+                statusCode: 200,
+                headers,
+                body: JSON.stringify({
+                    success: true,
+                    activeMemberTicketId: memberTicketId,
+                    ticket: t
+                })
+            };
+        }
+
+        // 8. Fallback for undefined routes
         return {
             statusCode: 404,
             headers,

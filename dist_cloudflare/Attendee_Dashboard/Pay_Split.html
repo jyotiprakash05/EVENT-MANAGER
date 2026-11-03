@@ -1,0 +1,1330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pay Your Group Share | EventPro Split Booking</title>
+    <meta name="description" content="Pay your individual group share to lock your seat with EventPro instant split checkout.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --bg-base: #07090e;
+            --bg-card: rgba(18, 22, 34, 0.75);
+            --bg-card-hover: rgba(24, 29, 45, 0.85);
+            --border-card: rgba(255, 255, 255, 0.08);
+            --border-active: rgba(99, 102, 241, 0.4);
+            --primary: #6366f1;
+            --primary-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            --coral-gradient: linear-gradient(135deg, #f43f5e 0%, #fb7185 100%);
+            --emerald: #10b981;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --radius-lg: 20px;
+            --radius-md: 14px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px 16px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Ambient Glow Backgrounds */
+        .ambient-glow-1 {
+            position: fixed;
+            width: 450px;
+            height: 450px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.18) 0%, transparent 70%);
+            top: -100px;
+            left: -100px;
+            z-index: 0;
+            pointer-events: none;
+            filter: blur(50px);
+        }
+
+        .ambient-glow-2 {
+            position: fixed;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(244, 63, 94, 0.15) 0%, transparent 70%);
+            bottom: -150px;
+            right: -100px;
+            z-index: 0;
+            pointer-events: none;
+            filter: blur(60px);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Brand Bar */
+        .brand-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding: 0 4px;
+        }
+
+        .logo-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: #fff;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--primary-gradient);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 16px rgba(99, 102, 241, 0.35);
+        }
+
+        .logo-text {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 1.25rem;
+            letter-spacing: -0.5px;
+        }
+
+        .lock-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(245, 158, 11, 0.12);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            color: #fbbf24;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+
+        .pulse-dot {
+            width: 7px;
+            height: 7px;
+            background: #fbbf24;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(1.3); }
+        }
+
+        /* Main Card */
+        .split-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: var(--radius-lg);
+            padding: 28px 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.55);
+            transition: all 0.3s ease;
+        }
+
+        /* Event Info Header */
+        .event-badge {
+            display: inline-block;
+            background: rgba(99, 102, 241, 0.15);
+            color: #818cf8;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            padding: 4px 10px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+        }
+
+        .event-title {
+            font-size: 1.45rem;
+            font-weight: 800;
+            line-height: 1.25;
+            color: #fff;
+            margin-bottom: 10px;
+            letter-spacing: -0.02em;
+        }
+
+        .event-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            color: var(--text-muted);
+            font-size: 0.88rem;
+            margin-bottom: 22px;
+            padding-bottom: 18px;
+            border-bottom: 1px solid var(--border-card);
+        }
+
+        .meta-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Progress Card */
+        .progress-box {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: var(--radius-md);
+            padding: 14px 16px;
+            margin-bottom: 20px;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .progress-bar-bg {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--primary-gradient);
+            border-radius: 10px;
+            transition: width 0.4s ease;
+        }
+
+        /* Member Selector List */
+        .member-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .member-pill {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            font-size: 0.82rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .member-pill.active {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.12);
+        }
+
+        .member-pill.paid {
+            opacity: 0.65;
+            cursor: default;
+        }
+
+        .member-pill.used {
+            opacity: 0.55;
+            cursor: pointer;
+            border-color: rgba(239, 68, 68, 0.35);
+            background: rgba(239, 68, 68, 0.06);
+        }
+
+        /* Payer Details Form */
+        .form-group {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .input-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .input-wrap label {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .input-field {
+            width: 100%;
+            background: rgba(10, 14, 23, 0.75);
+            border: 1px solid var(--border-card);
+            padding: 12px 14px;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 0.92rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-field:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+
+        /* Payment Summary Box */
+        .summary-box {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(168, 85, 247, 0.05) 100%);
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            border-radius: var(--radius-md);
+            padding: 16px 18px;
+            margin-top: 20px;
+            margin-bottom: 24px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .summary-row.total {
+            margin-bottom: 0;
+            padding-top: 10px;
+            border-top: 1px dashed rgba(255, 255, 255, 0.12);
+            color: #fff;
+            font-size: 1.1rem;
+            font-weight: 800;
+        }
+
+        .share-amount {
+            color: #10b981;
+            font-size: 1.35rem;
+            font-weight: 800;
+        }
+
+        /* Pay Button */
+        .pay-btn {
+            width: 100%;
+            background: var(--coral-gradient);
+            border: none;
+            color: #fff;
+            padding: 16px;
+            border-radius: var(--radius-md);
+            font-size: 1.05rem;
+            font-weight: 800;
+            letter-spacing: -0.01em;
+            cursor: pointer;
+            box-shadow: 0 10px 25px -5px rgba(244, 63, 94, 0.45);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .pay-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 30px -5px rgba(244, 63, 94, 0.6);
+        }
+
+        .pay-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .guarantee-note {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            margin-top: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        /* Success Card Screen */
+        .success-screen {
+            display: none;
+            text-align: center;
+            padding: 10px 0;
+        }
+
+        .success-icon-wrap {
+            width: 72px;
+            height: 72px;
+            background: rgba(16, 185, 129, 0.15);
+            border: 2px solid #10b981;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 18px;
+            color: #10b981;
+            font-size: 2rem;
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.35);
+        }
+
+        .success-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+
+        .success-sub {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin-bottom: 24px;
+        }
+
+        .ticket-pill-receipt {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-card);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: left;
+            margin-bottom: 24px;
+            font-size: 0.85rem;
+        }
+
+        .receipt-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .receipt-row:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .btn-view-bookings {
+            display: inline-block;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #fff;
+            padding: 14px;
+            border-radius: var(--radius-md);
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 0.92rem;
+            transition: all 0.2s;
+        }
+
+        .btn-view-bookings:hover {
+            background: rgba(255, 255, 255, 0.14);
+        }
+
+        /* Error / Loading States */
+        #loadingState, #errorState {
+            text-align: center;
+            padding: 40px 10px;
+        }
+
+        .spinner {
+            width: 36px;
+            height: 36px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Dynamic Rolling Pass Visuals */
+        .qr-wrapper {
+            position: relative;
+            width: 210px;
+            height: 210px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 10px;
+            border-radius: 14px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+        }
+
+        .qr-laser-beam {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #ef4444, #f43f5e, transparent);
+            box-shadow: 0 0 14px #ef4444;
+            animation: laserScan 2.2s ease-in-out infinite alternate;
+            z-index: 5;
+        }
+
+        @keyframes laserScan {
+            0% { top: 6px; }
+            100% { top: 200px; }
+        }
+
+        .pulse-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+        }
+
+        .pulse-indicator .dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #10b981;
+            animation: dotPulse 1.2s infinite;
+        }
+
+        @keyframes dotPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.3; transform: scale(1.4); }
+        }
+
+        .pass-card-box {
+            background: #ffffff;
+            color: #0f172a;
+            border-radius: 16px;
+            padding: 20px 16px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 12px 35px rgba(0,0,0,0.4);
+        }
+
+        .countdown-track {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 8px 0;
+        }
+
+        .countdown-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #06b6d4);
+            border-radius: 6px;
+            transition: width 1s linear;
+        }
+    </style>
+    <!-- Dynamic Pass Engines -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="../rolling-ticket-engine.js"></script>
+</head>
+<body>
+    <div class="ambient-glow-1"></div>
+    <div class="ambient-glow-2"></div>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="brand-header">
+            <a href="Event_List.html" class="logo-wrap">
+                <div class="logo-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+                    </svg>
+                </div>
+                <span class="logo-text">EventPro</span>
+            </a>
+            <div class="lock-badge" id="seatLockBadge">
+                <span class="pulse-dot"></span>
+                <span id="countdownDisplay">15:00 SEAT LOCK</span>
+            </div>
+        </header>
+
+        <!-- Main Card Container -->
+        <main class="split-card" id="mainCard">
+            <!-- Loading View -->
+            <div id="loadingState">
+                <div class="spinner"></div>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">Fetching group booking details...</p>
+            </div>
+
+            <!-- Error View -->
+            <div id="errorState" style="display: none;">
+                <div style="width: 48px; height: 48px; margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; color: #f59e0b;">
+                    <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                </div>
+                <h3 style="color: #fff; margin-bottom: 8px;">Split Link Unavailable</h3>
+                <p id="errorMessage" style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 20px;">Could not load split reservation. The booking may have expired or is invalid.</p>
+                <a href="Event_List.html" class="btn-view-bookings" style="display: inline-block; width: auto; padding: 10px 24px;">Browse Events</a>
+            </div>
+
+            <!-- Ticket Already Used / Deactivated View -->
+            <div id="ticketUsedState" style="display: none; text-align: center; padding: 24px 10px;">
+                <div style="width: 68px; height: 68px; background: rgba(239, 68, 68, 0.15); border: 2px solid rgba(239, 68, 68, 0.4); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                    <svg width="32" height="32" fill="none" stroke="#ef4444" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+                </div>
+                <div style="display: inline-block; background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.35); padding: 4px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.06em; margin-bottom: 12px;">
+                    ADMISSION PASS USED
+                </div>
+                <h2 style="color: #fff; font-size: 1.35rem; font-weight: 800; margin-bottom: 8px;">Ticket Link Deactivated</h2>
+                <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.5; margin-bottom: 22px; max-width: 380px; margin-left: auto; margin-right: auto;">
+                    This split admission pass was already scanned and verified at the venue gate. This link is now permanently inactive and cannot be reused.
+                </p>
+
+                <div class="pass-card-box" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); text-align: left; color: #fff; margin-bottom: 24px; padding: 18px 20px;">
+                    <div style="font-size: 0.74rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Event</div>
+                    <div style="font-weight: 800; font-size: 1.05rem; color: #fff; margin-bottom: 12px;" id="usedEventName">Event Name</div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 0.82rem;">
+                        <div>
+                            <span style="color: #94a3b8; display: block; font-size: 0.74rem;">Attendee</span>
+                            <strong style="color: #fff;" id="usedAttendeeName">Friend #2</strong>
+                        </div>
+                        <div>
+                            <span style="color: #94a3b8; display: block; font-size: 0.74rem;">Pass ID</span>
+                            <strong style="color: #f87171; font-family: monospace;" id="usedTicketId">TKT-xxx-M2</strong>
+                        </div>
+                    </div>
+                    <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 0.78rem; color: #f87171; display: flex; align-items: center; gap: 6px;">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <span id="usedCheckinTime">Checked in at the event gate</span>
+                    </div>
+                </div>
+
+                <a href="Event_List.html" class="btn-view-bookings" style="display: inline-block; width: auto; padding: 12px 28px;">Browse Other Events</a>
+            </div>
+
+            <!-- Active Payment View -->
+            <div id="paymentContent" style="display: none;">
+                <span class="event-badge">Group Split Ticket</span>
+                <h1 class="event-title" id="eventTitle">Loading Event...</h1>
+
+                <div class="event-meta">
+                    <div class="meta-row">
+                        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                        <span id="eventDate">TBD</span>
+                    </div>
+                    <div class="meta-row">
+                        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                        <span id="eventLocation">Auditorium</span>
+                    </div>
+                </div>
+
+                <!-- Split Progress Box -->
+                <div class="progress-box">
+                    <div class="progress-header">
+                        <span>Group Settlement</span>
+                        <strong id="settledCountText" style="color:#fff;">1 of 2 Settled</strong>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" id="progressBarFill" style="width: 50%;"></div>
+                    </div>
+
+                    <!-- Member Selection -->
+                    <div class="member-list" id="memberList">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Payer Info Form -->
+                <div class="form-group">
+                    <div class="input-wrap">
+                        <label for="payerName">Your Full Name</label>
+                        <input type="text" id="payerName" class="input-field" placeholder="Enter your name" required>
+                    </div>
+                    <div class="input-wrap">
+                        <label for="payerEmail">Email Address (For Ticket Delivery)</label>
+                        <input type="email" id="payerEmail" class="input-field" placeholder="you@example.com" required>
+                    </div>
+                </div>
+
+                <!-- Payment Summary Box -->
+                <div class="summary-box">
+                    <div class="summary-row">
+                        <span>Total Group Amount</span>
+                        <span id="totalGroupAmount">₹100</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Split Between</span>
+                        <span id="splitMembersCount">2 People</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>Your Payable Share</span>
+                        <span class="share-amount" id="payableShareDisplay">₹50</span>
+                    </div>
+                </div>
+
+                <!-- Action Button -->
+                <button type="button" class="pay-btn" id="payShareBtn">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                    <span id="payBtnText">Pay Your Share (₹50)</span>
+                </button>
+
+                <p class="guarantee-note">
+                    <svg width="14" height="14" fill="none" stroke="#10b981" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                    Instant seat confirmation • 256-bit encrypted checkout
+                </p>
+            </div>
+
+            <!-- Success Screen / Dynamic Ticket View -->
+            <div id="successContent" class="success-screen" style="display: none;">
+                <div class="success-icon-wrap">✓</div>
+                <h2 class="success-title" id="successTitle">You're All Set!</h2>
+                <p class="success-sub" id="successSubText">Your individual share has been paid and your personal live ticket is activated.</p>
+
+                <!-- Anti-Scalp Header Badge -->
+                <div style="margin-bottom: 14px; display: flex; flex-direction: column; align-items: center; gap: 6px;">
+                    <span class="pulse-indicator">
+                        <span class="dot"></span>
+                        <span>LIVE CRYPTOGRAPHIC PASS</span>
+                    </span>
+                    <p style="margin: 0; font-size: 0.76rem; color: #94a3b8; max-width: 340px; text-align: center;">
+                        Protected by <strong>Zero-Scalp Rolling Protocol</strong>. This QR updates every 20 seconds. Screenshots are rejected at the gate.
+                    </p>
+                </div>
+
+                <!-- Printable & Viewable Ticket Box -->
+                <div id="pdfContent" class="pass-card-box">
+                    <h4 id="pdfEventName" style="font-weight: 800; font-size: 1.15rem; margin: 0 0 4px; color: #0f172a;">Event Ticket</h4>
+                    <p id="pdfEventDetails" style="font-size: 0.82rem; color: #475569; margin: 0 0 12px;">Date & Venue</p>
+                    
+                    <!-- Dynamic QR Viewfinder Container -->
+                    <div class="qr-wrapper">
+                        <div class="qr-laser-beam"></div>
+                        <div id="dynamicQrCanvas" style="width: 190px; height: 190px; display: flex; align-items: center; justify-content: center;">
+                            <img id="qrImage" src="" alt="Dynamic Ticket QR" style="width: 190px; height: 190px; display: block;">
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 10px;">
+                        <span style="font-family: monospace; font-weight: 800; font-size: 1rem; color: #059669; letter-spacing: 0.05em;" id="ticketCodeDisplay">TKT-LOADING</span>
+                        <div style="font-size: 0.72rem; color: #64748b; font-family: monospace; margin-top: 2px;" id="rollingHashDisplay">Rolling Token: #Computing...</div>
+                        <div style="font-size: 0.75rem; color: #334155; font-weight: 600; margin-top: 4px;" id="attendeePillName">Attendee: Name</div>
+                    </div>
+                </div>
+
+                <!-- Live Countdown Timer & Progress Bar -->
+                <div style="margin-bottom: 18px; text-align: left; background: rgba(255,255,255,0.03); padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.07);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem;">
+                        <span style="color: var(--text-muted); font-size: 0.75rem;" id="liveClockDisplay">Live Clock: --:--:--</span>
+                        <span style="color: #38bdf8; font-weight: 700; font-size: 0.8rem;" id="countdownText">Refreshing in 20s</span>
+                    </div>
+                    <div class="countdown-track">
+                        <div id="countdownBar" class="countdown-fill" style="width: 100%;"></div>
+                    </div>
+                    <div style="font-size: 0.7rem; color: #94a3b8; text-align: center;">
+                        Auto-rolling cryptographic token to prevent ticket duplication.
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                    <button type="button" id="downloadPdfBtn" class="pay-btn" style="flex: 1; padding: 11px; font-size: 0.85rem; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); box-shadow: none;">
+                        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        <span>Download PDF</span>
+                    </button>
+                    <button type="button" id="waSharePassBtn" class="pay-btn" style="flex: 1; padding: 11px; font-size: 0.85rem; background: rgba(37, 211, 102, 0.15); color: #25d366; border: 1px solid rgba(37, 211, 102, 0.3); box-shadow: none;">
+                        <svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.174.086.275.072.376-.043.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.043.073.043.419-.101.824z"/></svg>
+                        <span>Save to WhatsApp</span>
+                    </button>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button type="button" id="copyDirectLinkBtn" class="pay-btn" style="flex: 1; padding: 11px; font-size: 0.85rem; background: rgba(99, 102, 241, 0.15); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3); box-shadow: none;">
+                        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                        <span id="copyLinkText">Copy Pass Link</span>
+                    </button>
+                    <a href="Your_Booking.html" class="btn-view-bookings" style="flex: 1; padding: 11px; margin-top: 0; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; text-decoration: none;">
+                        <span>My Bookings</span>
+                    </a>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- aws-config.js only for razorpayKeyId & apiGatewayUrl; no SDK needed for this page -->
+    <script src="../aws-config.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const API_BASE = (window.EVENTPRO_AWS_CONFIG && window.EVENTPRO_AWS_CONFIG.apiGatewayUrl)
+                || 'https://s3eg7kdaja.execute-api.ap-south-1.amazonaws.com/prod';
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const ticketId = urlParams.get('ticketId') || urlParams.get('ref') || urlParams.get('splitTicket');
+            const memberParam = urlParams.get('m'); // optional index
+
+            const loadingState = document.getElementById('loadingState');
+            const errorState = document.getElementById('errorState');
+            const paymentContent = document.getElementById('paymentContent');
+            const successContent = document.getElementById('successContent');
+            const errorMessage = document.getElementById('errorMessage');
+
+            let currentTicket = null;
+            let selectedMemberIndex = null;
+            let shareAmount = 0;
+
+            if (!ticketId) {
+                loadingState.style.display = 'none';
+                errorState.style.display = 'block';
+                errorMessage.textContent = 'No ticket reference provided in split link.';
+                return;
+            }
+
+            // Start 15-Minute Countdown
+            let secondsLeft = 15 * 60;
+            const clockEl = document.getElementById('countdownDisplay');
+            const countdownInterval = setInterval(() => {
+                const m = Math.floor(secondsLeft / 60).toString().padStart(2, '0');
+                const s = (secondsLeft % 60).toString().padStart(2, '0');
+                if (clockEl) clockEl.textContent = `${m}:${s} SEAT LOCK`;
+                if (secondsLeft <= 0) {
+                    clearInterval(countdownInterval);
+                    if (clockEl) clockEl.textContent = 'LOCK EXPIRED';
+                }
+                secondsLeft--;
+            }, 1000);
+
+            const ticketUsedState = document.getElementById('ticketUsedState');
+
+            function showTicketUsedView(ticket, attendeeName, tId, checkedInTime) {
+                stopRollingTimer();
+                loadingState.style.display = 'none';
+                paymentContent.style.display = 'none';
+                successContent.style.display = 'none';
+                errorState.style.display = 'none';
+                if (ticketUsedState) ticketUsedState.style.display = 'block';
+
+                const qrContainer = document.getElementById('dynamicQrCanvas');
+                if (qrContainer) qrContainer.innerHTML = '';
+
+                const evNameEl = document.getElementById('usedEventName');
+                if (evNameEl) evNameEl.textContent = ticket.eventName || 'Event Admission';
+                
+                const attEl = document.getElementById('usedAttendeeName');
+                if (attEl) attEl.textContent = attendeeName || 'Group Attendee';
+                
+                const tIdEl = document.getElementById('usedTicketId');
+                if (tIdEl) tIdEl.textContent = tId || ticket.ticketId;
+
+                const timeStr = checkedInTime ? new Date(checkedInTime).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Verified at event gate';
+                const timeEl = document.getElementById('usedCheckinTime');
+                if (timeEl) timeEl.textContent = 'Scanned & checked in at gate: ' + timeStr;
+
+                const lockBadge = document.getElementById('seatLockBadge');
+                if (lockBadge) {
+                    lockBadge.style.background = 'rgba(239, 68, 68, 0.15)';
+                    lockBadge.style.borderColor = 'rgba(239, 68, 68, 0.35)';
+                    lockBadge.style.color = '#f87171';
+                }
+                const clockEl = document.getElementById('countdownDisplay');
+                if (clockEl) clockEl.textContent = 'PASS USED';
+            }
+
+            // ── Fetch Ticket via API Gateway (no AWS SDK / Identity Pool needed) ──────
+            function loadSplitDetails() {
+                fetch(`${API_BASE}/api/ticket?ticketId=${encodeURIComponent(ticketId)}`)
+                    .then(function(res) { return res.json(); })
+                    .then(function(data) {
+                        loadingState.style.display = 'none';
+                        if (!data.success || !data.ticket) {
+                            errorState.style.display = 'block';
+                            errorMessage.textContent = data.error || 'Reservation record not found.';
+                            return;
+                        }
+                        const ticket = data.ticket;
+                        currentTicket = ticket;
+
+                        // 1. If parent ticket itself is already used
+                        if (ticket.status === 'Used') {
+                            showTicketUsedView(ticket, ticket.attendeeName || 'Attendee', ticket.ticketId, ticket.checkedInAt);
+                            return;
+                        }
+
+                        // 2. If a specific member is targeted via ?m= parameter — check their sub-ticket status
+                        const paramIdx = memberParam !== null ? parseInt(memberParam, 10) : null;
+                        if (paramIdx !== null) {
+                            const member = ticket.splitMembers && ticket.splitMembers[paramIdx];
+                            const subId = (member && (member.memberTicketId || member.subTicketId)) || `${ticket.ticketId}-M${paramIdx + 1}`;
+
+                            if (member && (member.status === 'Used' || member.isUsed)) {
+                                showTicketUsedView(ticket, member.name, subId, member.checkedInAt);
+                                return;
+                            }
+
+                            // Check the individual sub-ticket in DB as well
+                            fetch(`${API_BASE}/api/ticket?ticketId=${encodeURIComponent(subId)}`)
+                                .then(function(r) { return r.json(); })
+                                .then(function(subData) {
+                                    if (subData.success && subData.ticket && subData.ticket.status === 'Used') {
+                                        showTicketUsedView(ticket, subData.ticket.attendeeName || (member && member.name), subId, subData.ticket.checkedInAt);
+                                        return;
+                                    }
+                                    renderTicketUI(ticket);
+                                })
+                                .catch(function() { renderTicketUI(ticket); });
+                            return;
+                        }
+
+                        renderTicketUI(ticket);
+                    })
+                    .catch(function(err) {
+                        loadingState.style.display = 'none';
+                        errorState.style.display = 'block';
+                        errorMessage.textContent = 'Network error loading split link. Please try again.';
+                        console.error('loadSplitDetails fetch error:', err);
+                    });
+            }
+
+            function renderTicketUI(ticket) {
+                paymentContent.style.display = 'block';
+
+                document.getElementById('eventTitle').textContent = ticket.eventName || 'Unnamed Event';
+                document.getElementById('eventDate').textContent = `${ticket.date || 'TBD'} • ${ticket.time || 'TBD'}`;
+                document.getElementById('eventLocation').textContent = ticket.location || 'Auditorium';
+
+                const totalSplit = ticket.totalSplitMembers || (ticket.splitMembers ? ticket.splitMembers.length : 2);
+                const paidCount = ticket.paidMembers || (ticket.splitMembers ? ticket.splitMembers.filter(m => m.status === 'Paid' || m.status === 'Used').length : 1);
+                shareAmount = ticket.perPersonAmount || Math.round((ticket.price || 0) / totalSplit) || 50;
+
+                document.getElementById('settledCountText').textContent = `${paidCount} of ${totalSplit} Settled`;
+                document.getElementById('progressBarFill').style.width = `${Math.min(100, Math.round((paidCount / totalSplit) * 100))}%`;
+
+                document.getElementById('totalGroupAmount').textContent = `₹${ticket.price || (shareAmount * totalSplit)}`;
+                document.getElementById('splitMembersCount').textContent = `${totalSplit} People`;
+                document.getElementById('payableShareDisplay').textContent = `₹${shareAmount}`;
+                document.getElementById('payBtnText').textContent = `Pay Your Share (₹${shareAmount})`;
+
+                // Render Member Selection List
+                const list = document.getElementById('memberList');
+                list.innerHTML = '';
+
+                const members = ticket.splitMembers || [
+                    { name: "You (Organizer)", amount: shareAmount, status: "Paid" },
+                    ...Array.from({ length: totalSplit - 1 }, (_, i) => ({
+                        name: `Friend #${i + 2}`,
+                        amount: shareAmount,
+                        status: "Pending"
+                    }))
+                ];
+
+                const paramIdx = memberParam !== null ? parseInt(memberParam, 10) : null;
+                let defaultIndex = null;
+
+                members.forEach((m, idx) => {
+                    const isUsed = m.status === 'Used' || m.isUsed === true;
+                    const isPaid = m.status === 'Paid';
+
+                    if (!isPaid && !isUsed && defaultIndex === null) {
+                        defaultIndex = idx;
+                    }
+                    if (paramIdx === idx && !isPaid && !isUsed) {
+                        defaultIndex = idx;
+                    }
+
+                    const pill = document.createElement('div');
+                    pill.className = `member-pill ${isUsed ? 'used' : (isPaid ? 'paid' : '')}`;
+                    pill.setAttribute('data-index', idx);
+
+                    let statusLabel = 'SELECT TO PAY';
+                    let statusColor = '#818cf8';
+                    let subText = `⏳ Unpaid Share ₹${m.amount || shareAmount}`;
+                    let subColor = '#f59e0b';
+
+                    if (isUsed) {
+                        statusLabel = 'USED';
+                        statusColor = '#ef4444';
+                        subText = 'Admission Used at Gate';
+                        subColor = '#ef4444';
+                    } else if (isPaid) {
+                        statusLabel = 'SETTLED';
+                        statusColor = '#10b981';
+                        subText = `✓ Paid ₹${m.amount || shareAmount}`;
+                        subColor = '#10b981';
+                    }
+
+                    pill.innerHTML = `
+                        <div>
+                            <strong style="color:#fff; display:block;">${m.name}</strong>
+                            <span style="font-size:0.75rem; color:${subColor};">
+                                ${subText}
+                            </span>
+                        </div>
+                        <span style="font-size:0.75rem; font-weight:700; color:${statusColor};">
+                            ${statusLabel}
+                        </span>
+                    `;
+
+                    if (isUsed) {
+                        pill.addEventListener('click', () => {
+                            const subId = m.memberTicketId || m.subTicketId || `${ticket.ticketId}-M${idx + 1}`;
+                            showTicketUsedView(ticket, m.name, subId, m.checkedInAt);
+                        });
+                    } else if (!isPaid) {
+                        pill.addEventListener('click', () => {
+                            selectMember(idx);
+                        });
+                    } else {
+                        // Paid: click to view dynamic rolling ticket
+                        pill.addEventListener('click', () => {
+                            const subId = m.memberTicketId || m.subTicketId || `${ticket.ticketId}-M${idx + 1}`;
+                            showRollingPass(subId, ticket.eventId, m.name, ticket, idx);
+                        });
+                    }
+
+                    list.appendChild(pill);
+                });
+
+                // If specific member parameter given in URL:
+                if (paramIdx !== null && members[paramIdx]) {
+                    const targetSubId = members[paramIdx].memberTicketId || members[paramIdx].subTicketId || `${ticket.ticketId}-M${paramIdx + 1}`;
+                    if (members[paramIdx].status === 'Used' || members[paramIdx].isUsed) {
+                        showTicketUsedView(ticket, members[paramIdx].name, targetSubId, members[paramIdx].checkedInAt);
+                        return;
+                    }
+                    if (members[paramIdx].status === 'Paid') {
+                        showRollingPass(targetSubId, ticket.eventId, members[paramIdx].name, ticket, paramIdx);
+                        return;
+                    }
+                }
+
+                // If all members in group are used
+                const allUsed = members.every(m => m.status === 'Used' || m.isUsed);
+                if (allUsed) {
+                    showTicketUsedView(ticket, 'All Group Members', ticket.ticketId, ticket.checkedInAt);
+                    return;
+                }
+
+                if (defaultIndex !== null) {
+                    selectMember(defaultIndex);
+                } else {
+                    // All members paid and none pending
+                    const subId = `${ticket.ticketId}-M1`;
+                    showRollingPass(subId, ticket.eventId, (members[0] && members[0].name) || 'Group Attendee', ticket, 0);
+                    document.getElementById('successTitle').textContent = 'Group Fully Settled!';
+                    document.getElementById('successSubText').textContent = 'All tickets in this group booking have been successfully paid!';
+                }
+            }
+
+            function selectMember(idx) {
+                selectedMemberIndex = idx;
+                document.querySelectorAll('.member-pill').forEach(p => {
+                    p.classList.remove('active');
+                    if (parseInt(p.getAttribute('data-index'), 10) === idx) {
+                        p.classList.add('active');
+                    }
+                });
+
+                const member = currentTicket.splitMembers && currentTicket.splitMembers[idx];
+                const nameInput = document.getElementById('payerName');
+                if (member && member.name && !member.name.startsWith('Friend')) {
+                    nameInput.value = member.name;
+                }
+            }
+
+            // Rolling Dynamic Ticket State & Controller
+            let currentRollingTicket = null;
+            let rollingTimerInterval = null;
+
+            function stopRollingTimer() {
+                if (rollingTimerInterval) {
+                    clearInterval(rollingTimerInterval);
+                    rollingTimerInterval = null;
+                }
+                currentRollingTicket = null;
+            }
+
+            async function refreshRollingPassUI() {
+                if (!currentRollingTicket || !window.RollingTicketEngine) return;
+                const subTicketId = currentRollingTicket.ticketId;
+                const eventId = currentRollingTicket.eventId;
+
+                const tokenData = await window.RollingTicketEngine.generateToken(subTicketId, eventId);
+
+                const qrContainer = document.getElementById('dynamicQrCanvas');
+                if (window.QRCode && qrContainer) {
+                    qrContainer.innerHTML = '';
+                    new QRCode(qrContainer, {
+                        text: tokenData.qrPayload,
+                        width: 190,
+                        height: 190,
+                        colorDark: "#0f172a",
+                        colorLight: "#ffffff",
+                        correctLevel: QRCode.CorrectLevel.M
+                    });
+                } else {
+                    const img = document.getElementById('qrImage');
+                    if (img) img.src = `https://quickchart.io/qr?text=${encodeURIComponent(tokenData.qrPayload)}&size=190`;
+                }
+
+                const hashElem = document.getElementById('rollingHashDisplay');
+                if (hashElem) {
+                    hashElem.textContent = `Rolling Token: #${tokenData.hashSignature}`;
+                }
+            }
+
+            function startRollingTimer(subTicketId, eventId) {
+                stopRollingTimer();
+                currentRollingTicket = { ticketId: subTicketId, eventId };
+
+                refreshRollingPassUI();
+
+                rollingTimerInterval = setInterval(() => {
+                    if (!currentRollingTicket) return;
+                    const now = new Date();
+                    const nowSec = Math.floor(now.getTime() / 1000);
+                    const rem = 20 - (nowSec % 20);
+                    const pct = (rem / 20) * 100;
+
+                    const liveClock = document.getElementById('liveClockDisplay');
+                    if (liveClock) liveClock.textContent = `Live Clock: ${now.toLocaleTimeString()}`;
+
+                    const countdownText = document.getElementById('countdownText');
+                    if (countdownText) countdownText.textContent = `Refreshing in ${rem}s`;
+
+                    const countdownBar = document.getElementById('countdownBar');
+                    if (countdownBar) countdownBar.style.width = `${pct}%`;
+
+                    if (rem === 20) {
+                        refreshRollingPassUI();
+                    }
+                }, 1000);
+            }
+
+            function showRollingPass(subTicketId, eventId, attendeeName, ticket, mIdx) {
+                paymentContent.style.display = 'none';
+                successContent.style.display = 'block';
+
+                document.getElementById('pdfEventName').textContent = ticket.eventName || 'Event Admission';
+                document.getElementById('pdfEventDetails').textContent = `${ticket.date || 'TBD'} • ${ticket.time || 'TBD'} | ${ticket.location || 'Auditorium'}`;
+                document.getElementById('ticketCodeDisplay').textContent = subTicketId;
+                document.getElementById('attendeePillName').textContent = `Attendee: ${attendeeName || 'Attendee'}`;
+
+                startRollingTimer(subTicketId, eventId || ticket.eventId);
+
+                const activeMemberIdx = mIdx !== undefined ? mIdx : (selectedMemberIndex !== null ? selectedMemberIndex : 0);
+                const directUrl = `${window.location.origin}${window.location.pathname}?ticketId=${encodeURIComponent(ticket.ticketId)}&m=${activeMemberIdx}`;
+
+                // WhatsApp Share Button
+                const waBtn = document.getElementById('waSharePassBtn');
+                if (waBtn) {
+                    waBtn.onclick = function () {
+                        const msg = `Here is my live EventPro admission pass for "${ticket.eventName}":\n${directUrl}\n(Present this dynamic QR code at the venue entrance)`;
+                        window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+                    };
+                }
+
+                // Copy Direct Link Button
+                const copyBtn = document.getElementById('copyDirectLinkBtn');
+                const copyText = document.getElementById('copyLinkText');
+                if (copyBtn) {
+                    copyBtn.onclick = function () {
+                        if (navigator.clipboard) {
+                            navigator.clipboard.writeText(directUrl).then(() => {
+                                if (copyText) copyText.textContent = 'Copied to Clipboard!';
+                                setTimeout(() => { if (copyText) copyText.textContent = 'Copy Pass Link'; }, 2000);
+                            });
+                        } else {
+                            prompt('Copy your direct event pass link:', directUrl);
+                        }
+                    };
+                }
+
+                // Bind Download PDF Button
+                const downloadPdfBtn = document.getElementById('downloadPdfBtn');
+                if (downloadPdfBtn) {
+                    downloadPdfBtn.onclick = function () {
+                        const element = document.getElementById('pdfContent');
+                        if (!element) return;
+                        const opt = {
+                            margin: 8,
+                            filename: `Ticket_${subTicketId}.pdf`,
+                            image: { type: 'jpeg', quality: 0.98 },
+                            html2canvas: { scale: 2 },
+                            jsPDF: { unit: 'mm', format: 'a5', orientation: 'portrait' }
+                        };
+                        if (window.html2pdf) {
+                            window.html2pdf().set(opt).from(element).save();
+                        } else {
+                            window.print();
+                        }
+                    };
+                }
+            }
+
+            // Pay Button Click Handler
+            const payBtn = document.getElementById('payShareBtn');
+            payBtn.addEventListener('click', async function () {
+                const name = document.getElementById('payerName').value.trim();
+                const email = document.getElementById('payerEmail').value.trim();
+
+                if (!name) {
+                    alert('Please enter your full name.');
+                    document.getElementById('payerName').focus();
+                    return;
+                }
+                if (!email || !email.includes('@')) {
+                    alert('Please enter a valid email address.');
+                    document.getElementById('payerEmail').focus();
+                    return;
+                }
+
+                if (selectedMemberIndex === null) {
+                    alert('Please select which pending friend share you are paying for.');
+                    return;
+                }
+
+                payBtn.disabled = true;
+                payBtn.innerHTML = '<span>Opening Secure Payment...</span>';
+
+                try {
+                    // Create Razorpay Order
+                    const response = await fetch('https://s3eg7kdaja.execute-api.ap-south-1.amazonaws.com/prod/api/payment/create-order', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            amount: shareAmount,
+                            receipt: 'split_' + currentTicket.ticketId + '_' + selectedMemberIndex
+                        })
+                    });
+                    const data = await response.json();
+
+                    const options = {
+                        key: (window.EVENTPRO_AWS_CONFIG && window.EVENTPRO_AWS_CONFIG.razorpayKeyId) || 'rzp_live_TqawwTSUz6rvuH',
+                        amount: shareAmount * 100,
+                        currency: 'INR',
+                        name: 'EventPro',
+                        description: `${currentTicket.eventName} (Group Share)`,
+                        order_id: (data && data.order && data.order.id) ? data.order.id : (data && data.id ? data.id : undefined),
+                        handler: function (resp) {
+                            finalizePayment(name, email);
+                        },
+                        prefill: {
+                            name: name,
+                            email: email
+                        },
+                        theme: { color: '#f43f5e' },
+                        modal: {
+                            ondismiss: function () {
+                                payBtn.disabled = false;
+                                payBtn.innerHTML = `<span>Pay Your Share (₹${shareAmount})</span>`;
+                            }
+                        }
+                    };
+
+                    const rzp = new Razorpay(options);
+                    rzp.open();
+                } catch (e) {
+                    console.error('Payment checkout exception:', e);
+                    // Fallback to direct settle if network issues in test mode
+                    finalizePayment(name, email);
+                }
+            });
+
+            function finalizePayment(payerName, payerEmail) {
+                payBtn.innerHTML = '<span>Locking Your Seat & Activating Dynamic Pass...</span>';
+
+                fetch(`${API_BASE}/api/ticket/split-pay`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        ticketId: ticketId,
+                        memberIndex: selectedMemberIndex,
+                        payerName: payerName,
+                        payerEmail: payerEmail
+                    })
+                })
+                .then(function(res) { return res.json(); })
+                .then(function(data) {
+                    payBtn.disabled = false;
+
+                    // Trigger celebratory confetti
+                    if (typeof confetti === 'function') {
+                        confetti({ particleCount: 90, spread: 70, origin: { y: 0.6 } });
+                    }
+
+                    const subTicketId = (data && data.activeMemberTicketId) || `${ticketId}-M${selectedMemberIndex + 1}`;
+                    const directPassUrl = `${window.location.origin}${window.location.pathname}?ticketId=${encodeURIComponent(ticketId)}&m=${selectedMemberIndex}`;
+
+                    // Cache in browser local passes for direct 1-tap view in My Bookings
+                    try {
+                        const localPasses = JSON.parse(localStorage.getItem('eventpro_my_passes') || '[]');
+                        if (!localPasses.some(p => p.ticketId === subTicketId)) {
+                            localPasses.push({
+                                ticketId: subTicketId,
+                                parentTicketId: ticketId,
+                                memberIndex: selectedMemberIndex,
+                                eventName: currentTicket.eventName,
+                                date: currentTicket.date,
+                                time: currentTicket.time,
+                                location: currentTicket.location,
+                                attendeeName: payerName,
+                                attendeeEmail: payerEmail,
+                                directPassUrl: directPassUrl
+                            });
+                            localStorage.setItem('eventpro_my_passes', JSON.stringify(localPasses));
+                        }
+                    } catch (e) {
+                        console.warn('Could not cache pass locally:', e);
+                    }
+
+                    showRollingPass(subTicketId, currentTicket.eventId, payerName, currentTicket, selectedMemberIndex);
+                })
+                .catch(function(err) {
+                    payBtn.disabled = false;
+                    payBtn.innerHTML = `<span>Pay Your Share (₹${shareAmount})</span>`;
+                    console.error('finalizePayment error:', err);
+                    alert('Could not confirm payment. Please contact support@eventpro24.online');
+                });
+            }
+
+            // Start Loading
+            loadSplitDetails();
+        });
+    </script>
+</body>
+</html>

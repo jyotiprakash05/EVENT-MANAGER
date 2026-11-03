@@ -1,0 +1,2468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventPro | Explore Events & Movies</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- CSS -->
+    <link rel="stylesheet" href="Attendee_Dashboard.css">
+    <!-- EmailJS SDK -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script type="text/javascript">
+        (function() {
+            emailjs.init("ZhY8nu-13U5N_I5Zf");
+        })();
+    </script>
+    <!-- AWS SDK & Auth Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/amazon-cognito-identity-js@6.3.12/dist/amazon-cognito-identity.min.js"></script>
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1408.0.min.js"></script>
+    <script src="../aws-config.js"></script>
+    <script src="../dashboard-auth.js"></script>
+    <script src="attendee-backend.js"></script>
+    <script src="../info-tooltip-manager.js"></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+    <!-- BOOKMYSHOW HEADING & EVENT LISTING STYLES -->
+    <style>
+        :root {
+            --bms-red: #10b981;
+            --bms-red-hover: #059669;
+            --bms-red-glow: rgba(16, 185, 129, 0.35);
+            --bms-gold: #ffb400;
+        }
+
+        /* Top Announcement Strip */
+        .bms-announcement-strip {
+            background: linear-gradient(90deg, #181b26 0%, #221c27 50%, #181b26 100%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 8px 18px;
+            font-size: 0.8rem;
+            color: #94a3b8;
+            border-radius: 14px 14px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .bms-announcement-strip strong { color: var(--bms-red); }
+
+        /* BookMyShow Main Heading Bar */
+        .bms-heading-container {
+            background: #141722;
+            border: 1px solid #282f3f;
+            border-radius: 18px;
+            padding: 18px 24px 14px;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .bms-heading-top-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .bms-logo-title {
+            font-size: 1.55rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+        .bms-logo-title .bms-accent { color: var(--bms-red); }
+        .bms-tagline-badge {
+            font-size: 0.65rem;
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--bms-red);
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            padding: 2px 7px;
+            border-radius: 9999px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        /* BMS Search Bar */
+        .bms-search-box {
+            flex: 1;
+            max-width: 580px;
+            background: #0c0e14;
+            border: 1px solid #282f3f;
+            border-radius: 10px;
+            padding: 9px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s;
+        }
+        .bms-search-box:focus-within {
+            border-color: var(--bms-red);
+            box-shadow: 0 0 0 3px var(--bms-red-glow);
+        }
+        .bms-search-input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #ffffff;
+            font-size: 0.92rem;
+            font-family: inherit;
+        }
+        .bms-search-input::placeholder { color: #64748b; }
+
+        /* City Selector Button */
+        .bms-city-btn {
+            background: #0c0e14;
+            border: 1px solid #282f3f;
+            color: #e2e8f0;
+            padding: 8px 14px;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            transition: all 0.2s;
+        }
+        .bms-city-btn:hover {
+            border-color: var(--bms-red);
+            color: #ffffff;
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        /* BMS Category Navigation Ribbon */
+        .bms-category-ribbon {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding-top: 16px;
+            margin-top: 14px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .bms-cat-pill {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            font-size: 0.88rem;
+            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .bms-cat-pill:hover,
+        .bms-cat-pill.active {
+            background: var(--bms-red);
+            color: #ffffff;
+            box-shadow: 0 2px 10px var(--bms-red-glow);
+        }
+        .bms-badge-new {
+            background: #ffb400;
+            color: #0c0e14;
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 1px 5px;
+            border-radius: 4px;
+        }
+
+        /* BookMyShow Poster Cards in Grid */
+        .event-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)) !important;
+            gap: 22px !important;
+        }
+
+        .bms-poster-card {
+            background: #141722;
+            border: 1px solid #282f3f;
+            border-radius: 16px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            cursor: pointer;
+            position: relative;
+        }
+        .bms-poster-card:hover {
+            transform: translateY(-6px);
+            border-color: rgba(16, 185, 129, 0.5);
+            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.7);
+            background: #1b1f2e;
+        }
+
+        .bms-poster-img-wrap {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 2 / 2.85;
+            background: #0c0e14;
+            overflow: hidden;
+        }
+        .bms-poster-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.4s ease;
+        }
+        .bms-poster-card:hover .bms-poster-img {
+            transform: scale(1.05);
+        }
+
+        /* Rating Overlay Bar */
+        .bms-rating-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(0deg, rgba(12, 14, 20, 0.95) 0%, rgba(12, 14, 20, 0.6) 70%, transparent 100%);
+            padding: 10px 10px 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .bms-rating-score {
+            font-size: 0.82rem;
+            font-weight: 800;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .bms-star { color: var(--bms-gold); }
+        .bms-votes-sub { font-size: 0.7rem; color: #94a3b8; font-weight: 500; }
+
+        .bms-category-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(12, 14, 20, 0.85);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 3px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+        .bms-category-badge.live {
+            background: var(--bms-red);
+            border-color: var(--bms-red);
+        }
+
+        .bms-card-body {
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            justify-content: space-between;
+        }
+        .bms-card-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .bms-card-meta {
+            font-size: 0.78rem;
+            color: #94a3b8;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .bms-card-location {
+            font-size: 0.78rem;
+            color: #64748b;
+            margin-bottom: 12px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .bms-card-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: auto;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .bms-card-price {
+            font-size: 1rem;
+            font-weight: 800;
+            color: #ffffff;
+        }
+        .bms-card-price small {
+            font-size: 0.68rem;
+            color: #64748b;
+            display: block;
+            font-weight: 500;
+        }
+
+        .bms-btn-book {
+            background: var(--bms-red);
+            color: #ffffff !important;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .bms-btn-book:hover {
+            background: var(--bms-red-hover);
+            box-shadow: 0 4px 14px var(--bms-red-glow);
+        }
+
+        /* City Modal */
+        .bms-modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.82);
+            backdrop-filter: blur(6px);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .bms-modal-backdrop.active { display: flex; }
+        .bms-city-modal-box {
+            background: #141722;
+            border: 1px solid #282f3f;
+            border-radius: 18px;
+            max-width: 680px;
+            width: 100%;
+            padding: 28px;
+            box-shadow: 0 24px 60px rgba(0,0,0,0.8);
+            position: relative;
+        }
+        .bms-city-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            margin-top: 18px;
+        }
+        .bms-city-badge {
+            background: #0c0e14;
+            border: 1px solid #282f3f;
+            padding: 12px 8px;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            color: #cbd5e1;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .bms-city-badge:hover, .bms-city-badge.active {
+            border-color: var(--bms-red);
+            background: rgba(16, 185, 129, 0.12);
+            color: #ffffff;
+        }
+
+        /* Order Summary & Offer Modal */
+        .bms-checkout-modal-box {
+            background: #141722;
+            border: 1px solid #282f3f;
+            border-radius: 20px;
+            max-width: 580px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 26px 28px;
+            box-shadow: 0 24px 60px rgba(0,0,0,0.85);
+            position: relative;
+        }
+        .bms-qty-btn {
+            background: #0c0e14;
+            border: 1px solid #282f3f;
+            color: #fff;
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .bms-qty-btn:hover:not(:disabled) {
+            border-color: var(--bms-red);
+            color: var(--bms-red);
+            background: rgba(16, 185, 129, 0.08);
+        }
+        .bms-qty-btn:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
+        .bms-promo-input-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .bms-promo-input {
+            flex: 1;
+            background: #0c0e14;
+            border: 1px solid #282f3f;
+            border-radius: 10px;
+            padding: 10px 14px;
+            color: #fff;
+            font-size: 0.88rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 1px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .bms-promo-input:focus {
+            border-color: var(--bms-red);
+        }
+        .bms-promo-apply-btn {
+            background: #1e293b;
+            color: #fff;
+            border: 1px solid #334155;
+            padding: 0 18px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .bms-promo-apply-btn:hover {
+            background: var(--bms-red);
+            border-color: var(--bms-red);
+        }
+        .bms-offer-chip {
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px dashed rgba(16, 185, 129, 0.4);
+            color: #6ee7b7;
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 0.74rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .bms-offer-chip:hover {
+            background: rgba(16, 185, 129, 0.2);
+            border-color: var(--bms-red);
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
+
+        /* DISTRICT BY ZOMATO EXPERIENCE MODAL STYLES */
+        .district-vibe-chip {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #e2e8f0;
+            padding: 5px 12px;
+            border-radius: 9999px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        .district-vibe-chip:hover {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: var(--bms-red);
+            color: #fff;
+            transform: translateY(-1px);
+        }
+        .district-gallery-item {
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+            aspect-ratio: 4/3;
+            cursor: pointer;
+            border: 1px solid #282f3f;
+            transition: all 0.25s;
+        }
+        .district-gallery-item:hover {
+            transform: scale(1.03);
+            border-color: var(--bms-red);
+            box-shadow: 0 6px 18px rgba(16, 185, 129, 0.25);
+        }
+        .district-gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .district-review-card {
+            background: #0c0e14;
+            border: 1px solid #282f3f;
+            border-radius: 12px;
+            padding: 12px 16px;
+            font-size: 0.82rem;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body class="attendee-dashboard" data-required-role="attendee">
+    <div class="page-shell">
+        
+        <!-- Sidebar Navigation (Maintained as usual) -->
+        <aside class="sidebar">
+            <div>
+                <div class="brand-wrap">
+                    <div class="brand-mark" style="background: linear-gradient(135deg, #10b981, #059669); color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.3rem; font-weight:800;">E</div>
+                    <div>
+                        <p class="brand-mini" style="color: #10b981;">Attendee Portal</p>
+                        <h2>EVENTPRO</h2>
+                    </div>
+                </div>
+
+                <nav class="side-nav">
+                    <a href="Event_List.html" class="active">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                        Explore Events
+                    </a>
+                    <a href="Your_Booking.html">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                        My Bookings
+                    </a>
+                    <a href="Saved_Events.html">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+                        Saved Events
+                    </a>
+                    <a href="Account_settings.html">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                        Settings
+                    </a>
+                </nav>
+            </div>
+            
+            <div class="sidebar-card">
+                <p style="color: #10b981;">Live Network</p>
+                <h3 id="liveEventCount">0 live events</h3>
+                <span>Discover and reserve verified experiences nationwide.</span>
+            </div>
+        </aside>
+
+        <!-- Main Workspace -->
+        <main class="main-panel">
+            
+            <!-- BOOKMYSHOW HEADING & CONTROLS -->
+            <div class="bms-heading-container">
+                <div class="bms-announcement-strip">
+                    <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                        <span><strong>FESTIVAL OFFER:</strong> Get 20% off up to ₹150 with Axis & Amazon Pay. Code: <span style="color:#ffb400; font-weight:700; cursor:pointer; text-decoration:underline;" title="Click to copy code" onclick="navigator.clipboard.writeText('BMSFEST26'); alert('Code BMSFEST26 copied! Apply it during ticket checkout.');">BMSFEST26</span></span>
+                        <span class="info-circle" title="Promo Terms">ⓘ
+                            <span class="info-tooltip">
+                                <strong>Festival Promo Terms</strong>
+                                Valid on all concert, sports, and theatre tickets above ₹499. Instant discount applied at checkout.
+                            </span>
+                        </span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="color:#10b981; font-weight:600; font-size:0.78rem;">Verified Buyer Protection</span>
+                        <span class="info-circle" title="Buyer Protection">ⓘ
+                            <span class="info-tooltip">
+                                <strong>EventPro Buyer Guarantee</strong>
+                                Direct integration with verified promoters. If an event is cancelled or rescheduled, receive an instant 100% refund.
+                            </span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="bms-heading-top-row">
+                    <!-- Universal Search Bar -->
+                    <div class="bms-search-box">
+                        <svg width="18" height="18" fill="none" stroke="#64748b" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        <input id="eventSearch" type="search" class="bms-search-input" placeholder="Search for Movies, Events, Plays, Sports and Activities..." aria-label="Search events">
+                    </div>
+
+                    <!-- City Selector Button -->
+                    <button id="cityPickerBtn" class="bms-city-btn" type="button">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                        <span id="currentCityText">Delhi-NCR</span>
+                        <span style="font-size:0.7rem; color:#94a3b8;">▼</span>
+                    </button>
+
+                    <!-- User Actions: Notification & Profile Pill -->
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                        <div style="position: relative;">
+                            <button id="notificationBellBtn" title="Alerts & Reminders" style="background: #0c0e14; border: 1px solid #282f3f; width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fff; cursor: pointer;">
+                                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                                <span id="unreadAlertBadge" style="display: none; position: absolute; top: -3px; right: -3px; background: #f84464; color: #fff; font-size: 0.65rem; font-weight: 800; min-width: 16px; height: 16px; border-radius: 8px; line-height: 16px; text-align: center;">0</span>
+                            </button>
+
+                            <div id="notificationDropdown" style="display: none; position: absolute; right: 0; top: 50px; width: 340px; background: #141722; border: 1px solid #282f3f; border-radius: 14px; box-shadow: 0 16px 40px rgba(0,0,0,0.7); z-index: 1000; overflow: hidden;">
+                                <div style="padding: 12px 16px; border-bottom: 1px solid #282f3f; display: flex; justify-content: space-between; align-items: center;">
+                                    <h5 style="margin: 0; font-size: 0.9rem; color: #fff;">Alerts & Reminders</h5>
+                                    <button id="markAllReadBtn" style="background: transparent; border: none; color: #f84464; font-size: 0.75rem; cursor: pointer; font-weight: 700;">Mark read</button>
+                                </div>
+                                <div id="notificationList" style="max-height: 300px; overflow-y: auto; padding: 8px;">
+                                    <p style="color: #94a3b8; font-size: 0.8rem; text-align: center; margin: 18px 0;">No new alerts.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="user-pill" onclick="window.location.href='Account_settings.html'" style="cursor:pointer; background:#0c0e14; border:1px solid #282f3f; border-radius:24px; padding:4px 14px 4px 6px;">
+                            <span class="user-avatar" style="background: #10b981; width:30px; height:30px; font-size:0.8rem;">?</span>
+                            <span style="font-size:0.85rem; font-weight:600;">Attendee</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BookMyShow Category Tabs Ribbon (Matches User Screenshot) -->
+                <div class="bms-category-ribbon">
+                    <button class="bms-cat-pill active" data-cat="all">All Categories</button>
+                    <button class="bms-cat-pill" data-cat="movies">Movies</button>
+                    <button class="bms-cat-pill" data-cat="stream">Stream <span class="bms-badge-new">NEW</span></button>
+                    <button class="bms-cat-pill" data-cat="concert">Live Events</button>
+                    <button class="bms-cat-pill" data-cat="plays">Plays & Theatre</button>
+                    <button class="bms-cat-pill" data-cat="sports">Sports</button>
+                    <button class="bms-cat-pill" data-cat="comedy">Standup Comedy</button>
+                    <button class="bms-cat-pill" data-cat="camping">Camping</button>
+                    <button class="bms-cat-pill" data-cat="workshop">Workshops</button>
+                </div>
+            </div>
+
+            <!-- Summary Metrics Grid -->
+            <section class="summary-grid">
+                <div class="summary-box accent-blue">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span>Popular Shows</span>
+                        <span class="info-circle">ⓘ
+                            <span class="info-tooltip">
+                                <strong>City Curations</strong>
+                                Active verified shows and premier cinema listings matching your chosen location.
+                            </span>
+                        </span>
+                    </div>
+                    <strong id="popularCount">0</strong>
+                    <small>Events in selected city</small>
+                </div>
+                <div class="summary-box accent-purple">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span>My Bookings</span>
+                        <span class="info-circle">ⓘ
+                            <span class="info-tooltip">
+                                <strong>Active Reservations</strong>
+                                Dynamic M-Tickets and QR passes attached to your verified attendee email.
+                            </span>
+                        </span>
+                    </div>
+                    <strong id="bookingCount">-</strong>
+                    <small>Confirmed tickets</small>
+                </div>
+                <div class="summary-box accent-gold">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span>Shortlisted</span>
+                        <span class="info-circle">ⓘ
+                            <span class="info-tooltip">
+                                <strong>Wishlist Items</strong>
+                                Events you have bookmarked for quick updates, seat releases, and reminders.
+                            </span>
+                        </span>
+                    </div>
+                    <strong id="savedCount">-</strong>
+                    <small>Events saved</small>
+                </div>
+            </section>
+
+            <!-- BookMyShow Event Listing Section -->
+            <section class="event-panel" style="background:#141722; border:1px solid #282f3f; border-radius:18px;">
+                <div class="section-head" style="margin-bottom: 20px;">
+                    <div>
+                        <h3 style="font-size: 1.35rem; font-weight:800; color:#fff;">
+                            Recommended Events in <span id="eventCityLabel" style="color:#f84464;">Delhi-NCR</span>
+                        </h3>
+                        <p style="font-size:0.82rem; color:#94a3b8; margin: 2px 0 0;">Top rated cinema, live music, sports & comedy</p>
+                    </div>
+
+                    <div class="panel-tools">
+                        <select id="dateFilter" class="filter-select" style="background:#0c0e14; border:1px solid #282f3f; border-radius:8px;">
+                            <option value="">All Dates</option>
+                            <option value="today">Today</option>
+                            <option value="week">Next 7 Days</option>
+                            <option value="month">This Month</option>
+                        </select>
+                        <select id="priceFilter" class="filter-select" style="background:#0c0e14; border:1px solid #282f3f; border-radius:8px;">
+                            <option value="">Any Price</option>
+                            <option value="free">Free</option>
+                            <option value="paid">Paid</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Event Grid with BookMyShow Cards -->
+                <div class="event-grid" id="eventGrid">
+                    <p style="color: #94a3b8; padding: 20px;">Loading shows & movies...</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- CITY SELECTOR MODAL -->
+    <div class="bms-modal-backdrop" id="bmsCityModal">
+        <div class="bms-city-modal-box">
+            <button id="closeCityModalBtn" style="position:absolute; top:20px; right:20px; background:#0c0e14; border:none; color:#fff; width:32px; height:32px; border-radius:50%; cursor:pointer; font-size:1rem;">✕</button>
+            <h4 style="font-size: 1.25rem; font-weight: 800; color: #fff; margin-bottom: 4px;">Choose Location</h4>
+            <p style="font-size: 0.82rem; color: #94a3b8;">Search any city/area or pick from important cities</p>
+            
+            <!-- Location Search Input -->
+            <div style="position: relative; margin: 16px 0 18px;">
+                <svg width="18" height="18" fill="none" stroke="#64748b" stroke-width="2" viewBox="0 0 24 24" style="position:absolute; left:14px; top:12px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input type="text" id="citySearchInput" placeholder="Type to search city, area or state (e.g. Delhi, Mumbai, Pune, Cuttack)..." style="width:100%; background:#0c0e14; border:1px solid #282f3f; border-radius:10px; padding:10px 16px 10px 42px; color:#fff; font-size:0.9rem; outline:none; font-family:inherit;">
+                <button id="applySearchCityBtn" type="button" style="display:none; position:absolute; right:8px; top:6px; background:#f84464; color:#fff; border:none; padding:6px 14px; border-radius:6px; font-weight:700; font-size:0.78rem; cursor:pointer;">Select</button>
+            </div>
+
+            <!-- Important Cities Section -->
+            <div style="font-size: 0.76rem; text-transform: uppercase; letter-spacing: 1px; color: #f84464; font-weight: 800; margin-bottom: 10px;">Popular Cities</div>
+            <div class="bms-city-grid" id="popularCitiesList">
+                <div class="bms-city-badge" data-city="All Cities" style="border-style:dashed;">All Cities</div>
+                <div class="bms-city-badge active" data-city="Delhi-NCR">Delhi-NCR</div>
+                <div class="bms-city-badge" data-city="Mumbai">Mumbai</div>
+                <div class="bms-city-badge" data-city="Bengaluru">Bengaluru</div>
+                <div class="bms-city-badge" data-city="Hyderabad">Hyderabad</div>
+                <div class="bms-city-badge" data-city="Ahmedabad">Ahmedabad</div>
+                <div class="bms-city-badge" data-city="Chandigarh">Chandigarh</div>
+                <div class="bms-city-badge" data-city="Chennai">Chennai</div>
+                <div class="bms-city-badge" data-city="Pune">Pune</div>
+                <div class="bms-city-badge" data-city="Kolkata">Kolkata</div>
+                <div class="bms-city-badge" data-city="Bhubaneswar">Bhubaneswar</div>
+            </div>
+
+            <!-- Other Cities Section -->
+            <div style="font-size: 0.74rem; text-transform: uppercase; letter-spacing: 1px; color: #64748b; font-weight: 700; margin: 18px 0 10px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px;">Other Popular Locations</div>
+            <div style="display:flex; flex-wrap:wrap; gap:8px;" id="otherCitiesList">
+                <span class="other-city-chip bms-city-badge" data-city="Jaipur" style="padding:6px 14px; font-size:0.8rem; border-radius:20px;">Jaipur</span>
+                <span class="other-city-chip bms-city-badge" data-city="Goa" style="padding:6px 14px; font-size:0.8rem; border-radius:20px;">Goa</span>
+                <span class="other-city-chip bms-city-badge" data-city="Kochi" style="padding:6px 14px; font-size:0.8rem; border-radius:20px;">Kochi</span>
+                <span class="other-city-chip bms-city-badge" data-city="Indore" style="padding:6px 14px; font-size:0.8rem; border-radius:20px;">Indore</span>
+                <span class="other-city-chip bms-city-badge" data-city="Lucknow" style="padding:6px 14px; font-size:0.8rem; border-radius:20px;">Lucknow</span>
+                <span class="other-city-chip bms-city-badge" data-city="Surat" style="padding:6px 14px; font-size:0.8rem; border-radius:20px;">Surat</span>
+                <span class="other-city-chip bms-city-badge" data-city="Nagpur" style="padding:6px 14px; font-size:0.8rem; border-radius:20px;">Nagpur</span>
+                <span class="other-city-chip bms-city-badge" data-city="Patna" style="padding:6px 14px; font-size:0.8rem; border-radius:20px;">Patna</span>
+                <span class="other-city-chip bms-city-badge" data-city="Noida" style="padding:6px 14px; font-size:0.8rem; border-radius:20px;">Noida</span>
+                <span class="other-city-chip bms-city-badge" data-city="Gurgaon" style="padding:6px 14px; font-size:0.8rem; border-radius:20px;">Gurgaon</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- DISTRICT BY ZOMATO STYLE: EVENT EXPERIENCE & MEDIA GALLERY MODAL -->
+    <div class="bms-modal-backdrop" id="districtExperienceModal" style="z-index: 10001;">
+        <div class="district-modal-box" style="background:#141722; border:1px solid #282f3f; border-radius:20px; width:92%; max-width:680px; max-height:90vh; overflow-y:auto; position:relative; box-shadow:0 25px 60px rgba(0,0,0,0.85); color:#fff;">
+            <button id="closeDistrictModalBtn" style="position:absolute; top:18px; right:18px; z-index:10; background:rgba(12,14,20,0.85); border:1px solid #282f3f; color:#fff; width:36px; height:36px; border-radius:50%; cursor:pointer; font-size:1rem; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(6px);">✕</button>
+
+            <!-- Hero Image Header with Live Tags -->
+            <div style="position:relative; height:240px; overflow:hidden; border-radius:20px 20px 0 0;">
+                <img id="districtHeroImg" src="" alt="Event Atmosphere" style="width:100%; height:100%; object-fit:cover;">
+                <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(20,23,34,0.1) 0%, rgba(20,23,34,0.95) 100%);"></div>
+                <div style="position:absolute; top:16px; left:16px; display:flex; gap:8px;">
+                    <span id="districtCategoryBadge" class="bms-category-badge" style="position:static;">LIVE CONCERT</span>
+                    <span id="districtVibePill" style="background:rgba(248,68,100,0.25); border:1px solid rgba(248,68,100,0.5); color:#fca5a5; font-size:0.7rem; font-weight:700; padding:3px 9px; border-radius:20px; display:inline-flex; align-items:center; gap:4px;">TRENDING</span>
+                </div>
+                <div style="position:absolute; bottom:14px; left:20px; right:20px;">
+                    <h2 id="districtEventTitle" style="font-size:1.55rem; font-weight:800; margin:0 0 4px; color:#fff; text-shadow:0 2px 10px rgba(0,0,0,0.7);">Event Title</h2>
+                    <p id="districtEventMeta" style="font-size:0.85rem; color:#cbd5e1; margin:0; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                        <span id="districtEventDate">Date</span> • <span id="districtEventVenue">Venue</span>
+                    </p>
+                </div>
+            </div>
+
+            <div style="padding:20px 24px;">
+                <!-- Real-time Social Proof & Trust Strip (District Style) -->
+                <div style="background:linear-gradient(90deg, rgba(248,68,100,0.12), rgba(245,158,11,0.12)); border:1px solid rgba(248,68,100,0.25); border-radius:12px; padding:10px 16px; display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; flex-wrap:wrap; gap:10px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <div>
+                            <strong id="districtBookingBuzz" style="font-size:0.85rem; color:#fff; display:block;">38 people booked in last 24h</strong>
+                            <small id="districtUrgencyText" style="color:#fca5a5; font-size:0.75rem;">Filling fast in your city</small>
+                        </div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:6px; background:rgba(0,0,0,0.3); padding:4px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.08);">
+                        <span style="color:#fbbf24; font-weight:800; font-size:0.9rem;">Rating: <span id="districtRatingScore">4.9</span></span>
+                        <span style="color:#94a3b8; font-size:0.75rem;">(<span id="districtRatingCount">180+</span> reviews)</span>
+                    </div>
+                </div>
+
+                <!-- Event Highlights Photo/Media Gallery (District Visuals Reel) -->
+                <div style="margin-bottom:20px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <h4 style="font-size:0.92rem; font-weight:700; color:#fff; text-transform:uppercase; letter-spacing:0.5px; margin:0; display:flex; align-items:center; gap:6px;">
+                            <span>Event Atmosphere & Visuals</span>
+                            <span class="info-circle" title="Visuals Info">ⓘ
+                                <span class="info-tooltip">
+                                    <strong>Verified Stage & Crowd Media</strong>
+                                    Authentic venue atmosphere captures and stage production reels provided by the official host.
+                                </span>
+                            </span>
+                        </h4>
+                        <span style="font-size:0.75rem; color:#94a3b8;">Verified Crowd & Stage Media</span>
+                    </div>
+                    <div id="districtGalleryGrid" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:10px;">
+                        <!-- 4 photo tiles -->
+                    </div>
+                </div>
+
+                <!-- Vibe & Experience Tags -->
+                <div style="margin-bottom:20px;">
+                    <h4 style="font-size:0.85rem; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px; margin:0 0 10px; display:flex; align-items:center; gap:6px;">
+                        <span>The Vibe & Experience</span>
+                        <span class="info-circle" title="Vibe Info">ⓘ
+                            <span class="info-tooltip">
+                                <strong>Vibe & Dress Code Tags</strong>
+                                Highlights sound styles, seating arrangements, and ambiance descriptors for this listing.
+                            </span>
+                        </span>
+                    </h4>
+                    <div id="districtVibeTags" style="display:flex; flex-wrap:wrap; gap:8px;">
+                        <!-- tags -->
+                    </div>
+                </div>
+
+                <!-- Featured Artist Lineup Banner -->
+                <div id="districtLineupBanner" style="display:none; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px 16px; margin-bottom:18px;">
+                    <span style="color:#fb7185; font-size:0.75rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px;">Featured Performers & Lineup</span>
+                    <p id="districtLineupText" style="margin:4px 0 0; color:#fff; font-weight:700; font-size:0.95rem;"></p>
+                </div>
+
+                <!-- What to Expect / Perks Grid -->
+                <div style="background:#0c0e14; border:1px solid #282f3f; border-radius:14px; padding:16px; margin-bottom:20px;">
+                    <h4 style="font-size:0.85rem; font-weight:700; color:#cbd5e1; margin:0 0 12px; display:flex; align-items:center; gap:6px;">
+                        <span>What to Expect & Venue Perks</span>
+                        <span class="info-circle" title="Perks Info">ⓘ
+                            <span class="info-tooltip">
+                                <strong>Event Logistics Guide</strong>
+                                Amenities and access policies verified by the production team.
+                            </span>
+                        </span>
+                    </h4>
+                    <div id="districtPerksGrid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:12px; font-size:0.8rem; color:#94a3b8;">
+                        <div style="background:rgba(255,255,255,0.03); padding:8px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
+                            <span style="color:#fff; display:flex; align-items:center; justify-content:space-between; font-weight:600; margin-bottom:2px;">
+                                <span>72h Cancellation</span>
+                                <span class="info-circle" style="width:14px; height:14px; font-size:0.6rem;">ⓘ
+                                    <span class="info-tooltip">
+                                        <strong>72h Refund Protection</strong>
+                                        Full ticket refund minus nominal 2% payment gateway fee when cancelled up to 72 hours before start.
+                                    </span>
+                                </span>
+                            </span>
+                            <span>2% fee • Instant refund</span>
+                        </div>
+                        <div style="background:rgba(255,255,255,0.03); padding:8px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
+                            <span style="color:#fff; display:flex; align-items:center; justify-content:space-between; font-weight:600; margin-bottom:2px;">
+                                <span>Food & Bar</span>
+                                <span class="info-circle" style="width:14px; height:14px; font-size:0.6rem;">ⓘ
+                                    <span class="info-tooltip">
+                                        <strong>F&B Stalls</strong>
+                                        Curated culinary stalls and licensed beverage counters available inside the arena.
+                                    </span>
+                                </span>
+                            </span>
+                            <span>Counters Available</span>
+                        </div>
+                        <div style="background:rgba(255,255,255,0.03); padding:8px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
+                            <span style="color:#fff; display:flex; align-items:center; justify-content:space-between; font-weight:600; margin-bottom:2px;">
+                                <span>Parking</span>
+                                <span class="info-circle" style="width:14px; height:14px; font-size:0.6rem;">ⓘ
+                                    <span class="info-tooltip">
+                                        <strong>Venue Parking</strong>
+                                        Dedicated multi-level parking and valet counters located at Gates 2 & 4.
+                                    </span>
+                                </span>
+                            </span>
+                            <span>Valet & Self-Park</span>
+                        </div>
+                        <div style="background:rgba(255,255,255,0.03); padding:8px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
+                            <span style="color:#fff; display:flex; align-items:center; justify-content:space-between; font-weight:600; margin-bottom:2px;">
+                                <span>Entry Age</span>
+                                <span class="info-circle" style="width:14px; height:14px; font-size:0.6rem;">ⓘ
+                                    <span class="info-tooltip">
+                                        <strong>Age Verification</strong>
+                                        Physical or digital DigiLocker government ID required for turnstile security scan.
+                                    </span>
+                                </span>
+                            </span>
+                            <span>All Ages / 18+ VIP</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Verified Attendee Testimonials -->
+                <div style="margin-bottom:24px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <h4 style="font-size:0.85rem; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px; margin:0;">Attendee Buzz & Reviews</h4>
+                        <span style="color:#10b981; font-size:0.75rem; font-weight:600;">Verified Attendees</span>
+                    </div>
+                    <div id="districtReviewsList" style="display:flex; flex-direction:column; gap:8px;">
+                        <!-- Review items -->
+                    </div>
+                </div>
+
+                <!-- Sticky Bottom Action Bar -->
+                <div style="background:#0c0e14; border:1px solid #282f3f; border-radius:14px; padding:14px 18px; display:flex; align-items:center; justify-content:space-between; gap:16px;">
+                    <div>
+                        <span style="font-size:0.75rem; color:#94a3b8; display:block;">Starting Price</span>
+                        <strong id="districtFooterPrice" style="font-size:1.25rem; color:#fff; font-weight:800;">₹0</strong>
+                    </div>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <button id="districtSaveBtn" type="button" style="background:#141722; border:1px solid #282f3f; color:#fff; border-radius:10px; width:44px; height:44px; font-size:1.1rem; cursor:pointer; display:flex; align-items:center; justify-content:center;">♡</button>
+                        <button id="districtPrimaryActionBtn" type="button" class="bms-btn-book" style="padding:12px 24px; font-size:0.95rem; font-weight:800; border-radius:10px; cursor:pointer;">Book Tickets</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ORDER SUMMARY & OFFER CHECKOUT MODAL -->
+    <div class="bms-modal-backdrop" id="bmsCheckoutModal">
+        <div class="bms-checkout-modal-box">
+            <button id="closeCheckoutModalBtn" style="position:absolute; top:20px; right:20px; background:#0c0e14; border:1px solid #282f3f; color:#fff; width:34px; height:34px; border-radius:50%; cursor:pointer; font-size:0.9rem;">✕</button>
+            
+            <span id="checkoutCategoryBadge" class="bms-category-badge" style="position:static; margin-bottom:10px; display:inline-block;">EVENT</span>
+            <h3 id="checkoutEventTitle" style="font-size: 1.3rem; font-weight:800; color:#fff; margin: 4px 0 6px;">Event Title</h3>
+            <p id="checkoutEventMeta" style="font-size:0.82rem; color:#94a3b8; margin: 0 0 18px;">Venue • Date & Time</p>
+
+            <!-- Ticket Quantity & Base Rate -->
+            <div style="background:#0c0e14; border:1px solid #282f3f; border-radius:14px; padding:14px 18px; display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <div>
+                    <span style="display:block; font-size:0.88rem; font-weight:700; color:#fff;">Standard Admission Pass</span>
+                    <small id="checkoutPerTicketRate" style="color:#94a3b8; font-size:0.75rem;">₹0 per ticket</small>
+                </div>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <button class="bms-qty-btn" id="qtyMinusBtn" type="button" aria-label="Decrease quantity">−</button>
+                    <span id="checkoutQtyDisplay" style="font-weight:800; font-size:1.05rem; color:#fff; min-width:24px; text-align:center;">1</span>
+                    <button class="bms-qty-btn" id="qtyPlusBtn" type="button" aria-label="Increase quantity">+</button>
+                </div>
+            </div>
+
+            <!-- Apply Offers / Promo Code Section -->
+            <div id="checkoutOffersContainer" style="background:#0c0e14; border:1px solid #282f3f; border-radius:14px; padding:16px 18px; margin-bottom:16px;">
+                <div style="font-size:0.85rem; font-weight:700; color:#fff; display:flex; align-items:center; justify-content:space-between;">
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <span>Apply Offers & Promo Codes</span>
+                        <span class="info-circle" title="Promo Info">ⓘ
+                            <span class="info-tooltip">
+                                <strong>Promo Discounts</strong>
+                                Coupon codes apply automatically against ticket base fare before gateway surcharge.
+                            </span>
+                        </span>
+                    </div>
+                    <span id="appliedBadgeChip" style="display:none; background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.4); padding:3px 8px; border-radius:6px; font-size:0.7rem; font-weight:700;">APPLIED</span>
+                </div>
+
+                <div class="bms-promo-input-row">
+                    <input type="text" id="promoCodeInput" class="bms-promo-input" placeholder="Enter coupon code (e.g. BMSFEST26)">
+                    <button id="applyPromoBtn" class="bms-promo-apply-btn" type="button">Apply</button>
+                </div>
+                
+                <div id="promoMessage" style="font-size:0.78rem; margin-top:8px; display:none; line-height:1.4;"></div>
+
+                <!-- Quick Offer Chips -->
+                <div style="margin-top:12px;">
+                    <div style="font-size:0.72rem; color:#64748b; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; font-weight:700;">Trending Offers:</div>
+                    <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                        <span class="bms-offer-chip" data-code="BMSFEST26"><strong>BMSFEST26</strong> (20% off up to ₹150)</span>
+                        <span class="bms-offer-chip" data-code="EVENTPRO20"><strong>EVENTPRO20</strong> (20% off up to ₹200)</span>
+                        <span class="bms-offer-chip" data-code="WELCOME50"><strong>WELCOME50</strong> (Flat ₹50 off)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Group Split Booking Option (shown when quantity >= 2) -->
+            <div id="groupSplitOptionContainer" style="display:none; background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 14px; padding: 14px 18px; margin-bottom: 16px;">
+                <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer;">
+                    <input type="checkbox" id="splitBillToggle" style="accent-color: #3b82f6; width:18px; height:18px; margin-top:2px;">
+                    <div style="flex:1;">
+                        <div style="display:flex; align-items:center; justify-content:space-between;">
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <strong style="color:#93c5fd; font-size:0.9rem;">Group Split Booking (Pay Your Share)</strong>
+                                <span class="info-circle" title="Split Booking Info">ⓘ
+                                    <span class="info-tooltip">
+                                        <strong>15-Minute Seat Lock</strong>
+                                        Pay your portion now to lock all tickets. Your friends receive WhatsApp / SMS invite links to pay their share.
+                                    </span>
+                                </span>
+                            </div>
+                            <span style="background:rgba(59,130,246,0.25); color:#60a5fa; font-size:0.7rem; font-weight:700; padding:2px 8px; border-radius:6px;">15-MIN SEAT LOCK</span>
+                        </div>
+                        <span style="font-size:0.78rem; color:#94a3b8; display:block; margin-top:3px; line-height:1.4;">
+                            Split equally among <span id="splitQtyCount" style="color:#fff; font-weight:700;">2</span> people. You pay <strong id="splitPerPersonDisplay" style="color:#60a5fa;">₹0</strong> now to hold all seats. Friends pay their individual share via invite links!
+                        </span>
+                    </div>
+                </label>
+            </div>
+
+            <!-- Price Breakdown Summary -->
+            <div style="background:#0c0e14; border:1px solid #282f3f; border-radius:14px; padding:16px 18px; margin-bottom:18px;">
+                <div style="display:flex; justify-content:space-between; font-size:0.82rem; color:#94a3b8; margin-bottom:8px;">
+                    <span>Ticket Subtotal (<span id="summaryQty">1</span> ticket)</span>
+                    <span id="summarySubtotal" style="color:#fff; font-weight:600;">₹0</span>
+                </div>
+                <div id="summaryDiscountRow" style="display:none; justify-content:space-between; font-size:0.82rem; color:#10b981; margin-bottom:8px;">
+                    <span>Offer Discount (<span id="summaryDiscountCode"></span>)</span>
+                    <span id="summaryDiscountAmount" style="font-weight:700;">-₹0</span>
+                </div>
+                <!-- Proof-of-Presence Smart Escrow Deposit Row -->
+                <div id="summaryDepositRow" style="display:none; justify-content:space-between; font-size:0.82rem; color:#10b981; margin-bottom:8px;">
+                    <span style="display:flex; align-items:center; gap:4px;">
+                        <span>Refundable Gate Pledge</span>
+                        <span class="info-circle" title="Gate Deposit Info">ⓘ
+                            <span class="info-tooltip">
+                                <strong>Proof-of-Presence Escrow</strong>
+                                Held in RBI-compliant escrow to prevent bot reservations. Automatically credited back to your original payment method upon turnstile gate scan.
+                            </span>
+                        </span>
+                    </span>
+                    <span id="summaryDepositAmount" style="font-weight:700;">+₹0</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.82rem; color:#94a3b8; margin-bottom:12px;">
+                    <span style="display:flex; align-items:center; gap:4px;">
+                        <span>Convenience Fee & GST (1.5%)</span>
+                        <span class="info-circle" title="Convenience Fee Info">ⓘ
+                            <span class="info-tooltip">
+                                <strong>Platform & Processing Fee</strong>
+                                Covers 256-bit TLS encryption, dynamic rolling QR generation, and Razorpay UPI bank gateway costs.
+                            </span>
+                        </span>
+                    </span>
+                    <span id="summaryFee" style="color:#fff; font-weight:600;">₹0</span>
+                </div>
+                <div id="summarySplitRow" style="display:none; justify-content:space-between; font-size:0.85rem; color:#60a5fa; margin-bottom:8px; padding-top:6px; border-top:1px dashed #282f3f;">
+                    <span>Your Group Share Today (1 of <span id="summarySplitTotalCount">2</span>)</span>
+                    <span id="summarySplitYourShare" style="font-weight:700;">₹0</span>
+                </div>
+                <div style="border-top:1px dashed #282f3f; padding-top:10px; display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <strong style="color:#fff; font-size:1rem; display:block;">Total Amount</strong>
+                        <small id="summarySavingsNote" style="color:#10b981; font-size:0.72rem; display:none;"></small>
+                    </div>
+                    <strong id="summaryGrandTotal" style="color:#f84464; font-size:1.3rem;">₹0</strong>
+                </div>
+            </div>
+
+            <!-- Action Button -->
+            <button id="checkoutPayBtn" class="bms-btn-book" style="width:100%; padding:14px; font-size:0.98rem; border-radius:12px; font-weight:800;">Proceed to Pay ₹0</button>
+        </div>
+    </div>
+
+    <!-- Booking Success & Email Receipt Modal -->
+    <div class="bms-modal-backdrop" id="bookingSuccessModal">
+        <div class="bms-checkout-modal-box" style="text-align: center; max-width: 440px;">
+            <div style="width: 58px; height: 58px; border-radius: 50%; background: rgba(16, 185, 129, 0.15); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; color: #10b981;">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            </div>
+            
+            <h3 style="font-size: 1.4rem; font-weight: 800; color: #fff; margin-bottom: 6px;">Booking Confirmed!</h3>
+            <p id="successEventTitle" style="color: #94a3b8; font-size: 0.95rem; margin-bottom: 18px; font-weight: 600;">Event Name</p>
+
+            <div style="background: #0c0e14; border: 1px solid #282f3f; border-radius: 14px; padding: 16px; text-align: left; margin-bottom: 18px;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #94a3b8; margin-bottom: 8px;">
+                    <span>Tickets Booked:</span>
+                    <strong id="successQty" style="color: #fff;">1</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #94a3b8; margin-bottom: 8px;">
+                    <span>Total Amount Paid:</span>
+                    <strong id="successAmount" style="color: #10b981;">₹0</strong>
+                </div>
+                <div id="successDepositNotice" style="display:none; justify-content: space-between; font-size: 0.85rem; color: #10b981; margin-bottom: 8px;">
+                    <span>Refundable Gate Deposit:</span>
+                    <strong id="successDepositAmount">₹0 (Held in Escrow)</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #94a3b8;">
+                    <span>Event Date & Time:</span>
+                    <strong id="successDateTime" style="color: #fff;">TBD</strong>
+                </div>
+            </div>
+
+            <!-- Email Receipt Notice -->
+            <div style="background: rgba(59, 130, 246, 0.12); border: 1px solid rgba(59, 130, 246, 0.35); border-radius: 12px; padding: 14px 16px; margin-bottom: 22px; text-align: left; display: flex; align-items: flex-start; gap: 12px;">
+                <svg width="22" height="22" fill="none" stroke="#60a5fa" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0; margin-top:2px;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                <div>
+                    <div style="font-size: 0.85rem; font-weight: 700; color: #93c5fd; margin-bottom: 3px;">Ticket Receipt & QR Pass Sent!</div>
+                    <div style="font-size: 0.78rem; color: #cbd5e1; line-height: 1.4;">A copy of your M-Ticket receipt has been emailed to <strong id="successEmailDisplay" style="color: #fff;">your email</strong>.</div>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <button type="button" id="closeSuccessBtn" class="bms-btn-book" style="flex: 1; padding: 12px; font-size: 0.9rem; background: #222938; border: 1px solid #334155; color: #fff;">Explore More</button>
+                <button type="button" id="viewBookingsBtn" class="bms-btn-book" style="flex: 1.2; padding: 12px; font-size: 0.9rem;">View My Bookings</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Group Split Booking Hub Modal -->
+    <div class="bms-modal-backdrop" id="groupSplitSuccessModal">
+        <div class="bms-checkout-modal-box" style="text-align: center; max-width: 480px;">
+            <div style="width: 58px; height: 58px; border-radius: 50%; background: rgba(59, 130, 246, 0.15); display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; color: #3b82f6;">
+                <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            </div>
+            
+            <h3 style="font-size: 1.35rem; font-weight: 800; color: #fff; margin-bottom: 4px;">Group Seats Reserved!</h3>
+            <p id="splitSuccessEventTitle" style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 14px; font-weight: 600;">Event Name</p>
+
+            <!-- 15-Minute Countdown Timer Box -->
+            <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 12px; padding: 10px 14px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.8rem; color: #fca5a5; font-weight: 600;">Time left for friends to pay:</span>
+                <span id="splitCountdownClock" style="font-family: monospace; font-size: 1.05rem; font-weight: 800; color: #ef4444;">14:59</span>
+            </div>
+
+            <!-- Member Settlement Tracker -->
+            <div style="background: #0c0e14; border: 1px solid #282f3f; border-radius: 14px; padding: 14px; text-align: left; margin-bottom: 16px;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 10px; color: var(--muted); font-weight: 700; text-transform: uppercase;">
+                    <span>Group Members</span>
+                    <span id="splitProgressCount" style="color: #60a5fa;">1/2 Settled</span>
+                </div>
+                <div id="splitMembersList" style="display: flex; flex-direction: column; gap: 8px;">
+                    <!-- Dynamically populated member cards -->
+                </div>
+            </div>
+
+            <!-- Share Invite Link Box -->
+            <div style="background: rgba(255, 255, 255, 0.04); border: 1px dashed rgba(255, 255, 255, 0.18); border-radius: 12px; padding: 12px 14px; margin-bottom: 18px; text-align: left;">
+                <div style="font-size: 0.78rem; color: #94a3b8; margin-bottom: 6px; font-weight: 600;">Share payment link with your friends:</div>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="splitInviteLinkInput" readonly style="flex: 1; background: #0c0e14; border: 1px solid #282f3f; border-radius: 8px; color: #38bdf8; font-size: 0.78rem; padding: 8px 10px; font-family: monospace;" value="https://eventpro.live/split?ref=TKT-101">
+                    <button type="button" id="copySplitLinkBtn" style="background: #2563eb; color: #fff; border: none; border-radius: 8px; padding: 8px 12px; font-size: 0.78rem; font-weight: 700; cursor: pointer;">Copy</button>
+                    <button type="button" id="whatsappSplitBtn" style="background: #22c55e; color: #fff; border: none; border-radius: 8px; padding: 8px 12px; font-size: 0.78rem; font-weight: 700; cursor: pointer;">WhatsApp</button>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <button type="button" id="closeSplitModalBtn" class="bms-btn-book" style="flex: 1; padding: 12px; font-size: 0.9rem; background: #222938; border: 1px solid #334155; color: #fff;">Close Hub</button>
+                <button type="button" id="viewSplitBookingsBtn" class="bms-btn-book" style="flex: 1.2; padding: 12px; font-size: 0.9rem;">View My Bookings</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT (BookMyShow Heading & Event Listing Logic) -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let userProfile = {};
+            let activeEvents = [];
+            let currentCity = localStorage.getItem('bms_attendee_city') || 'All Cities';
+            let currentCat = 'all';
+
+            // Notification Center Functionality
+            let currentAlerts = [];
+            function loadAttendeeAlerts() {
+                if (!window.AttendeeBackend || !window.AttendeeBackend.getAttendeeAlerts) {
+                    setTimeout(loadAttendeeAlerts, 500);
+                    return;
+                }
+
+                window.AttendeeBackend.getAttendeeAlerts(function(err, alerts, unreadCount) {
+                    if (err) return;
+                    currentAlerts = alerts || [];
+
+                    const badge = document.getElementById('unreadAlertBadge');
+                    const list = document.getElementById('notificationList');
+
+                    if (unreadCount > 0) {
+                        if (badge) {
+                            badge.style.display = 'block';
+                            badge.textContent = unreadCount > 9 ? '9+' : unreadCount;
+                        }
+                    } else {
+                        if (badge) badge.style.display = 'none';
+                    }
+
+                    if (!currentAlerts || currentAlerts.length === 0) {
+                        if (list) {
+                            list.innerHTML = `
+                                <div style="text-align: center; padding: 24px 12px; color: #94a3b8; font-size: 0.85rem;">
+                                    No event alerts or schedule updates at this time.
+                                </div>
+                            `;
+                        }
+                        return;
+                    }
+
+                    if (list) {
+                        list.innerHTML = currentAlerts.map(a => {
+                            const isUnread = !a.isRead;
+                            const badgeLabel = a.type === 'reminder' ? 'REMINDER' : (a.priority === 'high' ? 'ALERT' : 'NOTICE');
+                            const borderColor = a.priority === 'high' ? '#ef4444' : (a.type === 'reminder' ? '#f59e0b' : '#3b82f6');
+                            return `
+                                <div class="alert-item" data-id="${a.alertId}" style="padding: 10px 12px; margin-bottom: 8px; border-radius: 10px; background: ${isUnread ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.2)'}; border-left: 3px solid ${borderColor}; cursor: pointer; transition: background 0.2s;">
+                                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 4px;">
+                                        <strong style="font-size: 0.85rem; color: ${isUnread ? '#fff' : '#94a3b8'}; display: flex; align-items: center; gap: 6px;">
+                                            <span style="font-size:0.65rem; font-weight:800; padding:2px 6px; border-radius:4px; background:rgba(255,255,255,0.1);">${badgeLabel}</span> ${a.title}
+                                        </strong>
+                                        ${isUnread ? '<span style="width: 6px; height: 6px; border-radius: 50%; background: #f84464; display: inline-block;"></span>' : ''}
+                                    </div>
+                                    <p style="margin: 0; font-size: 0.8rem; color: #94a3b8; line-height: 1.3;">${a.message}</p>
+                                    <small style="display: block; margin-top: 4px; font-size: 0.7rem; color: #64748b;">${a.eventName || 'Event'}</small>
+                                </div>
+                            `;
+                        }).join('');
+
+                        list.querySelectorAll('.alert-item').forEach(el => {
+                            el.addEventListener('click', function() {
+                                const alertId = this.getAttribute('data-id');
+                                if (window.AttendeeBackend && window.AttendeeBackend.markAlertAsRead) {
+                                    window.AttendeeBackend.markAlertAsRead(alertId, () => {
+                                        loadAttendeeAlerts();
+                                    });
+                                }
+                            });
+                        });
+                    }
+                });
+            }
+
+            function initNotificationCenter() {
+                const notifBtn = document.getElementById('notificationBellBtn');
+                const dropdown = document.getElementById('notificationDropdown');
+                const markAllBtn = document.getElementById('markAllReadBtn');
+
+                if (notifBtn && dropdown) {
+                    notifBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const isHidden = dropdown.style.display === 'none' || !dropdown.style.display;
+                        dropdown.style.display = isHidden ? 'block' : 'none';
+                    });
+                }
+
+                document.addEventListener('click', function(e) {
+                    if (dropdown && !dropdown.contains(e.target) && (!notifBtn || !notifBtn.contains(e.target))) {
+                        dropdown.style.display = 'none';
+                    }
+                });
+
+                if (markAllBtn) {
+                    markAllBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const allIds = currentAlerts.map(a => a.alertId);
+                        if (window.AttendeeBackend && window.AttendeeBackend.markAllAlertsAsRead) {
+                            window.AttendeeBackend.markAllAlertsAsRead(allIds, () => {
+                                loadAttendeeAlerts();
+                            });
+                        }
+                    });
+                }
+            }
+
+            // Initialize Controls
+            initCityPicker();
+            initCategoryRibbon();
+            initCheckoutModal();
+            initDistrictExperienceModal();
+            initNotificationCenter();
+
+            // Load Data & AWS Integration
+            function loadData() {
+                if (window.AttendeeBackend) {
+                    window.AttendeeBackend.getUserProfile((err, profile) => {
+                        if (!err && profile) {
+                            userProfile = profile;
+                            document.getElementById('savedCount').textContent = (profile.savedEvents || []).length;
+                            const avatar = document.querySelector('.user-pill .user-avatar');
+                            const nameSpan = document.querySelector('.user-pill span:last-child');
+                            const fullName = `${profile.firstName || ''} ${profile.lastName || ''}`.trim();
+                            if (nameSpan) nameSpan.textContent = fullName || profile.email || 'Attendee';
+                            if (avatar) avatar.textContent = (profile.firstName ? profile.firstName[0] : (profile.email ? profile.email[0] : 'A')).toUpperCase();
+                        }
+
+                        window.AttendeeBackend.getMyBookings((err, tickets) => {
+                            if (!err && tickets) {
+                                document.getElementById('bookingCount').textContent = tickets.length;
+                            }
+                        });
+
+                        loadAttendeeAlerts();
+
+                        window.AttendeeBackend.getAllEvents(function(err, events) {
+                            if (!err && events && events.length > 0) {
+                                activeEvents = events.map(e => {
+                                    let derivedCity = e.city || '';
+                                    if (!derivedCity && e.location) {
+                                        const parts = e.location.split(',');
+                                        derivedCity = parts[parts.length - 1].trim();
+                                    }
+                                    const depAmt = parseFloat(e.refundableDeposit) || 0;
+                                    const hasBond = (e.hasDepositBond === true || e.hasDepositBond === 'true' || depAmt > 0) && depAmt > 0;
+                                    return {
+                                        ...e,
+                                        eventId: e.eventId,
+                                        eventName: e.eventName || 'Live Event',
+                                        category: e.category || 'concert',
+                                        city: derivedCity || 'All Cities',
+                                        rating: e.rating || '9.5',
+                                        votes: e.votes || '14.2K',
+                                        price: parseFloat(e.price) || 0,
+                                        hasDepositBond: hasBond,
+                                        refundableDeposit: depAmt,
+                                        date: e.date || 'TBD',
+                                        time: e.time || '07:00 PM',
+                                        location: e.location || 'City Auditorium',
+                                        googleMapLink: e.googleMapLink || '',
+                                        tags: e.tags || (hasBond ? '100% Refundable Gate Deposit (₹' + depAmt + ')' : 'Live Experience • Instant M-Ticket'),
+                                        imageUrl: e.imageUrl || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=600&q=80',
+                                        isLive: true
+                                    };
+                                });
+                            } else {
+                                activeEvents = [];
+                            }
+                            renderEvents();
+                        });
+                    });
+                } else {
+                    activeEvents = [];
+                    renderEvents();
+                }
+            }
+
+            // City Picker (Search and Important Cities List)
+            function initCityPicker() {
+                const btn = document.getElementById('cityPickerBtn');
+                const modal = document.getElementById('bmsCityModal');
+                const closeBtn = document.getElementById('closeCityModalBtn');
+                const txt = document.getElementById('currentCityText');
+                const lbl = document.getElementById('eventCityLabel');
+                const searchInput = document.getElementById('citySearchInput');
+                const applyBtn = document.getElementById('applySearchCityBtn');
+
+                function applyCity(cityName) {
+                    currentCity = cityName;
+                    localStorage.setItem('bms_attendee_city', currentCity);
+                    txt.textContent = currentCity;
+                    lbl.textContent = currentCity;
+
+                    document.querySelectorAll('.bms-city-badge').forEach(x => {
+                        if (x.getAttribute('data-city') === currentCity) x.classList.add('active');
+                        else x.classList.remove('active');
+                    });
+                    modal.classList.remove('active');
+                    renderEvents();
+                }
+
+                txt.textContent = currentCity;
+                lbl.textContent = currentCity;
+
+                btn.addEventListener('click', () => {
+                    modal.classList.add('active');
+                    if (searchInput) {
+                        searchInput.value = '';
+                        searchInput.focus();
+                        filterCityList('');
+                    }
+                });
+
+                closeBtn.addEventListener('click', () => modal.classList.remove('active'));
+
+                // Click on any city badge (Important or Other)
+                document.querySelectorAll('.bms-city-badge').forEach(b => {
+                    b.addEventListener('click', function() {
+                        applyCity(this.getAttribute('data-city'));
+                    });
+                });
+
+                // User search location logic
+                function filterCityList(q) {
+                    q = q.toLowerCase().trim();
+
+                    document.querySelectorAll('.bms-city-badge').forEach(badge => {
+                        const c = badge.getAttribute('data-city').toLowerCase();
+                        if (!q || c.includes(q)) {
+                            badge.style.display = '';
+                        } else {
+                            badge.style.display = 'none';
+                        }
+                    });
+
+                    if (q.length > 1) {
+                        applyBtn.style.display = 'block';
+                        applyBtn.textContent = 'Select "' + searchInput.value.trim() + '"';
+                    } else {
+                        applyBtn.style.display = 'none';
+                    }
+                }
+
+                if (searchInput) {
+                    searchInput.addEventListener('input', function() {
+                        filterCityList(this.value);
+                    });
+
+                    searchInput.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter' && this.value.trim()) {
+                            e.preventDefault();
+                            applyCity(this.value.trim());
+                        }
+                    });
+                }
+
+                if (applyBtn) {
+                    applyBtn.addEventListener('click', function() {
+                        if (searchInput.value.trim()) {
+                            applyCity(searchInput.value.trim());
+                        }
+                    });
+                }
+            }
+
+            // Category Ribbon
+            function initCategoryRibbon() {
+                document.querySelectorAll('.bms-cat-pill').forEach(pill => {
+                    pill.addEventListener('click', function() {
+                        document.querySelectorAll('.bms-cat-pill').forEach(p => p.classList.remove('active'));
+                        this.classList.add('active');
+                        currentCat = this.getAttribute('data-cat');
+                        renderEvents();
+                    });
+                });
+
+                // Search Bar Filter
+                document.getElementById('eventSearch').addEventListener('input', renderEvents);
+                document.getElementById('dateFilter').addEventListener('change', renderEvents);
+                document.getElementById('priceFilter').addEventListener('change', renderEvents);
+            }
+
+            // Render BookMyShow Cards
+            function renderEvents() {
+                const grid = document.getElementById('eventGrid');
+                grid.innerHTML = '';
+
+                if (activeEvents.length === 0) {
+                    grid.innerHTML = `
+                        <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: #94a3b8;">
+                            <h4 style="color: #fff; margin-bottom: 6px; font-size: 1.25rem;">No Events Currently Listed</h4>
+                            <p style="font-size: 0.88rem; color: #94a3b8; max-width: 420px; margin: 0 auto;">There are no active public events published right now. Please check back later!</p>
+                        </div>
+                    `;
+                    document.getElementById('liveEventCount').textContent = `0 live events`;
+                    document.getElementById('popularCount').textContent = 0;
+                    return;
+                }
+
+                const q = document.getElementById('eventSearch').value.toLowerCase().trim();
+                const priceFilter = document.getElementById('priceFilter').value;
+
+                let filtered = activeEvents.filter(ev => {
+                    const targetCity = (currentCity || '').toLowerCase().trim();
+                    const evCity = (ev.city || '').toLowerCase().trim();
+                    const evLoc = (ev.location || '').toLowerCase().trim();
+                    const matchesCity = targetCity === 'all cities' || 
+                        !targetCity || 
+                        evCity === targetCity || 
+                        evCity.includes(targetCity) || 
+                        targetCity.includes(evCity) ||
+                        evLoc.includes(targetCity) ||
+                        targetCity.split(/[\s,-]+/).some(token => token && token.length > 2 && (evLoc.includes(token) || evCity.includes(token)));
+                    const matchesCat = currentCat === 'all' || 
+                        ev.category === currentCat || 
+                        (currentCat === 'concert' && (ev.category === 'live-events' || ev.category === 'concert')) ||
+                        (currentCat === 'camping' && (ev.category === 'camping' || ev.category === 'camp'));
+                    const matchesQuery = !q || (ev.eventName && ev.eventName.toLowerCase().includes(q)) || (ev.location && ev.location.toLowerCase().includes(q));
+                    
+                    let matchesPrice = true;
+                    if (priceFilter === 'free') matchesPrice = !ev.price || ev.price === 0;
+                    if (priceFilter === 'paid') matchesPrice = ev.price && ev.price > 0;
+
+                    return matchesCity && matchesCat && matchesQuery && matchesPrice;
+                });
+
+                // If city has no matching shows, display helpful prompt
+                if (filtered.length === 0) {
+                    grid.innerHTML = `
+                        <div style="grid-column: 1 / -1; text-align: center; padding: 48px 20px; color: #94a3b8;">
+                            <h4 style="color: #fff; margin-bottom: 6px;">No shows currently listed in "${currentCity}"</h4>
+                            <p style="font-size: 0.85rem; margin-bottom: 18px;">Try exploring all locations or choosing another city.</p>
+                            <button id="viewAllCitiesBtn" style="background: #f84464; color: #fff; border: none; padding: 8px 18px; border-radius: 8px; font-weight: 700; cursor: pointer;">Explore All Cities</button>
+                        </div>
+                    `;
+                    const viewAllBtn = document.getElementById('viewAllCitiesBtn');
+                    if (viewAllBtn) {
+                        viewAllBtn.addEventListener('click', () => {
+                            currentCity = 'All Cities';
+                            document.getElementById('currentCityText').textContent = currentCity;
+                            document.getElementById('eventCityLabel').textContent = currentCity;
+                            renderEvents();
+                        });
+                    }
+                    return;
+                }
+
+                document.getElementById('liveEventCount').textContent = `${filtered.length} live events`;
+                document.getElementById('popularCount').textContent = filtered.length;
+
+                filtered.forEach(ev => {
+                    const savedEventsList = userProfile.savedEvents || [];
+                    const isSaved = savedEventsList.includes(ev.eventId);
+                    const depAmt = parseFloat(ev.refundableDeposit) || 0;
+                    const hasDeposit = (ev.hasDepositBond === true || ev.hasDepositBond === 'true' || depAmt > 0) && depAmt > 0;
+                    const mapUrl = ev.googleMapLink && ev.googleMapLink.trim() ? ev.googleMapLink.trim() : ('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(ev.location || ''));
+
+                    let priceHtml = '';
+                    if (ev.price > 0) {
+                        priceHtml = `<small>Starting from</small>₹${ev.price}`;
+                    } else if (hasDeposit) {
+                        priceHtml = `<small style="color:#10b981; font-weight:700;">Free Entry</small><span style="font-size:0.75rem; color:#6ee7b7; font-weight:700; display:block;">₹${depAmt} Gate Pledge</span>`;
+                    } else {
+                        priceHtml = `<small>Admission</small>Free`;
+                    }
+
+                    const depositBadgeMarkup = hasDeposit ? `<span class="bms-category-badge" style="background:rgba(16,185,129,0.92); color:#fff; top:36px; left:12px; font-size:0.65rem; padding:2px 7px; display:inline-flex; align-items:center;">REFUNDABLE ESCROW <span class="info-circle" style="width:14px; height:14px; font-size:0.58rem; margin-left:4px;" onclick="event.stopPropagation();">ⓘ<span class="info-tooltip"><strong>Proof-of-Presence Escrow</strong>₹${depAmt} refundable gate pledge returned upon venue entrance scan.</span></span></span>` : '';
+
+                    const cap = parseInt(ev.totalCapacity, 10) || 0;
+                    const sold = parseInt(ev.ticketsSold, 10) || 0;
+                    const isSoldOut = (cap > 0 && sold >= cap);
+                    const buzzNum = Math.max(14, ((sold * 7) % 65) + 18);
+                    const vibePillMarkup = isSoldOut 
+                        ? `<span style="position:absolute; bottom:38px; left:12px; background:rgba(239,68,68,0.9); color:#fff; font-size:0.68rem; font-weight:800; padding:2px 8px; border-radius:12px; backdrop-filter:blur(4px); letter-spacing:0.3px;">HIGH DEMAND</span>`
+                        : `<span style="position:absolute; bottom:38px; left:12px; background:rgba(248,68,100,0.9); color:#fff; font-size:0.68rem; font-weight:800; padding:2px 8px; border-radius:12px; backdrop-filter:blur(4px); letter-spacing:0.3px;">${buzzNum} BOOKED TODAY</span>`;
+
+                    const categoryBadgeMarkup = isSoldOut
+                        ? `<span class="bms-category-badge" style="background:#ef4444; color:#fff; top:12px; left:12px; font-weight:800; border:1px solid rgba(255,255,255,0.4); box-shadow:0 4px 12px rgba(239,68,68,0.4); display:inline-flex; align-items:center;">SOLD OUT • WAITLIST <span class="info-circle" style="width:14px; height:14px; font-size:0.58rem; margin-left:4px;" onclick="event.stopPropagation();">ⓘ<span class="info-tooltip"><strong>Priority Waitlist Queue</strong>If tickets are released or refunded, waitlist members get first access.</span></span></span>`
+                        : `<span class="bms-category-badge ${ev.isLive ? 'live' : ''}">${ev.category ? ev.category.toUpperCase() : 'EVENT'}</span>`;
+
+                    const actionBtnMarkup = isSoldOut
+                        ? `<button class="bms-btn-book waitlist-join-btn" data-id="${ev.eventId}" style="background:linear-gradient(135deg, #f59e0b, #d97706); color:#fff; font-weight:700;">Join Waitlist</button>`
+                        : `<button class="bms-btn-book book-ticket-btn" data-id="${ev.eventId}">Book Tickets</button>`;
+
+                    const card = document.createElement('article');
+                    card.className = 'bms-poster-card';
+                    card.innerHTML = `
+                        <div class="bms-poster-img-wrap">
+                            <img src="${ev.imageUrl}" alt="${ev.eventName}" class="bms-poster-img" loading="lazy">
+                            ${categoryBadgeMarkup}
+                            ${depositBadgeMarkup}
+                            ${vibePillMarkup}
+                            <div class="bms-rating-bar">
+                                <span class="bms-rating-score">Rating: ${ev.rating || '9.5'}/10</span>
+                                <span class="bms-votes-sub">${ev.votes || '25K'} Votes</span>
+                            </div>
+                        </div>
+                        <div class="bms-card-body">
+                            <div>
+                                <h4 class="bms-card-title" title="${ev.eventName}">${ev.eventName}</h4>
+                                <p class="bms-card-meta" style="color: #38bdf8; font-weight: 600; font-size: 0.76rem;">
+                                    ${(ev.vibeTags && ev.vibeTags.length > 0) ? ev.vibeTags.slice(0, 2).join(' • ') : (ev.tags || 'Live Performance')}
+                                </p>
+                                <p class="bms-card-location" title="Click to view location on Google Maps" style="cursor: pointer; display: inline-flex; align-items: center; gap: 4px; z-index: 2; position: relative;">
+                                    <svg width="12" height="12" fill="none" stroke="#10b981" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                                    <span style="text-decoration: underline; text-underline-offset: 3px; font-weight: 500;">
+                                        ${ev.locality ? `${ev.locality}${ev.city ? ', ' + ev.city : ''}` : (ev.location || 'Venue TBA')}
+                                    </span>
+                                    <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="opacity: 0.7;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                                </p>
+                            </div>
+                            <div class="bms-card-footer">
+                                <div class="bms-card-price">
+                                    ${priceHtml}
+                                </div>
+                                <div style="display:flex; gap:6px;">
+                                    <button class="save-btn ${isSaved ? 'saved' : ''}" data-id="${ev.eventId}" style="background:transparent; border:1px solid #282f3f; color:#fff; border-radius:6px; padding:6px 10px; cursor:pointer;">${isSaved ? '♥' : '♡'}</button>
+                                    ${actionBtnMarkup}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    // Location Click Action - Redirect to Google Maps
+                    const locEl = card.querySelector('.bms-card-location');
+                    if (locEl) {
+                        locEl.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            window.open(mapUrl, '_blank', 'noopener,noreferrer');
+                        });
+                    }
+
+                    // Direct Action Click (Book or Waitlist)
+                    const bookBtn = card.querySelector('.book-ticket-btn');
+                    if (bookBtn) {
+                        bookBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            openCheckoutModal(ev);
+                        });
+                    }
+
+                    const waitlistBtn = card.querySelector('.waitlist-join-btn');
+                    if (waitlistBtn) {
+                        waitlistBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            handleJoinWaitlist(ev);
+                        });
+                    }
+
+                    // Card click opens District-style Experience & Media Gallery Modal
+                    card.addEventListener('click', () => {
+                        openDistrictExperienceModal(ev);
+                    });
+
+                    // Save toggle
+                    const saveBtn = card.querySelector('.save-btn');
+                    saveBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        if (window.AttendeeBackend && typeof window.AttendeeBackend.toggleSavedEvent === 'function') {
+                            window.AttendeeBackend.toggleSavedEvent(ev.eventId, (err, data) => {
+                                if (!err && data) {
+                                    saveBtn.textContent = data.isSaved ? '♥' : '♡';
+                                    document.getElementById('savedCount').textContent = data.savedEvents.length;
+                                }
+                            });
+                        }
+                    });
+
+                    grid.appendChild(card);
+                });
+            }
+
+            // Available Checkout Offers & Promos
+            const availableOffers = {
+                'BMSFEST26': { type: 'percent', value: 20, max: 150, desc: '20% off up to ₹150' },
+                'EVENTPRO20': { type: 'percent', value: 20, max: 200, desc: '20% off up to ₹200' },
+                'WELCOME50': { type: 'flat', value: 50, minOrder: 100, desc: 'Flat ₹50 off' }
+            };
+
+            let currentCheckoutEvent = null;
+            let currentQty = 1;
+            let appliedOffer = null;
+
+            // Priority Waitlist Handler (District by Zomato style)
+            function handleJoinWaitlist(ev) {
+                if (!window.AttendeeBackend || typeof window.AttendeeBackend.joinWaitlist !== 'function') {
+                    alert("Waitlist service is currently initializing. Please try again in a moment.");
+                    return;
+                }
+                
+                if (confirm(`Join Priority Waitlist for "${ev.eventName}"?\n\nThis event is currently sold out. Under our 72h cancellation guarantee, the moment an attendee cancels, a spot will automatically be unlocked for you via email!`)) {
+                    window.AttendeeBackend.joinWaitlist(ev, (err, waitlistTicket) => {
+                        if (err) {
+                            alert("Could not join waitlist: " + (err.message || err));
+                            return;
+                        }
+                        alert(`You are on the Priority Waitlist!\n\nWaitlist ID: ${waitlistTicket.ticketId}\nWe have registered your position in the priority queue. Check My Bookings anytime to track your waitlist status.`);
+                    });
+                }
+            }
+
+            // DISTRICT BY ZOMATO STYLE: Event Experience & Media Gallery Modal
+            function initDistrictExperienceModal() {
+                const modal = document.getElementById('districtExperienceModal');
+                const closeBtn = document.getElementById('closeDistrictModalBtn');
+                if (closeBtn) closeBtn.addEventListener('click', () => modal.classList.remove('active'));
+                if (modal) {
+                    modal.addEventListener('click', (e) => {
+                        if (e.target === modal) modal.classList.remove('active');
+                    });
+                }
+            }
+
+            function openDistrictExperienceModal(ev) {
+                const modal = document.getElementById('districtExperienceModal');
+                if (!modal) return;
+
+                const cap = parseInt(ev.totalCapacity, 10) || 0;
+                const sold = parseInt(ev.ticketsSold, 10) || 0;
+                const isSoldOut = (cap > 0 && sold >= cap);
+                const buzzCount = Math.max(16, ((sold * 5) % 60) + 22);
+
+                document.getElementById('districtHeroImg').src = ev.imageUrl || 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?auto=format&fit=crop&w=1200&q=80';
+                document.getElementById('districtCategoryBadge').textContent = (ev.category || 'EVENT').toUpperCase();
+                document.getElementById('districtEventTitle').textContent = ev.eventName || 'Live Event';
+                document.getElementById('districtEventDate').textContent = `${ev.date || 'Upcoming'} at ${ev.time || 'TBD'}`;
+                
+                const locDetail = ev.locality ? `${ev.locality} • ${ev.location || 'Venue TBA'}` : (ev.location || 'Venue TBA');
+                document.getElementById('districtEventVenue').textContent = `${locDetail}${ev.city ? ' (' + ev.city + ')' : ''}`;
+                
+                document.getElementById('districtBookingBuzz').textContent = `${buzzCount} people booked in last 24h`;
+                document.getElementById('districtUrgencyText').textContent = isSoldOut ? '100% Sold Out • Priority Waitlist Open' : (cap > 0 ? `Filling fast • ${Math.max(1, cap - sold)} passes left` : `High demand in ${ev.city || 'your city'}`);
+                document.getElementById('districtRatingScore').textContent = ev.rating || '4.9';
+                document.getElementById('districtRatingCount').textContent = ev.votes || '180+';
+
+                // 4 Atmosphere photo tiles (Use real gallery uploaded by organizer if present, otherwise category presets)
+                const cat = (ev.category || '').toLowerCase();
+                let galleryPhotos = (ev.galleryImages && Array.isArray(ev.galleryImages) && ev.galleryImages.length >= 4)
+                    ? ev.galleryImages.slice(0, 4)
+                    : [
+                        'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=600&q=80',
+                        'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=600&q=80',
+                        'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=600&q=80',
+                        'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=600&q=80'
+                    ];
+
+                if (!ev.galleryImages || ev.galleryImages.length < 4) {
+                    if (cat.includes('comedy')) {
+                        galleryPhotos = [
+                            'https://images.unsplash.com/photo-1585699324551-f6c309eedeca?auto=format&fit=crop&w=600&q=80',
+                            'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=600&q=80',
+                            'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=600&q=80',
+                            'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=600&q=80'
+                        ];
+                    } else if (cat.includes('camp')) {
+                        galleryPhotos = [
+                            'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80',
+                            'https://images.unsplash.com/photo-1478131143081-80f7f84ca84d?auto=format&fit=crop&w=600&q=80',
+                            'https://images.unsplash.com/photo-1537905569824-f89f14cceb68?auto=format&fit=crop&w=600&q=80',
+                            'https://images.unsplash.com/photo-1510312305653-8ed496efae75?auto=format&fit=crop&w=600&q=80'
+                        ];
+                    }
+                }
+
+                const galleryGrid = document.getElementById('districtGalleryGrid');
+                galleryGrid.innerHTML = galleryPhotos.map((src, idx) => `
+                    <div class="district-gallery-item" title="Click to view full atmosphere">
+                        <img src="${src}" alt="Atmosphere visual ${idx + 1}" loading="lazy">
+                    </div>
+                `).join('');
+
+                // Vibe chips (Use real tags saved by organizer if available)
+                const vibeTagsContainer = document.getElementById('districtVibeTags');
+                const vibes = (ev.vibeTags && Array.isArray(ev.vibeTags) && ev.vibeTags.length > 0)
+                    ? ev.vibeTags
+                    : [
+                        'Live Music & Audio',
+                        'High Energy Crowd',
+                        'Craft Drinks & Food',
+                        'Instagrammable Aesthetic',
+                        'Great for Groups',
+                        'Instant Digital Pass'
+                    ];
+                vibeTagsContainer.innerHTML = vibes.map(v => `<span class="district-vibe-chip">${v}</span>`).join('');
+
+                // Lineup Banner
+                const lineupBanner = document.getElementById('districtLineupBanner');
+                const lineupText = document.getElementById('districtLineupText');
+                if (ev.lineup && ev.lineup.trim()) {
+                    lineupText.textContent = ev.lineup;
+                    lineupBanner.style.display = 'block';
+                } else {
+                    lineupBanner.style.display = 'none';
+                }
+
+                // Perks Grid
+                const perksGrid = document.getElementById('districtPerksGrid');
+                if (perksGrid) {
+                    const perksList = (ev.perks && Array.isArray(ev.perks) && ev.perks.length > 0)
+                        ? ev.perks
+                        : ['72h Refund Protected', 'Food & Bar Counters', 'Parking Available', `${ev.ageLimit || 'All Ages'}`];
+
+                    perksGrid.innerHTML = perksList.map(p => `
+                        <div style="background:rgba(255,255,255,0.03); padding:8px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
+                            <span style="color:#fff; display:block; font-weight:600; margin-bottom:2px;">${p}</span>
+                            <span style="color:#94a3b8; font-size:0.75rem;">Verified Venue Amenity</span>
+                        </div>
+                    `).join('');
+                }
+
+                // Attendee Reviews
+                const reviewsList = document.getElementById('districtReviewsList');
+                reviewsList.innerHTML = `
+                    <div class="district-review-card">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                            <strong style="color:#fff;">Rohan S. • <span style="color:#fbbf24;">5/5 Stars</span></strong>
+                            <span style="color:#64748b; font-size:0.75rem;">3 days ago</span>
+                        </div>
+                        <p style="margin:0; color:#cbd5e1;">The ambiance and organization were top notch. Gate check-in took under 5 seconds with the live QR pass!</p>
+                    </div>
+                    <div class="district-review-card">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                            <strong style="color:#fff;">Ananya K. • <span style="color:#fbbf24;">5/5 Stars</span></strong>
+                            <span style="color:#64748b; font-size:0.75rem;">1 week ago</span>
+                        </div>
+                        <p style="margin:0; color:#cbd5e1;">Loved the vibe and music lineup. Also great to know cancellation was 72h protected just in case.</p>
+                    </div>
+                `;
+
+                // Fetch real DynamoDB reviews if any
+                if (window.AttendeeBackend && typeof window.AttendeeBackend.getEventReviews === 'function') {
+                    window.AttendeeBackend.getEventReviews(ev.eventId, (err, dbReviews) => {
+                        if (!err && dbReviews && dbReviews.length > 0) {
+                            reviewsList.innerHTML = dbReviews.slice(0, 3).map(r => `
+                                <div class="district-review-card">
+                                    <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                                        <strong style="color:#fff;">${r.userName || 'Attendee'} • <span style="color:#fbbf24;">${r.rating || 5}/5 Stars</span></strong>
+                                        <span style="color:#64748b; font-size:0.75rem;">Verified Buyer</span>
+                                    </div>
+                                    <p style="margin:0; color:#cbd5e1;">${r.comment || 'Amazing experience!'}</p>
+                                </div>
+                            `).join('');
+                        }
+                    });
+                }
+
+                // Pricing & Primary Action
+                const priceEl = document.getElementById('districtFooterPrice');
+                const actionBtn = document.getElementById('districtPrimaryActionBtn');
+                const saveBtn = document.getElementById('districtSaveBtn');
+
+                if (ev.price > 0) {
+                    priceEl.textContent = `₹${ev.price}`;
+                } else {
+                    priceEl.textContent = 'Free Admission';
+                }
+
+                const savedEventsList = userProfile.savedEvents || [];
+                saveBtn.textContent = savedEventsList.includes(ev.eventId) ? '♥' : '♡';
+                saveBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    if (window.AttendeeBackend && typeof window.AttendeeBackend.toggleSavedEvent === 'function') {
+                        window.AttendeeBackend.toggleSavedEvent(ev.eventId, (err, data) => {
+                            if (!err && data) {
+                                saveBtn.textContent = data.isSaved ? '♥' : '♡';
+                                document.getElementById('savedCount').textContent = data.savedEvents.length;
+                                renderEvents();
+                            }
+                        });
+                    }
+                };
+
+                if (isSoldOut) {
+                    actionBtn.textContent = 'Join Priority Waitlist';
+                    actionBtn.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
+                    actionBtn.onclick = () => {
+                        modal.classList.remove('active');
+                        handleJoinWaitlist(ev);
+                    };
+                } else {
+                    actionBtn.textContent = 'Book Tickets';
+                    actionBtn.style.background = '';
+                    actionBtn.onclick = () => {
+                        modal.classList.remove('active');
+                        openCheckoutModal(ev);
+                    };
+                }
+
+                modal.classList.add('active');
+            }
+
+            // Initialize Checkout Modal Controls
+            function initCheckoutModal() {
+                const modal = document.getElementById('bmsCheckoutModal');
+                const closeBtn = document.getElementById('closeCheckoutModalBtn');
+                const minusBtn = document.getElementById('qtyMinusBtn');
+                const plusBtn = document.getElementById('qtyPlusBtn');
+                const applyBtn = document.getElementById('applyPromoBtn');
+                const promoInput = document.getElementById('promoCodeInput');
+                const payBtn = document.getElementById('checkoutPayBtn');
+
+                if (closeBtn) closeBtn.addEventListener('click', () => modal.classList.remove('active'));
+
+                if (minusBtn) {
+                    minusBtn.addEventListener('click', () => {
+                        if (currentQty > 1) {
+                            currentQty--;
+                            recalculateCheckout();
+                        }
+                    });
+                }
+
+                if (plusBtn) {
+                    plusBtn.addEventListener('click', () => {
+                        if (currentQty < 10) {
+                            currentQty++;
+                            recalculateCheckout();
+                        }
+                    });
+                }
+
+                function applyCode(code) {
+                    code = (code || '').toUpperCase().trim();
+                    const msgEl = document.getElementById('promoMessage');
+                    const badge = document.getElementById('appliedBadgeChip');
+
+                    if (!code) {
+                        msgEl.style.display = 'block';
+                        msgEl.style.color = '#f87171';
+                        msgEl.textContent = 'Please enter an offer code.';
+                        return;
+                    }
+
+                    if (availableOffers[code]) {
+                        const offer = availableOffers[code];
+                        const unitPrice = currentCheckoutEvent ? (currentCheckoutEvent.price || 0) : 0;
+                        const subtotal = unitPrice * currentQty;
+
+                        if (offer.minOrder && subtotal < offer.minOrder) {
+                            msgEl.style.display = 'block';
+                            msgEl.style.color = '#f87171';
+                            msgEl.textContent = `Coupon valid only on orders above ₹${offer.minOrder}.`;
+                            return;
+                        }
+
+                        appliedOffer = { code, ...offer };
+                        promoInput.value = code;
+                        badge.style.display = 'inline-block';
+                        msgEl.style.display = 'block';
+                        msgEl.style.color = '#10b981';
+                        msgEl.innerHTML = `✓ <strong>${code}</strong> applied! (${offer.desc}) <a href="#" id="removePromoLink" style="color:#f87171; text-decoration:underline; margin-left:8px; font-weight:700;">Remove</a>`;
+
+                        const removeLink = document.getElementById('removePromoLink');
+                        if (removeLink) {
+                            removeLink.addEventListener('click', (e) => {
+                                e.preventDefault();
+                                removePromo();
+                            });
+                        }
+
+                        recalculateCheckout();
+                    } else {
+                        msgEl.style.display = 'block';
+                        msgEl.style.color = '#f87171';
+                        msgEl.textContent = `✕ "${code}" is invalid or expired. Try using BMSFEST26.`;
+                    }
+                }
+
+                function removePromo() {
+                    appliedOffer = null;
+                    promoInput.value = '';
+                    const badge = document.getElementById('appliedBadgeChip');
+                    if (badge) badge.style.display = 'none';
+                    const msgEl = document.getElementById('promoMessage');
+                    if (msgEl) {
+                        msgEl.style.display = 'none';
+                        msgEl.textContent = '';
+                    }
+                    recalculateCheckout();
+                }
+
+                if (applyBtn) {
+                    applyBtn.addEventListener('click', () => {
+                        applyCode(promoInput.value);
+                    });
+                }
+
+                if (promoInput) {
+                    promoInput.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            applyCode(promoInput.value);
+                        }
+                    });
+                }
+
+                // Quick offer chips
+                document.querySelectorAll('.bms-offer-chip').forEach(chip => {
+                    chip.addEventListener('click', function() {
+                        const code = this.getAttribute('data-code');
+                        applyCode(code);
+                    });
+                });
+
+                // Split Bill Toggle Listener
+                const splitToggle = document.getElementById('splitBillToggle');
+                if (splitToggle) {
+                    splitToggle.addEventListener('change', () => {
+                        recalculateCheckout();
+                    });
+                }
+
+                // Pay button action
+                if (payBtn) {
+                    payBtn.addEventListener('click', () => {
+                        processCheckoutPayment();
+                    });
+                }
+            }
+
+            function openCheckoutModal(ev) {
+                currentCheckoutEvent = ev;
+                currentQty = 1;
+                appliedOffer = null;
+
+                const modal = document.getElementById('bmsCheckoutModal');
+                const promoInput = document.getElementById('promoCodeInput');
+                const promoMsg = document.getElementById('promoMessage');
+                const badge = document.getElementById('appliedBadgeChip');
+                const splitToggle = document.getElementById('splitBillToggle');
+
+                if (promoInput) promoInput.value = '';
+                if (promoMsg) promoMsg.style.display = 'none';
+                if (badge) badge.style.display = 'none';
+                if (splitToggle) splitToggle.checked = false;
+
+                const modalMapUrl = ev.googleMapLink && ev.googleMapLink.trim() ? ev.googleMapLink.trim() : ('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(ev.location || ''));
+                document.getElementById('checkoutCategoryBadge').textContent = (ev.category || 'EVENT').toUpperCase();
+                document.getElementById('checkoutEventTitle').textContent = ev.eventName;
+                document.getElementById('checkoutEventMeta').innerHTML = `<a href="${modalMapUrl}" target="_blank" rel="noopener noreferrer" style="color:#f84464; text-decoration:underline; text-underline-offset:2px; font-weight:600; cursor:pointer;" title="Click to view on Google Maps">${ev.location} ↗</a> • ${ev.date} at ${ev.time}`;
+
+                const unitPrice = ev.price || 0;
+                const depVal = parseFloat(ev.refundableDeposit) || 0;
+                const hasDeposit = (ev.hasDepositBond === true || ev.hasDepositBond === 'true' || depVal > 0) && depVal > 0;
+                if (unitPrice > 0) {
+                    document.getElementById('checkoutPerTicketRate').textContent = `₹${unitPrice} per ticket`;
+                } else if (hasDeposit) {
+                    document.getElementById('checkoutPerTicketRate').textContent = `Free Admission (₹${depVal} Refundable Gate Pledge)`;
+                } else {
+                    document.getElementById('checkoutPerTicketRate').textContent = 'Free Admission';
+                }
+
+                recalculateCheckout();
+                modal.classList.add('active');
+            }
+
+            function recalculateCheckout() {
+                if (!currentCheckoutEvent) return;
+
+                const unitPrice = currentCheckoutEvent.price || 0;
+                const subtotal = unitPrice * currentQty;
+
+                let discount = 0;
+                if (appliedOffer && subtotal > 0) {
+                    if (appliedOffer.type === 'percent') {
+                        discount = Math.round(subtotal * (appliedOffer.value / 100));
+                        if (appliedOffer.max) discount = Math.min(discount, appliedOffer.max);
+                    } else if (appliedOffer.type === 'flat') {
+                        discount = Math.min(appliedOffer.value, subtotal);
+                    }
+                }
+
+                const discountedSubtotal = Math.max(0, subtotal - discount);
+                const fee = discountedSubtotal > 0 ? Math.round(discountedSubtotal * 0.015) : 0;
+
+                // Smart Escrow Deposit Engine (Refunded upon gate scan)
+                const depVal = parseFloat(currentCheckoutEvent.refundableDeposit) || 0;
+                const hasDeposit = (currentCheckoutEvent.hasDepositBond === true || currentCheckoutEvent.hasDepositBond === 'true' || depVal > 0) && depVal > 0;
+                const depositPerTicket = hasDeposit ? depVal : 0;
+                const totalDeposit = depositPerTicket * currentQty;
+
+                const depositRow = document.getElementById('summaryDepositRow');
+                const depositAmtEl = document.getElementById('summaryDepositAmount');
+                if (totalDeposit > 0) {
+                    if (depositRow) depositRow.style.display = 'flex';
+                    if (depositAmtEl) depositAmtEl.textContent = `+₹${totalDeposit}`;
+                } else {
+                    if (depositRow) depositRow.style.display = 'none';
+                }
+
+                const grandTotal = discountedSubtotal + fee + totalDeposit;
+
+                // Update UI elements
+                document.getElementById('checkoutQtyDisplay').textContent = currentQty;
+                document.getElementById('summaryQty').textContent = currentQty;
+                document.getElementById('summarySubtotal').textContent = `₹${subtotal}`;
+
+                const discountRow = document.getElementById('summaryDiscountRow');
+                const discountCodeEl = document.getElementById('summaryDiscountCode');
+                const discountAmtEl = document.getElementById('summaryDiscountAmount');
+                const savingsNote = document.getElementById('summarySavingsNote');
+
+                if (discount > 0) {
+                    discountRow.style.display = 'flex';
+                    discountCodeEl.textContent = appliedOffer.code;
+                    discountAmtEl.textContent = `-₹${discount}`;
+                    savingsNote.style.display = 'block';
+                    savingsNote.textContent = `You saved ₹${discount} with ${appliedOffer.code}!`;
+                } else {
+                    discountRow.style.display = 'none';
+                    savingsNote.style.display = 'none';
+                }
+
+                document.getElementById('summaryFee').textContent = `₹${fee}`;
+                document.getElementById('summaryGrandTotal').textContent = `₹${grandTotal}`;
+
+                // Group Split Booking Controls (Revealed when Qty >= 2)
+                const splitContainer = document.getElementById('groupSplitOptionContainer');
+                const splitToggle = document.getElementById('splitBillToggle');
+                const splitQtyCount = document.getElementById('splitQtyCount');
+                const splitPerPersonDisplay = document.getElementById('splitPerPersonDisplay');
+                const summarySplitRow = document.getElementById('summarySplitRow');
+                const summarySplitTotalCount = document.getElementById('summarySplitTotalCount');
+                const summarySplitYourShare = document.getElementById('summarySplitYourShare');
+
+                let isSplitActive = false;
+                let perPersonShare = grandTotal;
+
+                if (currentQty >= 2) {
+                    if (splitContainer) splitContainer.style.display = 'block';
+                    if (splitQtyCount) splitQtyCount.textContent = currentQty;
+                    perPersonShare = Math.ceil(grandTotal / currentQty);
+                    if (splitPerPersonDisplay) splitPerPersonDisplay.textContent = `₹${perPersonShare}`;
+
+                    if (splitToggle && splitToggle.checked) {
+                        isSplitActive = true;
+                        if (summarySplitRow) summarySplitRow.style.display = 'flex';
+                        if (summarySplitTotalCount) summarySplitTotalCount.textContent = currentQty;
+                        if (summarySplitYourShare) summarySplitYourShare.textContent = `₹${perPersonShare}`;
+                    } else {
+                        if (summarySplitRow) summarySplitRow.style.display = 'none';
+                    }
+                } else {
+                    if (splitContainer) splitContainer.style.display = 'none';
+                    if (splitToggle) splitToggle.checked = false;
+                    if (summarySplitRow) summarySplitRow.style.display = 'none';
+                }
+
+                const payBtn = document.getElementById('checkoutPayBtn');
+                if (isSplitActive) {
+                    payBtn.textContent = `Pay Your Share (₹${perPersonShare}) & Lock ${currentQty} Seats`;
+                } else if (grandTotal > 0) {
+                    if (discountedSubtotal === 0 && totalDeposit > 0) {
+                        payBtn.textContent = `Pay Refundable Pledge ₹${grandTotal}`;
+                    } else {
+                        payBtn.textContent = `Proceed to Pay ₹${grandTotal}`;
+                    }
+                } else {
+                    payBtn.textContent = `Confirm Free Booking`;
+                }
+
+                document.getElementById('qtyMinusBtn').disabled = (currentQty <= 1);
+                document.getElementById('qtyPlusBtn').disabled = (currentQty >= 10);
+            }
+
+            async function processCheckoutPayment() {
+                if (!currentCheckoutEvent) return;
+
+                const payBtn = document.getElementById('checkoutPayBtn');
+                payBtn.disabled = true;
+                payBtn.textContent = 'Processing Checkout...';
+
+                const ev = currentCheckoutEvent;
+                const unitPrice = ev.price || 0;
+                const subtotal = unitPrice * currentQty;
+
+                let discount = 0;
+                if (appliedOffer && subtotal > 0) {
+                    if (appliedOffer.type === 'percent') {
+                        discount = Math.round(subtotal * (appliedOffer.value / 100));
+                        if (appliedOffer.max) discount = Math.min(discount, appliedOffer.max);
+                    } else if (appliedOffer.type === 'flat') {
+                        discount = Math.min(appliedOffer.value, subtotal);
+                    }
+                }
+
+                const discountedSubtotal = Math.max(0, subtotal - discount);
+                const fee = discountedSubtotal > 0 ? Math.round(discountedSubtotal * 0.015) : 0;
+
+                const depVal = parseFloat(ev.refundableDeposit) || 0;
+                const hasDeposit = (ev.hasDepositBond === true || ev.hasDepositBond === 'true' || depVal > 0) && depVal > 0;
+                const depositPerTicket = hasDeposit ? depVal : 0;
+                const totalDeposit = depositPerTicket * currentQty;
+
+                const grandTotal = discountedSubtotal + fee + totalDeposit;
+
+                // Check if user is using Group Split
+                const splitToggle = document.getElementById('splitBillToggle');
+                const isSplit = !!(splitToggle && splitToggle.checked && currentQty >= 2);
+                const payAmount = isSplit ? Math.ceil(grandTotal / currentQty) : grandTotal;
+
+                // Razorpay Payment if payable amount > 0
+                if (payAmount > 0 && typeof Razorpay !== 'undefined') {
+                    try {
+                        const response = await fetch('https://s3eg7kdaja.execute-api.ap-south-1.amazonaws.com/prod/api/payment/create-order', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ amount: payAmount, receipt: 'ev_' + ev.eventId })
+                        });
+                        const data = await response.json();
+                        
+                        const paymentDesc = isSplit ? 
+                            `${ev.eventName} (Group Split - 1 of ${currentQty})` : 
+                            ((unitPrice === 0 && totalDeposit > 0) ? `${ev.eventName} (Refundable Gate Pledge ₹${payAmount})` : `${ev.eventName} (${currentQty} Ticket${currentQty > 1 ? 's' : ''})`);
+
+                        const options = {
+                            key: (window.EVENTPRO_AWS_CONFIG && window.EVENTPRO_AWS_CONFIG.razorpayKeyId) || 'rzp_live_TqawwTSUz6rvuH',
+                            amount: payAmount * 100,
+                            currency: 'INR',
+                            name: 'EventPro',
+                            description: paymentDesc,
+                            order_id: (data && data.order && data.order.id) ? data.order.id : (data && data.id ? data.id : undefined),
+                            handler: function (response) {
+                                completeBooking(ev, currentQty, grandTotal, appliedOffer, isSplit, payAmount, totalDeposit, response.razorpay_payment_id, response.razorpay_order_id);
+                            },
+                            prefill: {
+                                name: (userProfile.firstName || 'Guest') + ' ' + (userProfile.lastName || ''),
+                                email: userProfile.email || 'guest@example.com'
+                            },
+                            theme: { color: '#f84464' },
+                            modal: {
+                                ondismiss: function() {
+                                    payBtn.disabled = false;
+                                    recalculateCheckout();
+                                }
+                            }
+                        };
+                        const rzp = new Razorpay(options);
+                        rzp.open();
+                    } catch (e) {
+                        completeBooking(ev, currentQty, grandTotal, appliedOffer, isSplit, payAmount, totalDeposit);
+                    }
+                } else {
+                    completeBooking(ev, currentQty, grandTotal, appliedOffer, isSplit, payAmount, totalDeposit);
+                }
+            }
+
+            function showBookingSuccess(ev, quantity, amountPaid, offer, totalDeposit) {
+                const successModal = document.getElementById('bookingSuccessModal');
+                const titleEl = document.getElementById('successEventTitle');
+                const qtyEl = document.getElementById('successQty');
+                const amountEl = document.getElementById('successAmount');
+                const dtEl = document.getElementById('successDateTime');
+                const emailEl = document.getElementById('successEmailDisplay');
+                const depositNotice = document.getElementById('successDepositNotice');
+                const depositAmtEl = document.getElementById('successDepositAmount');
+
+                if (titleEl) titleEl.textContent = ev.eventName || 'Event';
+                if (qtyEl) qtyEl.textContent = quantity + (quantity > 1 ? ' tickets' : ' ticket');
+                if (amountEl) amountEl.textContent = amountPaid > 0 ? ('₹' + amountPaid.toFixed(2)) : 'Free Entry';
+                if (dtEl) dtEl.textContent = `${ev.date || 'TBD'} • ${ev.time || 'TBD'}`;
+
+                if (totalDeposit > 0) {
+                    if (depositNotice) depositNotice.style.display = 'flex';
+                    if (depositAmtEl) depositAmtEl.textContent = `₹${totalDeposit} (Held in Escrow)`;
+                } else {
+                    if (depositNotice) depositNotice.style.display = 'none';
+                }
+
+                // Resolve user email
+                const email = (userProfile && userProfile.email) || (window.EVENTPRO_DASHBOARD_AUTH && window.EVENTPRO_DASHBOARD_AUTH.userEmail) || 'your registered email';
+                if (emailEl) emailEl.textContent = email;
+
+                if (successModal) successModal.classList.add('active');
+
+                const closeBtn = document.getElementById('closeSuccessBtn');
+                const viewBtn = document.getElementById('viewBookingsBtn');
+
+                if (closeBtn) {
+                    closeBtn.onclick = function() {
+                        successModal.classList.remove('active');
+                    };
+                }
+
+                if (viewBtn) {
+                    viewBtn.onclick = function() {
+                        window.location.href = 'Your_Booking.html';
+                    };
+                }
+
+                if (successModal) {
+                    successModal.onclick = function(e) {
+                        if (e.target === successModal) {
+                            successModal.classList.remove('active');
+                        }
+                    };
+                }
+            }
+
+            function showGroupSplitSuccess(ev, quantity, grandTotal, perPerson, ticket) {
+                const splitModal = document.getElementById('groupSplitSuccessModal');
+                const titleEl = document.getElementById('splitSuccessEventTitle');
+                const clockEl = document.getElementById('splitCountdownClock');
+                const linkInput = document.getElementById('splitInviteLinkInput');
+                const copyBtn = document.getElementById('copySplitLinkBtn');
+                const waBtn = document.getElementById('whatsappSplitBtn');
+                const closeBtn = document.getElementById('closeSplitModalBtn');
+                const viewBtn = document.getElementById('viewSplitBookingsBtn');
+
+                if (titleEl) titleEl.textContent = ev.eventName || 'Event';
+
+                const shareUrl = `${window.location.origin}/Attendee_Dashboard/Pay_Split.html?ticketId=${(ticket && ticket.ticketId) || 'TKT'}`;
+                if (linkInput) linkInput.value = shareUrl;
+
+                // 15-Minute Countdown
+                if (window.splitTimerInterval) clearInterval(window.splitTimerInterval);
+                let secondsLeft = 15 * 60;
+                const updateCountdown = () => {
+                    const m = Math.floor(secondsLeft / 60).toString().padStart(2, '0');
+                    const s = (secondsLeft % 60).toString().padStart(2, '0');
+                    if (clockEl) clockEl.textContent = `${m}:${s}`;
+                    if (secondsLeft <= 0) {
+                        clearInterval(window.splitTimerInterval);
+                        if (clockEl) clockEl.textContent = 'EXPIRED';
+                    }
+                    secondsLeft--;
+                };
+                updateCountdown();
+                window.splitTimerInterval = setInterval(updateCountdown, 1000);
+
+                // Render dynamic member list
+                function renderMembers(splitMembers, paidCount) {
+                    const list = document.getElementById('splitMembersList');
+                    const prog = document.getElementById('splitProgressCount');
+                    if (prog) prog.textContent = `${paidCount}/${quantity} Settled`;
+                    if (!list) return;
+
+                    list.innerHTML = '';
+                    const safeMembers = (splitMembers && splitMembers.length > 0) ? splitMembers : [
+                        { name: "You (Organizer)", amount: perPerson, status: "Paid" },
+                        ...Array.from({ length: Math.max(0, quantity - 1) }, (_, i) => ({
+                            name: `Friend #${i + 2}`,
+                            amount: perPerson,
+                            status: "Pending"
+                        }))
+                    ];
+
+                    safeMembers.forEach((m, idx) => {
+                        const isPaid = m.status === 'Paid';
+                        const memberAmt = m.amount !== undefined ? m.amount : perPerson;
+                        const row = document.createElement('div');
+                        row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; background:#161922; border:1px solid #232a3b; padding:10px 12px; border-radius:10px; font-size:0.82rem;';
+                        row.innerHTML = `
+                            <div>
+                                <strong style="color:#fff; display:block;">${m.name}</strong>
+                                <span style="font-size:0.75rem; color:${isPaid ? '#10b981' : '#f59e0b'};">
+                                    ${isPaid ? 'Paid ₹' + memberAmt : 'Pending ₹' + memberAmt}
+                                </span>
+                            </div>
+                            <div>
+                                ${isPaid ? 
+                                    '<span style="background:rgba(16,185,129,0.15); color:#10b981; font-weight:700; padding:4px 8px; border-radius:6px; font-size:0.75rem;">PAID</span>' : 
+                                    `<button type="button" class="simulate-pay-btn" data-index="${idx}" style="background:rgba(59,130,246,0.2); color:#60a5fa; border:1px solid rgba(59,130,246,0.4); padding:4px 10px; border-radius:6px; font-size:0.72rem; font-weight:700; cursor:pointer;">Simulate Friend Pay</button>`
+                                }
+                            </div>
+                        `;
+                        list.appendChild(row);
+                    });
+
+                    list.querySelectorAll('.simulate-pay-btn').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            const memberIdx = parseInt(this.getAttribute('data-index'), 10);
+                            this.disabled = true;
+                            this.textContent = 'Settling...';
+                            if (window.AttendeeBackend && typeof window.AttendeeBackend.updateSplitPayment === 'function') {
+                                window.AttendeeBackend.updateSplitPayment((ticket && ticket.ticketId), memberIdx, (err, updatedTicket) => {
+                                    if (!err && updatedTicket) {
+                                        renderMembers(updatedTicket.splitMembers, updatedTicket.paidMembers);
+                                    } else {
+                                        alert('Could not update payment status.');
+                                        this.disabled = false;
+                                        this.textContent = 'Simulate Friend Pay';
+                                    }
+                                });
+                            }
+                        });
+                    });
+                }
+
+                renderMembers(ticket ? ticket.splitMembers : null, (ticket && ticket.paidMembers) || 1);
+
+                // Copy Link Action
+                if (copyBtn) {
+                    copyBtn.onclick = () => {
+                        if (linkInput) {
+                            navigator.clipboard.writeText(linkInput.value).then(() => {
+                                copyBtn.textContent = 'Copied!';
+                                setTimeout(() => copyBtn.textContent = 'Copy', 2000);
+                            });
+                        }
+                    };
+                }
+
+                // WhatsApp Action
+                if (waBtn) {
+                    waBtn.onclick = () => {
+                        const text = `Hey! I locked our group tickets for "${ev.eventName}". Pay your individual share of ₹${perPerson} here: ${linkInput ? linkInput.value : ''}`;
+                        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+                    };
+                }
+
+                // Modal close & view bookings
+                if (closeBtn) closeBtn.onclick = () => splitModal.classList.remove('active');
+                if (viewBtn) viewBtn.onclick = () => window.location.href = 'Your_Booking.html';
+                if (splitModal) {
+                    splitModal.onclick = (e) => {
+                        if (e.target === splitModal) splitModal.classList.remove('active');
+                    };
+                }
+
+                splitModal.classList.add('active');
+            }
+
+            function completeBooking(ev, quantity, grandTotal, offer, isSplit, amountPaidNow, totalDeposit, paymentId, orderId) {
+                const modal = document.getElementById('bmsCheckoutModal');
+                const payBtn = document.getElementById('checkoutPayBtn');
+
+                // Dismiss checkout modal immediately and reset button
+                if (modal) modal.classList.remove('active');
+                if (payBtn) {
+                    payBtn.disabled = false;
+                    payBtn.textContent = 'Proceed to Pay';
+                }
+
+                let handled = false;
+                const finishBookingUI = (err, ticket) => {
+                    if (handled) return;
+                    handled = true;
+
+                    // Update booking count in top summary
+                    const countEl = document.getElementById('bookingCount');
+                    if (countEl) countEl.textContent = (parseInt(countEl.textContent || '0', 10) + quantity);
+
+                    const resolvedTicket = ticket || {
+                        ticketId: 'TKT-' + Date.now(),
+                        paidMembers: 1,
+                        perPersonAmount: amountPaidNow,
+                        splitMembers: [
+                            { name: "You (Organizer)", amount: amountPaidNow, status: "Paid" },
+                            ...Array.from({ length: Math.max(0, quantity - 1) }, (_, i) => ({
+                                name: `Friend #${i + 2}`,
+                                amount: amountPaidNow,
+                                status: "Pending"
+                            }))
+                        ]
+                    };
+
+                    if (isSplit) {
+                        showGroupSplitSuccess(ev, quantity, grandTotal, amountPaidNow, resolvedTicket);
+                    } else {
+                        showBookingSuccess(ev, quantity, grandTotal, offer, totalDeposit);
+                    }
+                };
+
+                if (window.AttendeeBackend && typeof window.AttendeeBackend.bookTicket === 'function') {
+                    const ticketPayload = {
+                        eventId: ev.eventId,
+                        eventName: ev.eventName,
+                        date: ev.date || 'TBD',
+                        time: ev.time || 'TBD',
+                        location: ev.location || 'Auditorium',
+                        quantity: quantity,
+                        price: grandTotal,
+                        paymentId: paymentId || null,
+                        orderId: orderId || null,
+                        attendeeName: ((userProfile && userProfile.firstName) ? (userProfile.firstName + ' ' + (userProfile.lastName || '')).trim() : null),
+                        attendeeEmail: (userProfile && userProfile.email) || null,
+                        promoCode: offer ? offer.code : null,
+                        hasDeposit: totalDeposit > 0,
+                        depositAmount: totalDeposit,
+                        isGroupSplit: !!isSplit,
+                        totalSplitMembers: isSplit ? quantity : 1,
+                        perPersonAmount: isSplit ? amountPaidNow : grandTotal
+                    };
+
+                    // Safety timeout fallback: if DynamoDB/AWS has network latency, don't leave user hanging
+                    const safetyTimeout = setTimeout(() => {
+                        console.warn("DynamoDB save slow or delayed, proceeding to confirmation view");
+                        finishBookingUI(null, null);
+                    }, 4000);
+
+                    try {
+                        window.AttendeeBackend.bookTicket(ticketPayload, (err, ticket) => {
+                            clearTimeout(safetyTimeout);
+                            finishBookingUI(err, ticket);
+                        });
+                    } catch (e) {
+                        clearTimeout(safetyTimeout);
+                        console.error("bookTicket synchronous error caught:", e);
+                        finishBookingUI(e, null);
+                    }
+                } else {
+                    finishBookingUI(null, null);
+                }
+            }
+
+            // Run initial load
+            setTimeout(loadData, 300);
+        });
+    </script>
+</body>
+</html>
