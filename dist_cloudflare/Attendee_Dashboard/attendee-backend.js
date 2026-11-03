@@ -772,6 +772,60 @@
                 });
             });
         },
+
+        resetSplitPayment: function(ticketId, memberIndex, callback) {
+            initAWS((err) => {
+                if (err) return callback(err);
+                const params = {
+                    TableName: config.ticketsTableName,
+                    Key: { ticketId: ticketId }
+                };
+                docClient.get(params, (getErr, data) => {
+                    if (getErr || !data.Item) return callback(getErr || new Error("Ticket record not found"));
+                    const t = data.Item;
+                    if (!t.splitMembers || !t.splitMembers[memberIndex]) {
+                        return callback(new Error("Split member not found"));
+                    }
+
+                    t.splitMembers[memberIndex].status = "Pending";
+                    delete t.splitMembers[memberIndex].paidAt;
+                    delete t.splitMembers[memberIndex].name;
+                    delete t.splitMembers[memberIndex].email;
+
+                    const paidCount = t.splitMembers.filter(m => m.status === "Paid").length;
+                    t.paidMembers = paidCount;
+                    t.status = "Valid";
+                    t.splitStatus = paidCount >= (t.totalSplitMembers || 2) ? "Fully Settled" : "Pending Friends";
+
+                    const memberTicketId = `${ticketId}-M${memberIndex + 1}`;
+                    docClient.delete({
+                        TableName: config.ticketsTableName,
+                        Key: { ticketId: memberTicketId }
+                    }, (delErr) => {
+                        if (delErr) console.warn("Could not delete sub-ticket:", delErr);
+                    });
+
+                    const updateParams = {
+                        TableName: config.ticketsTableName,
+                        Key: { ticketId: ticketId },
+                        UpdateExpression: "SET splitMembers = :sm, paidMembers = :pm, #s = :st, splitStatus = :ss",
+                        ExpressionAttributeNames: { "#s": "status" },
+                        ExpressionAttributeValues: {
+                            ":sm": t.splitMembers,
+                            ":pm": paidCount,
+                            ":st": t.status,
+                            ":ss": t.splitStatus
+                        },
+                        ReturnValues: "ALL_NEW"
+                    };
+
+                    docClient.update(updateParams, (upErr, upData) => {
+                        if (upErr) return callback(upErr);
+                        callback(null, upData.Attributes || t);
+                    });
+                });
+            });
+        },
         
         getUserProfile: function(callback) {
             initAWS((err) => {

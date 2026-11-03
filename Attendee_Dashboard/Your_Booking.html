@@ -467,6 +467,10 @@
                         if (fcPast) fcPast.textContent = used + cancelled;
 
                         // Sort by purchase date descending, handling invalid dates safely
+                        // Filter out child sub-tickets if the buyer already has the parent group ticket card
+                        const parentSplitIds = new Set(tickets.filter(t => t.isGroupSplit).map(t => t.ticketId));
+                        tickets = tickets.filter(t => !(t.isGroupSplitMember && parentSplitIds.has(t.parentTicketId)));
+
                         tickets.sort((a,b) => {
                             const dA = a.purchasedAt ? new Date(a.purchasedAt) : new Date(0);
                             const dB = b.purchasedAt ? new Date(b.purchasedAt) : new Date(0);
@@ -1293,25 +1297,31 @@
 
                     (members || []).forEach((m, idx) => {
                         const isPaid = m.status === 'Paid';
+                        const memberPayUrl = `${window.location.origin}/Attendee_Dashboard/Pay_Split.html?ticketId=${encodeURIComponent(ticket.ticketId)}&m=${idx}`;
                         const row = document.createElement('div');
-                        row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; background:#161922; border:1px solid #232a3b; padding:10px 12px; border-radius:10px; font-size:0.82rem;';
+                        row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; background:#161922; border:1px solid #232a3b; padding:12px 14px; border-radius:12px; font-size:0.82rem; gap:10px;';
                         row.innerHTML = `
-                            <div>
-                                <strong style="color:#fff; display:block;">${m.name}</strong>
-                                <span style="font-size:0.75rem; color:${isPaid ? '#10b981' : '#f59e0b'};">
-                                    ${isPaid ? '✓ Paid ₹' + (m.amount || ticket.perPersonAmount || 0) : 'Pending ₹' + (m.amount || ticket.perPersonAmount || 0)}
+                            <div style="flex: 1; min-width: 0;">
+                                <strong style="color:#fff; display:block; font-size:0.88rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${m.name || 'Friend #' + (idx + 1)}</strong>
+                                <span style="font-size:0.75rem; color:${isPaid ? '#10b981' : '#f59e0b'}; font-weight:600;">
+                                    ${isPaid ? '✓ Paid ₹' + (m.amount || ticket.perPersonAmount || 0) : '⏳ Pending ₹' + (m.amount || ticket.perPersonAmount || 0)}
                                 </span>
                             </div>
-                            <div>
-                                ${isPaid ? 
-                                    '<span style="background:rgba(16,185,129,0.15); color:#10b981; font-weight:700; padding:4px 8px; border-radius:6px; font-size:0.75rem;">PAID</span>' : 
-                                    `<button type="button" class="simulate-split-pay-btn" data-index="${idx}" style="background:rgba(59,130,246,0.2); color:#60a5fa; border:1px solid rgba(59,130,246,0.4); padding:4px 10px; border-radius:6px; font-size:0.72rem; font-weight:700; cursor:pointer;">Simulate Friend Pay</button>`
-                                }
+                            <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap; justify-content:flex-end;">
+                                ${isPaid ? `
+                                    <span style="background:rgba(16,185,129,0.15); color:#10b981; font-weight:700; padding:4px 8px; border-radius:6px; font-size:0.72rem; border:1px solid rgba(16,185,129,0.3);">PAID</span>
+                                    <a href="${memberPayUrl}" target="_blank" style="background:#1e2433; color:#93c5fd; border:1px solid #2b354c; padding:5px 9px; border-radius:6px; font-size:0.72rem; font-weight:700; text-decoration:none; display:inline-flex; align-items:center;">View Pass</a>
+                                    <button type="button" class="reset-split-pay-btn" data-index="${idx}" style="background:rgba(239,68,68,0.1); color:#f87171; border:1px solid rgba(239,68,68,0.25); padding:5px 9px; border-radius:6px; font-size:0.72rem; font-weight:600; cursor:pointer;" title="Reset this friend's share back to pending to test payment again">Reset</button>
+                                ` : `
+                                    <a href="${memberPayUrl}" target="_blank" style="background:linear-gradient(135deg, #10b981, #059669); color:#fff; padding:5px 10px; border-radius:6px; font-size:0.72rem; font-weight:700; text-decoration:none; display:inline-flex; align-items:center;">Pay Online</a>
+                                    <button type="button" class="simulate-split-pay-btn" data-index="${idx}" style="background:rgba(59,130,246,0.18); color:#60a5fa; border:1px solid rgba(59,130,246,0.35); padding:5px 9px; border-radius:6px; font-size:0.72rem; font-weight:700; cursor:pointer;">Simulate Pay</button>
+                                `}
                             </div>
                         `;
                         listEl.appendChild(row);
                     });
 
+                    // Bind Simulate Pay Buttons
                     listEl.querySelectorAll('.simulate-split-pay-btn').forEach(b => {
                         b.addEventListener('click', function() {
                             const memberIndex = parseInt(this.getAttribute('data-index'), 10);
@@ -1326,11 +1336,38 @@
                                         ticket.status = updated.status;
                                         ticket.splitStatus = updated.splitStatus;
                                         renderMembers(updated.splitMembers, updated.paidMembers);
-                                        loadBookings(); // refresh background list
+                                        loadBookings();
                                     } else {
                                         alert('Could not update payment status: ' + (err ? err.message : 'Unknown error'));
                                         this.disabled = false;
-                                        this.textContent = 'Simulate Friend Pay';
+                                        this.textContent = 'Simulate Pay';
+                                    }
+                                });
+                            }
+                        });
+                    });
+
+                    // Bind Reset Buttons
+                    listEl.querySelectorAll('.reset-split-pay-btn').forEach(b => {
+                        b.addEventListener('click', function() {
+                            const memberIndex = parseInt(this.getAttribute('data-index'), 10);
+                            if (!confirm('Reset this friend\'s share back to Pending? This will allow you to test paying again.')) return;
+                            this.disabled = true;
+                            this.textContent = 'Resetting...';
+
+                            if (window.AttendeeBackend && typeof window.AttendeeBackend.resetSplitPayment === 'function') {
+                                window.AttendeeBackend.resetSplitPayment(ticket.ticketId, memberIndex, (err, updated) => {
+                                    if (!err && updated) {
+                                        ticket.splitMembers = updated.splitMembers;
+                                        ticket.paidMembers = updated.paidMembers;
+                                        ticket.status = updated.status;
+                                        ticket.splitStatus = updated.splitStatus;
+                                        renderMembers(updated.splitMembers, updated.paidMembers);
+                                        loadBookings();
+                                    } else {
+                                        alert('Could not reset share: ' + (err ? err.message : 'Unknown error'));
+                                        this.disabled = false;
+                                        this.textContent = 'Reset';
                                     }
                                 });
                             }
