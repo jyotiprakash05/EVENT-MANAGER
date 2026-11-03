@@ -425,12 +425,22 @@
 
             function loadBookings() {
                 if (window.AttendeeBackend) {
-                    window.AttendeeBackend.getMyBookings(function(err, tickets) {
+                    window.AttendeeBackend.getMyBookings(function(err, rawTickets) {
                         const list = document.getElementById('bookingList');
                         if (err) {
                             list.innerHTML = '<p style="color: #ef4444; padding: 20px;">Error loading bookings: ' + err.message + '</p>';
                             return;
                         }
+
+                        // Filter out child sub-tickets of parent group tickets owned by this user
+                        const parentGroupIds = new Set((rawTickets || []).filter(t => t.isGroupSplit).map(t => t.ticketId));
+                        let tickets = (rawTickets || []).filter(t => {
+                            // If this ticket is a friend's sub-ticket belonging to one of the user's parent bookings, do not show it as a separate pass
+                            if (t.isGroupSplitMember && t.parentTicketId && parentGroupIds.has(t.parentTicketId)) {
+                                return false;
+                            }
+                            return true;
+                        });
 
                         if (!tickets || tickets.length === 0) {
                             list.innerHTML = '<p style="color: var(--muted); padding: 20px;">You haven\'t booked any events yet.</p>';

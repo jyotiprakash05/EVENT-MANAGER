@@ -733,7 +733,7 @@
                         eventName: t.eventName,
                         attendeeName: payerName || `Friend #${memberIndex + 1}`,
                         attendeeEmail: payerEmail || null,
-                        attendeeId: currentUserSub || t.attendeeId,
+                        attendeeId: (currentUserSub && currentUserSub !== t.attendeeId) ? currentUserSub : `guest_${memberTicketId}`,
                         status: "Valid",
                         date: t.date,
                         time: t.time,
