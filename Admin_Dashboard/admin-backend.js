@@ -372,7 +372,7 @@ window.AdminBackend = (function() {
         settlePayout: function(payoutId, utrNumber, callback) {
             if (!docClient && !init()) return callback(new Error("AWS not initialized"));
             const config = window.EVENTPRO_AWS_CONFIG || {};
-            const apiBase = (config.apiGatewayUrl || 'https://s3eg7kdaja.execute-api.ap-south-1.amazonaws.com/prod').replace(/\/+$/, '');
+            const apiBase = (config.apiGatewayUrl || 'https://g1hs9e6ckb.execute-api.ap-south-1.amazonaws.com/prod').replace(/\/+$/, '');
             const now = new Date().toISOString();
 
             this.getPayoutRequests((err, list) => {

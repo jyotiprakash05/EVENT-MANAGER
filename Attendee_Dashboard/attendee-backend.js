@@ -397,7 +397,7 @@
                                 qr_url: qrUrl
                             };
 
-                            const apiEndpoint = (config.apiGatewayUrl || 'https://s3eg7kdaja.execute-api.ap-south-1.amazonaws.com/prod') + '/api/send-email';
+                            const apiEndpoint = (config.apiGatewayUrl || 'https://g1hs9e6ckb.execute-api.ap-south-1.amazonaws.com/prod') + '/api/send-email';
 
                             // 1. Try sending via AWS SES via backend Lambda
                             fetch(apiEndpoint, {
@@ -521,7 +521,7 @@
                         const depositRefunded = ticket.hasDeposit ? (parseFloat(ticket.depositAmount) || 0) : 0;
                         const paymentId = ticket.paymentId || null;
                         const now = new Date().toISOString();
-                        const apiBase = config.apiGatewayUrl || 'https://s3eg7kdaja.execute-api.ap-south-1.amazonaws.com/prod';
+                        const apiBase = config.apiGatewayUrl || 'https://g1hs9e6ckb.execute-api.ap-south-1.amazonaws.com/prod';
 
                         const proceedWithCancellation = (gatewayNotice) => {
                             const depStatus = ticket.hasDeposit ? "Refunded (Cancelled)" : (ticket.depositStatus || "None");
@@ -978,7 +978,7 @@
 
                         const targetEmail = nextInLine.attendeeEmail || nextInLine.userEmail;
                         const targetName = nextInLine.attendeeName || 'Event Enthusiast';
-                        const apiBase = (config && config.apiGatewayUrl) ? config.apiGatewayUrl.replace(/\/+$/, '') : 'https://s3eg7kdaja.execute-api.ap-south-1.amazonaws.com/prod';
+                        const apiBase = (config && config.apiGatewayUrl) ? config.apiGatewayUrl.replace(/\/+$/, '') : 'https://g1hs9e6ckb.execute-api.ap-south-1.amazonaws.com/prod';
 
                         if (targetEmail) {
                             fetch(`${apiBase}/api/send-email`, {

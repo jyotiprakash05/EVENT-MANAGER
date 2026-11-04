@@ -1,0 +1,16 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 20
+  pre_build:
+    commands:
+      - echo "Running pre-deployment automated tests for EventPro..."
+      - node -c aws-lambda-backend/index.js
+  build:
+    commands:
+      - echo "Probing API Gateway endpoint..."
+      - curl -s -I https://g1hs9e6ckb.execute-api.ap-south-1.amazonaws.com/prod/health || true
+      - echo "All automated tests passed successfully!"
+

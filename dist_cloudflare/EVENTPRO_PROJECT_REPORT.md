@@ -75,7 +75,7 @@ graph TD
     Lambda --> SES[Amazon Simple Email Service - SES]
     Lambda --> RZP[Razorpay Payment & Refund Rails]
     
-    CloudFront --> S3[(Amazon S3 Media Bucket - eventpro-images)]
+    CloudFront --> S3[(Amazon S3 Media Bucket - eventpro-images-208443589904)]
 ```
 
 ---
@@ -144,10 +144,10 @@ sequenceDiagram
 | :--- | :--- | :--- |
 | **AWS Region** | `ap-south-1` (Mumbai, India) | Primary low-latency cloud data center |
 | **Amazon Cognito** | User Pool ID: `ap-south-1_2eW46CZhF`<br>App Client ID: `tuarer46kraf0cmt1ub5cq465`<br>Identity Pool: `ap-south-1:b98c8f08-2eb6-48a6-8bfe-e5466c5c9383` | Managed user directory, JWT token issuance, password security, session handling |
-| **Amazon API Gateway** | `https://s3eg7kdaja.execute-api.ap-south-1.amazonaws.com/prod` | RESTful API gateway with CORS, rate-limiting, and Lambda proxy integration |
+| **Amazon API Gateway** | `https://g1hs9e6ckb.execute-api.ap-south-1.amazonaws.com/prod` | RESTful API gateway with CORS, rate-limiting, and Lambda proxy integration |
 | **AWS Lambda** | Node.js 18.x / 20.x Serverless Runtime (`aws-lambda-backend/index.js`) | Stateless execution engine processing orders, signature validation, refunds, and emails |
 | **Amazon DynamoDB** | On-Demand NoSQL Multi-Table Cluster | Ultra-fast key-value and document persistence for users, events, passes, and escrows |
-| **Amazon S3** | S3 Bucket: `eventpro-images` | Durable cloud object store for event poster banners, gallery photos, and assets |
+| **Amazon S3** | S3 Bucket: `eventpro-images-208443589904` | Durable cloud object store for event poster banners, gallery photos, and assets |
 | **Amazon SES** | Verified Identity: `no-reply@eventpro24.online`<br>Support: `support@eventpro24.online` | High-deliverability transactional email service with DKIM, SPF, and DMARC alignment |
 
 ### 4.3 Payment & Webhook Architecture
@@ -540,7 +540,7 @@ Provision the image asset bucket and configure Cross-Origin Resource Sharing (CO
 
 ```bash
 # Create public media bucket
-aws s3api create-bucket --bucket eventpro-images \
+aws s3api create-bucket --bucket eventpro-images-208443589904 \
   --region ap-south-1 \
   --create-bucket-configuration LocationConstraint=ap-south-1
 
@@ -557,7 +557,7 @@ cat << 'EOF' > s3-cors.json
   ]
 }
 EOF
-aws s3api put-bucket-cors --bucket eventpro-images --cors-configuration file://s3-cors.json
+aws s3api put-bucket-cors --bucket eventpro-images-208443589904 --cors-configuration file://s3-cors.json
 ```
 
 #### 3. Amazon SES Email Domain Verification
@@ -615,7 +615,7 @@ When endpoints or Lambda proxy integrations are updated, deploy the changes to t
 ```bash
 # Deploy REST API changes to 'prod' stage
 aws apigateway create-deployment \
-  --rest-api-id s3eg7kdaja \
+  --rest-api-id g1hs9e6ckb \
   --stage-name prod \
   --description "Production Release $(date +%Y-%m-%d_%H:%M)" \
   --region ap-south-1
@@ -778,7 +778,7 @@ jobs:
     steps:
       - name: Probe API Gateway Health Endpoint
         run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://s3eg7kdaja.execute-api.ap-south-1.amazonaws.com/prod/api/health || true)
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://g1hs9e6ckb.execute-api.ap-south-1.amazonaws.com/prod/api/health || true)
           echo "Health Check Response Code: $STATUS"
           if [ "$STATUS" -ne 200 ] && [ "$STATUS" -ne 404 ]; then
             echo "Critical Health Check Failure!"

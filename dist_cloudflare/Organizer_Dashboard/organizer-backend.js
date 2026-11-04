@@ -412,7 +412,7 @@
                                     });
                                 }
 
-                                const apiBase = (config.apiGatewayUrl || 'https://s3eg7kdaja.execute-api.ap-south-1.amazonaws.com/prod').replace(/\/+$/, '');
+                                const apiBase = (config.apiGatewayUrl || 'https://g1hs9e6ckb.execute-api.ap-south-1.amazonaws.com/prod').replace(/\/+$/, '');
                                 const paymentId = ticket.paymentId || (ticket.paymentDetails && ticket.paymentDetails.paymentId);
 
                                 const finishCheckin = (gatewayRefundResult) => {
@@ -680,7 +680,7 @@
                         // Send emails via AWS SES (or EmailJS fallback)
                         if (sendEmail && attendeeTickets.length > 0) {
                             const config = window.EVENTPRO_AWS_CONFIG || {};
-                            const apiEndpoint = (config.apiGatewayUrl || 'https://s3eg7kdaja.execute-api.ap-south-1.amazonaws.com/prod') + '/api/send-email';
+                            const apiEndpoint = (config.apiGatewayUrl || 'https://g1hs9e6ckb.execute-api.ap-south-1.amazonaws.com/prod') + '/api/send-email';
 
                             attendeeTickets.slice(0, 10).forEach(ticket => {
                                 const recipientEmail = ticket.attendeeEmail || ticket.email;

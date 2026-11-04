@@ -1,0 +1,20 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 20
+    commands:
+      - echo "Installing backend dependencies..."
+      - cd aws-lambda-backend && npm ci --omit=dev && cd ..
+  build:
+    commands:
+      - echo "Build completed on `date`"
+artifacts:
+  files:
+    - '**/*'
+  exclude-paths:
+    - '.git/**/*'
+    - 'scratch/**/*'
+    - '.github/**/*'
+

@@ -126,7 +126,7 @@ jobs:
     steps:
       - name: Probe API Gateway Health Endpoint
         run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://s3eg7kdaja.execute-api.ap-south-1.amazonaws.com/prod/api/health || true)
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://g1hs9e6ckb.execute-api.ap-south-1.amazonaws.com/prod/api/health || true)
           echo "Health Check Response Code: $STATUS"
           if [ "$STATUS" -ne 200 ] && [ "$STATUS" -ne 404 ]; then
             echo "Critical Health Check Failure!"

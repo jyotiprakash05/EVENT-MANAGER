@@ -376,3 +376,4 @@ Outputs:
   ApiGatewayUrl:
     Description: API Gateway Production Endpoint
     Value: !Sub 'https://${ApiGatewayRestApi}.execute-api.${AWS::Region}.amazonaws.com/prod'
+
