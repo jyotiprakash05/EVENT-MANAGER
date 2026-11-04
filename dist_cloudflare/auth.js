@@ -13,6 +13,13 @@
         element.style.color = isError ? "#b42318" : "#087443";
     }
 
+    function getErrorMessage(err, defaultMsg) {
+        if (!err) return defaultMsg;
+        if (err.message && err.message !== "null") return err.message;
+        if (err.name || err.code) return (err.name || err.code) + ": Please verify your inputs.";
+        return defaultMsg;
+    }
+
     function isConfigured() {
         return config && sdk && config.userPoolId && !config.userPoolId.startsWith("YOUR_") && config.clientId && !config.clientId.startsWith("YOUR_");
     }
@@ -62,7 +69,7 @@
 
             getPool().signUp(pendingUsername, form.password.value, attributes, null, function (error) {
                 if (error) {
-                    showMessage(form, error.message || "Unable to create your account.", true);
+                    showMessage(form, getErrorMessage(error, "Unable to create your account. Please check your inputs."), true);
                     return;
                 }
                 sessionStorage.setItem("eventpro_pending_role", role);
@@ -90,7 +97,7 @@
                 
                 cognitoUser.confirmRegistration(code, true, function(err, result) {
                     if (err) {
-                        showMessage(verifyForm, err.message || "Invalid verification code.", true);
+                        showMessage(verifyForm, getErrorMessage(err, "Invalid verification code."), true);
                         return;
                     }
                     
@@ -206,7 +213,7 @@
                     }
                 },
                 onFailure: function (error) {
-                    showMessage(form, error.message || "Unable to sign in.", true);
+                    showMessage(form, getErrorMessage(error, "Unable to sign in. Please check your credentials."), true);
                 },
                 newPasswordRequired: function () {
                     showMessage(form, "A new password is required for this account.", true);
