@@ -143,7 +143,7 @@ sequenceDiagram
 | **AWS Service** | **Resource Identifier / Config** | **Role in Platform** |
 | :--- | :--- | :--- |
 | **AWS Region** | `ap-south-1` (Mumbai, India) | Primary low-latency cloud data center |
-| **Amazon Cognito** | User Pool ID: `ap-south-1_jpmIIWg5V`<br>App Client ID: `2srk9os95n7qs30v679ao96phn`<br>Identity Pool: `ap-south-1:6c21b1cb-b9f5...` | Managed user directory, JWT token issuance, password security, session handling |
+| **Amazon Cognito** | User Pool ID: `ap-south-1_2eW46CZhF`<br>App Client ID: `tuarer46kraf0cmt1ub5cq465`<br>Identity Pool: `ap-south-1:b98c8f08-2eb6-48a6-8bfe-e5466c5c9383` | Managed user directory, JWT token issuance, password security, session handling |
 | **Amazon API Gateway** | `https://s3eg7kdaja.execute-api.ap-south-1.amazonaws.com/prod` | RESTful API gateway with CORS, rate-limiting, and Lambda proxy integration |
 | **AWS Lambda** | Node.js 18.x / 20.x Serverless Runtime (`aws-lambda-backend/index.js`) | Stateless execution engine processing orders, signature validation, refunds, and emails |
 | **Amazon DynamoDB** | On-Demand NoSQL Multi-Table Cluster | Ultra-fast key-value and document persistence for users, events, passes, and escrows |
@@ -434,9 +434,9 @@ The client-side web application dynamically reads cloud resource bindings from [
 ```javascript
 window.EVENTPRO_AWS_CONFIG = {
     region: "ap-south-1",
-    userPoolId: "ap-south-1_jpmIIWg5V",
-    clientId: "2srk9os95n7qs30v679ao96phn",
-    identityPoolId: "ap-south-1:6c21b1cb-b9f5-4979-bcca-cc8c91771719",
+    userPoolId: "ap-south-1_2eW46CZhF",
+    clientId: "tuarer46kraf0cmt1ub5cq465",
+    identityPoolId: "ap-south-1:b98c8f08-2eb6-48a6-8bfe-e5466c5c9383",
     dynamoDBTableName: "EventProUsers",
     eventsTableName: "EventProEvents",
     ticketsTableName: "EventProTickets",
@@ -444,8 +444,8 @@ window.EVENTPRO_AWS_CONFIG = {
     checkinsTableName: "EventProCheckins",
     reviewsTableName: "EventProReviews",
     alertsTableName: "EventProAlerts",
-    s3BucketName: "eventpro-images",
-    apiGatewayUrl: "https://s3eg7kdaja.execute-api.ap-south-1.amazonaws.com/prod",
+    s3BucketName: "eventpro-images-208443589904",
+    apiGatewayUrl: "https://g1hs9e6ckb.execute-api.ap-south-1.amazonaws.com/prod",
     senderEmail: "no-reply@eventpro24.online",
     supportEmail: "support@eventpro24.online"
 };
