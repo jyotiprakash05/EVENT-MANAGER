@@ -240,7 +240,7 @@
                                 statusBadge = `<span class="status-badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">Sales Closed</span>`;
                             }
 
-                            const thumbHtml = event.imageUrl ? `<img src="${event.imageUrl}" alt="${event.eventName}" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover;">` : `<div class="event-thumb">${initial}</div>`;
+                            const thumbHtml = event.imageUrl ? `<img src="${event.imageUrl}" alt="${event.eventName}" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=150&q=80';" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover;">` : `<div class="event-thumb">${initial}</div>`;
                             
                             const tr = document.createElement('tr');
                             tr.className = 'event-row';

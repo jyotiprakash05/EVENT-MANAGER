@@ -1542,7 +1542,7 @@
                     card.className = 'bms-poster-card';
                     card.innerHTML = `
                         <div class="bms-poster-img-wrap">
-                            <img src="${ev.imageUrl}" alt="${ev.eventName}" class="bms-poster-img" loading="lazy">
+                            <img src="${ev.imageUrl}" alt="${ev.eventName}" class="bms-poster-img" loading="lazy" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=600&q=80';">
                             ${categoryBadgeMarkup}
                             ${depositBadgeMarkup}
                             ${vibePillMarkup}
